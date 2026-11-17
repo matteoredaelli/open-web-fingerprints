@@ -1,0 +1,39 @@
+{
+  "ClickOnce": {
+    "cats": [
+      47
+    ],
+    "css": [
+      "\\.ClickOnceInfoText"
+    ],
+    "description": "ClickOnce is a Microsoft .NET deployment technology that enables the creation of self-updating Windows-based applications that can be installed and run with minimal user interaction.",
+    "dom": {
+      "a[href='https://go.microsoft.com/fwlink/?LinkId=154571']": {
+        "text": "ClickOnce and .NET Framework Resources"
+      }
+    },
+    "icon": "default.svg",
+    "website": "https://learn.microsoft.com/en-us/visualstudio/deployment/clickonce-security-and-deployment"
+  },
+  "Croogo": {
+    "cats": [
+      1
+    ],
+    "description": "Croogo is an open-source CMS built on CakePHP, offering a platform for managing website content.",
+    "icon": "Croogo.svg",
+    "js": {
+      "Croogo.basePath": ""
+    },
+    "meta": {
+      "generator": "^Croogo"
+    },
+    "oss": true,
+    "pricing": [
+      "freemium"
+    ],
+    "requires": [
+      "PHP"
+    ],
+    "website": "https://croogo.org"
+  }
+}

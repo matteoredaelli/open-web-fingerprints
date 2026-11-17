@@ -121,6 +121,7 @@ type ExtractedRelationship struct {
 	ToTechnologyKey string
 	ToCategoryKey   string
 	Type            string
+	Confidence      *float64 // nil when the source gives none
 	File            string
 	Raw             json.RawMessage
 }

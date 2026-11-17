@@ -1,0 +1,104 @@
+{
+  "a-blog cms": {
+    "cats": [
+      1
+    ],
+    "icon": "a-blog cms.svg",
+    "implies": [
+      "PHP"
+    ],
+    "meta": {
+      "generator": "a-blog cms"
+    },
+    "website": "https://www.a-blogcms.jp"
+  },
+  "A-Frame": {
+    "cats": [
+      25,
+      105
+    ],
+    "description": "A-Frame is an open-source web framework that simplifies building cross-platform virtual reality (VR) experiences using HTML and JavaScript.",
+    "html": [
+      "<a-scene[^<>]*>"
+    ],
+    "icon": "A-Frame.svg",
+    "implies": [
+      "Three.js"
+    ],
+    "js": {
+      "AFRAME.version": "^(.+)$\\;version:\\1",
+      "aframeStats": ""
+    },
+    "oss": true,
+    "scriptSrc": [
+      "/?([\\d.]+)?/aframe(?:\\.min)?\\.js\\;version:\\1"
+    ],
+    "website": "https://aframe.io"
+  },
+  "AngularJS": {
+    "cats": [
+      12
+    ],
+    "cpe": "cpe:2.3:a:angularjs:angular.js:*:*:*:*:*:*:*:*",
+    "description": "AngularJS is a JavaScript-based open-source web application framework led by the Angular Team at Google.",
+    "excludes": [
+      "Angular",
+      "AngularDart"
+    ],
+    "html": [
+      "<(?:div|html)[^>]+ng-app=",
+      "<ng-app"
+    ],
+    "icon": "AngularJS.svg",
+    "js": {
+      "angular": "",
+      "angular.version.full": "^(.+)$\\;version:\\1"
+    },
+    "scriptSrc": [
+      "angular[.-]([\\d.]*\\d)[^/]*\\.js\\;version:\\1",
+      "/([\\d.]+(?:-?rc[.\\d]*)*)/angular(?:\\.min)?\\.js\\;version:\\1",
+      "(?!angular\\.io)\\bangular.{0,32}\\.js"
+    ],
+    "website": "https://angularjs.org"
+  },
+  "AWS Certificate Manager": {
+    "cats": [
+      70
+    ],
+    "certIssuer": "Amazon",
+    "cpe": "cpe:2.3:a:awstats:awstats:*:*:*:*:*:*:*:*",
+    "description": "AWS Certificate Manager is a service that lets you easily provision, manage, and deploy public and private Secure Sockets Layer/Transport Layer Security (SSL/TLS) certificates for use with AWS services and your internal connected resources.",
+    "icon": "AWS Certificate Manager.svg",
+    "implies": [
+      "Amazon Web Services"
+    ],
+    "saas": true,
+    "website": "https://aws.amazon.com/certificate-manager/"
+  },
+  "Acquia Personalization": {
+    "cats": [
+      10,
+      76
+    ],
+    "description": "Acquia Personalization (formerly Acquia Lift) lets you track customers' behavior throughout your website.",
+    "dom": [
+      "[data-lift-slot]"
+    ],
+    "icon": "acquia-personalization.png",
+    "implies": [
+      "Acquia Cloud Platform\\;confidence:95"
+    ],
+    "js": {
+      "AcquiaLift": "",
+      "_tcaq": ""
+    },
+    "saas": true,
+    "scriptSrc": [
+      "lift\\.acquia\\.com"
+    ],
+    "website": "https://www.acquia.com/products/marketing-cloud/personalization",
+    "xhr": [
+      "lift\\.acquia\\.com"
+    ]
+  }
+}

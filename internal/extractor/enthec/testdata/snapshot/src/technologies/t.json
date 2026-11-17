@@ -1,0 +1,249 @@
+{
+  "T-Soft": {
+    "cats": [
+      6
+    ],
+    "description": "T-Soft is a SaaS-based ecommerce platform developed in Turkey, offering a modular architecture with support for B2B and B2C transactions, API integrations, and payment processing.",
+    "dom": [
+      "a[href*='.tsoft.com.tr'][target='_blank'][title='T-Soft E-ticaret Sistemleri']"
+    ],
+    "html": [
+      "<a href=\"http://www\\.tsoft\\.com\\.tr\" target=\"_blank\" title=\"T-Soft E-ticaret Sistemleri\">"
+    ],
+    "icon": "Tsoft.svg",
+    "js": {
+      "TSOFT": "",
+      "TSOFT_APPS": ""
+    },
+    "meta": {
+      "copyright": "^T-Soft E-Ticaret Sistemleri$"
+    },
+    "pricing": [
+      "mid",
+      "recurring"
+    ],
+    "saas": true,
+    "website": "https://www.tsoft.com.tr"
+  },
+  "TYPO3 CMS": {
+    "cats": [
+      1
+    ],
+    "cpe": "cpe:2.3:a:typo3:typo3:*:*:*:*:*:*:*:*",
+    "description": "TYPO3 is a free and open-source Web content management system written in PHP.",
+    "dom": [
+      "link[href*='typo3conf'], link[href*='typo3temp'], img[src*='typo3conf'], img[src*='typo3temp']"
+    ],
+    "icon": "TYPO3.svg",
+    "implies": [
+      "PHP"
+    ],
+    "js": {
+      "webpackChunkTYPO3Webpack": ""
+    },
+    "meta": {
+      "generator": "TYPO3\\s+(?:CMS\\s+)?(?:[\\d.]+)?(?:\\s+CMS)?"
+    },
+    "oss": true,
+    "probe": {
+      "/typo3/sysext/core/Resources/Public/Images/typo3_orange.svg": ""
+    },
+    "scriptSrc": [
+      "^/?typo3(?:conf|temp)/"
+    ],
+    "url": [
+      "/typo3/"
+    ],
+    "website": "https://typo3.org/"
+  },
+  "TableBooker": {
+    "cats": [
+      93
+    ],
+    "description": "Tablebooker is an online reservation system for restaurants.",
+    "dom": {
+      "iframe": {
+        "attributes": {
+          "id": "tablebookerResFrame_"
+        }
+      }
+    },
+    "icon": "TableBooker.svg",
+    "pricing": [
+      "low",
+      "recurring"
+    ],
+    "saas": true,
+    "scriptSrc": [
+      "reservations\\.tablebooker\\.\\w+/"
+    ],
+    "website": "https://www.tablebooker.com"
+  },
+  "Taboola": {
+    "cats": [
+      36
+    ],
+    "cookies": {
+      "taboola_session_id": ""
+    },
+    "description": "Taboola is a content discovery & native advertising platform for publishers and advertisers.",
+    "dom": {
+      "link[href*='.taboola.com']": {
+        "attributes": {
+          "href": ""
+        }
+      }
+    },
+    "icon": "Taboola.svg",
+    "js": {
+      "TRCImpl.global": "",
+      "_taboola": "",
+      "taboola_view_id": ""
+    },
+    "pricing": [
+      "payg"
+    ],
+    "saas": true,
+    "scriptSrc": [
+      "\\.taboola\\.com"
+    ],
+    "website": "https://www.taboola.com",
+    "xhr": [
+      "\\.taboola\\.com"
+    ]
+  },
+  "Taggbox": {
+    "cats": [
+      5
+    ],
+    "description": "Taggbox is an UGC platform to collect, curate, manage rights, and publish user-generated content marketing campaigns across multiple channels.",
+    "icon": "Taggbox.svg",
+    "js": {
+      "taggboxAjaxurl": ""
+    },
+    "pricing": [
+      "low",
+      "recurring",
+      "freemium"
+    ],
+    "saas": true,
+    "scriptSrc": [
+      "\\.taggbox\\.com",
+      "taggbox\\.com/app/js/embed\\.min\\.js(?:\\?ver=([\\d.]+))?\\;version:\\1"
+    ],
+    "url": [
+      "\\.taggbox\\.com"
+    ],
+    "website": "https://taggbox.com/"
+  },
+  "Tailwind CSS": {
+    "cats": [
+      66
+    ],
+    "css": [
+      "--tw-(?:rotate|translate|space-x|text-opacity|border-opacity|bg-opacity|scale|ring|blur|shadow|brightness|contrast|grayscale|invert|sepia)"
+    ],
+    "description": "Tailwind is a utility-first CSS framework for rapidly building custom user interfaces.",
+    "dom": {
+      "link[rel='stylesheet'][href*='.css']": {
+        "attributes": {
+          "href": "assets.*index\\.v(\\d+\\.\\d+\\.\\d+)\\.css\\;version:\\1"
+        }
+      },
+      "link[rel='stylesheet'][href*='tailwind']": {
+        "attributes": {
+          "href": "tailwindcss[@|/](?:\\^)?([\\d.]+)(?:/[a-z]+)?/(?:tailwind|base|components|utilities)(?:\\.min)?\\.css\\;version:\\1"
+        }
+      },
+      "style": {
+        "text": "/\\/\\*! tailwindcss v([\\d.]+) \\| MIT License \\| https:\\/\\/tailwindcss\\.com\\*\\/\\;version:\\1"
+      }
+    },
+    "icon": "tailwindcss.svg",
+    "js": {
+      "hexToTailwindColorVar": "",
+      "tailwind": ""
+    },
+    "meta": {
+      "application-name": "^Tailwind CSS$"
+    },
+    "scriptSrc": [
+      "\\.tailwindcss(?:tailwind-config-cdn)?\\.(?:com|js)|/npm/@tailwindcss/browser"
+    ],
+    "website": "https://tailwindcss.com/"
+  },
+  "Tangled Network": {
+    "cats": [
+      88
+    ],
+    "description": "Tangled Network provides a managed services in website devleopment, web and database hosting and domain registration, with a focus on everything managed for small and medium sized businesses.",
+    "dns": {
+      "NS": [
+        "\\.tanglednetwork\\.com"
+      ],
+      "SOA": [
+        "\\.tanglednetwork\\.com"
+      ]
+    },
+    "headers": {
+      "X-Hosting-Provider": "Tangled Network"
+    },
+    "icon": "atws.svg",
+    "pricing": [
+      "low",
+      "recurring"
+    ],
+    "website": "https://tanglednetwork.com"
+  },
+  "Thawte": {
+    "cats": [
+      70
+    ],
+    "certIssuer": "Thawte",
+    "description": "Thawte is a provider of SSL certificates, offering a site seal as a visual indicator of website security.",
+    "icon": "Thawte.svg",
+    "pricing": [
+      "low",
+      "recurring"
+    ],
+    "saas": true,
+    "website": "https://www.thawte.com"
+  },
+  "Tipsa": {
+    "cats": [
+      99
+    ],
+    "description": "TIPSA is a parcel delivery company in Spain, Portugal and Andorra.",
+    "icon": "Tipsa.svg",
+    "requiresCategory": [
+      6
+    ],
+    "text": [
+      "\\bTipsa\\b"
+    ],
+    "website": "https://www.tip-sa.com"
+  },
+  "Twenty Twenty-Two": {
+    "cats": [
+      80
+    ],
+    "description": "Twenty Twenty-Two is the default WordPress theme for 2022.",
+    "dom": {
+      "link#twentytwentytwo-style-css": {},
+      "style#webfonts-inline-css": {
+        "text": "/wp-content/themes/twentytwentytwo/assets/fonts/"
+      },
+      "style#wp-webfonts-inline-css": {
+        "text": "/wp-content/themes/twentytwentytwo/assets/fonts/"
+      }
+    },
+    "icon": "WordPress.svg",
+    "pricing": [
+      "freemium"
+    ],
+    "requires": [
+      "WordPress"
+    ],
+    "website": "https://wordpress.org/themes/twentytwentytwo"
+  }
+}

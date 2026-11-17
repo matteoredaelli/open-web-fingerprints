@@ -113,7 +113,9 @@ a result of applying a rule to a real target.
 | `cats` | `category_ids` through mapping from numeric ID |
 | `website`, `description`, `oss`, `saas`, `cpe`, `icon` | fields (`icon` stays in `raw`, no image import) |
 | `headers`, `cookies`, `meta`, `html`, `scriptSrc`, `js`, `dom`, `dns`, `url`, `css`, `xhr`, `text`, `certIssuer`, `robots` | one Fingerprint per entry, observation by key |
-| `scripts` | `script_url` or `js_global` (to confirm) |
+| `scripts` | `script_content` (inline script text) |
+| `url`, `text`, `css` | `page_url`, `page_text`, `css_rule` |
+| `dom` | `dom`; targets `sel`, `sel::text`, `sel::attr(n)`, `sel::prop(n)` |
 | `probe` | Fingerprint with `probe`, status `draft` |
 | `implies`, `requires`, `excludes`, `requiresCategory` | Relationship |
 | `\;version:\1`, `\;confidence:N` | `version_extract`, `confidence` (N/100) |
@@ -152,3 +154,13 @@ meta tag, script URL, HTML, JS global, favicon hash, DNS, TLS and an active
 probe. `schemas/schemas_test.go` checks the example, 20 invalid mutations
 and 3 valid edge cases. Active probes cannot be `status: active` until
 their `safety_review` is `approved`.
+
+## Enthec extractor (implemented)
+
+`internal/extractor/enthec` maps the fields above. Run against Enthec
+`9e52f10`: 7704 technologies, 109 categories, 15843 fingerprints, 2290
+relationships. It emits 19 `unsupported_regex` warnings, matching the
+measurement above, and 16 `multiple_category_groups` warnings. Wappalyzer
+entries are OR-combined, so no `group_id` is produced. Probes are always
+`pending`. The full-snapshot test is opt-in: set `OWF_ENTHEC_SNAPSHOT` to a
+local clone.

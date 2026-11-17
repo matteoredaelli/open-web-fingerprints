@@ -1,0 +1,46 @@
+{
+  "PHP": {
+    "cats": [
+      27
+    ],
+    "cookies": {
+      "PHPSESSID": ""
+    },
+    "cpe": "cpe:2.3:a:php:php:*:*:*:*:*:*:*:*",
+    "description": "PHP is a general-purpose scripting language used for web development.",
+    "dom": [
+      "form[action*='login_process.php'], form[action*='assets/mail.php']"
+    ],
+    "headers": {
+      "Server": "php/?([\\d.]+)?\\;version:\\1",
+      "X-Powered-By": "^php/?([\\d.]+)?\\;version:\\1"
+    },
+    "icon": "PHP.svg",
+    "scripts": [
+      "\\.php(?:\\?|$)"
+    ],
+    "url": [
+      "\\.php(?:$|\\?)"
+    ],
+    "website": "https://php.net"
+  },
+  "PixelFed": {
+    "cats": [
+      2
+    ],
+    "description": "PixelFed is an activitypub based image sharing platform.",
+    "dom": {
+      "a[href='pixelfed.org'][title*='version']": {
+        "attributes": {
+          "title": "^version ([0-9.]+)$\\;version:\\1"
+        },
+        "text": "^Powered by Pixelfed$"
+      }
+    },
+    "icon": "PixelFed.svg",
+    "implies": [
+      "Laravel"
+    ],
+    "website": "https://pixelfed.org"
+  }
+}
