@@ -242,3 +242,11 @@ never merged automatically. Equivalent rules of one source share a canonical
 ID derived from the semantic key, with one provenance entry per upstream
 rule. Conflicts are internal review items and are not part of the public
 schema 0.1.0.
+
+## Reconciliation, step 2 (implemented)
+
+`owf conflict resolve` merges or separates records. See
+[dedup-design.md](dedup-design.md) for the merge rules, ownership of merged
+records and real-data numbers. `repository.ChangeSet` gained `Delete` (only
+used by merges) and `Aliases`; SQLite has the `aliases` table (migration
+`00003`).

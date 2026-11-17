@@ -44,9 +44,27 @@ func (d Diff) IsEmpty() bool {
 
 // spec tells the generic diff how to treat one record type.
 type spec[T any] struct {
-	id      func(T) string
-	prov    func(*T) *[]domain.Provenance
-	curated func(dst *T, old T) // keeps fields owned by reviewers
+	id   func(T) string
+	prov func(*T) *[]domain.Provenance
+	// curated runs after provenance is merged. It keeps what reviewers own and
+	// what other sources contributed: see ownership in docs/dedup-design.md.
+	curated func(dst *T, old T, sid domain.SourceID)
+}
+
+// isPrimary reports whether the source owns the content of a record: it is
+// the source of the record's first provenance entry. Other sources only add
+// their provenance to a merged record.
+func isPrimary(old []domain.Provenance, sid domain.SourceID) bool {
+	return len(old) == 0 || old[0].SourceID == sid
+}
+
+func multiSource(p []domain.Provenance) bool {
+	for _, x := range p[1:] {
+		if x.SourceID != p[0].SourceID {
+			return true
+		}
+	}
+	return false
 }
 
 // sourceEntries returns the provenance entries a source contributed to a
@@ -79,20 +97,32 @@ func allState(p []domain.Provenance, state string) bool {
 	return len(p) > 0
 }
 
+// mergeProvenance replaces the entries of one source with fresh ones. Order
+// matters: the first entry names the source that owns a record's content, so
+// the replacement happens in place instead of moving the source to the end.
 func mergeProvenance(existing, fresh []domain.Provenance, sid domain.SourceID) []domain.Provenance {
 	var out []domain.Provenance
+	placed := false
 	for _, p := range existing {
 		if p.SourceID != sid {
 			out = append(out, p)
+			continue
+		}
+		if !placed {
+			out = append(out, fresh...)
+			placed = true
 		}
 	}
-	return append(out, fresh...)
+	if !placed {
+		out = append(out, fresh...)
+	}
+	return out
 }
 
-// comparable strips what is allowed to differ between two imports of
+// forCompare strips what is allowed to differ between two imports of
 // equivalent data: other sources' provenance, and this source's snapshot
 // revision and import time. Entries are ordered by upstream ID.
-func comparable[T any](s spec[T], rec T, sid domain.SourceID) T {
+func forCompare[T any](s spec[T], rec T, sid domain.SourceID) T {
 	p := s.prov(&rec)
 	keep := sourceEntries(*p, sid)
 	for i := range keep {
@@ -103,8 +133,10 @@ func comparable[T any](s spec[T], rec T, sid domain.SourceID) T {
 	return rec
 }
 
-// compute diffs fresh records against stored ones. It returns the records to
-// upsert (with merged provenance and preserved curation) and the change list.
+// compute diffs fresh records against all stored ones. It returns the records
+// to upsert (with merged provenance and preserved curation) and the change
+// list. Records are matched by ID across sources, because a merged record
+// carries several sources' provenance.
 func compute[T any](s spec[T], sid domain.SourceID, stored, fresh []T) (upsert []T, ch Change) {
 	old := make(map[string]T, len(stored))
 	for _, o := range stored {
@@ -121,11 +153,11 @@ func compute[T any](s spec[T], sid domain.SourceID, stored, fresh []T) (upsert [
 			continue
 		}
 		merged := n
-		s.curated(&merged, o)
-		fp := s.prov(&merged)
-		*fp = mergeProvenance(*s.prov(&o), *fp, sid)
+		mp := s.prov(&merged)
+		*mp = mergeProvenance(*s.prov(&o), *mp, sid)
+		s.curated(&merged, o, sid)
 		if allState(sourceEntries(*s.prov(&o), sid), "present") &&
-			reflect.DeepEqual(comparable(s, o, sid), comparable(s, merged, sid)) {
+			reflect.DeepEqual(forCompare(s, o, sid), forCompare(s, merged, sid)) {
 			continue
 		}
 		upsert = append(upsert, merged)
@@ -145,32 +177,103 @@ func compute[T any](s spec[T], sid domain.SourceID, stored, fresh []T) (upsert [
 	return upsert, ch
 }
 
+func union[T comparable](a, b []T) []T {
+	out := append([]T(nil), a...)
+	have := map[T]bool{}
+	for _, x := range a {
+		have[x] = true
+	}
+	for _, x := range b {
+		if !have[x] {
+			have[x] = true
+			out = append(out, x)
+		}
+	}
+	return out
+}
+
 var (
 	catSpec = spec[domain.Category]{
-		id:      func(c domain.Category) string { return string(c.ID) },
-		prov:    func(c *domain.Category) *[]domain.Provenance { return &c.Provenance },
-		curated: func(*domain.Category, domain.Category) {},
+		id:   func(c domain.Category) string { return string(c.ID) },
+		prov: func(c *domain.Category) *[]domain.Provenance { return &c.Provenance },
+		curated: func(dst *domain.Category, old domain.Category, sid domain.SourceID) {
+			if !isPrimary(old.Provenance, sid) {
+				prov := dst.Provenance
+				*dst = old
+				dst.Provenance = prov
+			}
+		},
 	}
 	techSpec = spec[domain.Technology]{
-		id:      func(t domain.Technology) string { return string(t.ID) },
-		prov:    func(t *domain.Technology) *[]domain.Provenance { return &t.Provenance },
-		curated: func(dst *domain.Technology, old domain.Technology) { dst.Status = old.Status },
+		id:   func(t domain.Technology) string { return string(t.ID) },
+		prov: func(t *domain.Technology) *[]domain.Provenance { return &t.Provenance },
+		curated: func(dst *domain.Technology, old domain.Technology, sid domain.SourceID) {
+			prov := dst.Provenance
+			if !isPrimary(old.Provenance, sid) {
+				*dst = old
+				dst.Provenance = prov
+				return
+			}
+			dst.Status = old.Status
+			if multiSource(prov) {
+				// What other sources contributed through a merge is kept: extra
+				// names, CPEs and categories, and fields this source leaves empty.
+				dst.Aliases = union(old.Aliases, dst.Aliases)
+				dst.CPE = union(old.CPE, dst.CPE)
+				dst.CategoryIDs = union(old.CategoryIDs, dst.CategoryIDs)
+				if dst.Description == "" {
+					dst.Description = old.Description
+				}
+				if dst.Website == "" {
+					dst.Website = old.Website
+				}
+				if dst.Kind == "" {
+					dst.Kind = old.Kind
+				}
+				if dst.VendorID == "" {
+					dst.VendorID = old.VendorID
+				}
+				if dst.OpenSource == nil {
+					dst.OpenSource = old.OpenSource
+				}
+				if dst.SaaS == nil {
+					dst.SaaS = old.SaaS
+				}
+			}
+		},
 	}
 	fpSpec = spec[domain.Fingerprint]{
 		id:   func(f domain.Fingerprint) string { return string(f.ID) },
 		prov: func(f *domain.Fingerprint) *[]domain.Provenance { return &f.Provenance },
-		curated: func(dst *domain.Fingerprint, old domain.Fingerprint) {
-			dst.Status, dst.Validation = old.Status, old.Validation
-			// A probe's safety review is a human decision; never reset it.
-			if dst.Probe != nil && old.Probe != nil {
-				dst.Probe.SafetyReview = old.Probe.SafetyReview
+		curated: func(dst *domain.Fingerprint, old domain.Fingerprint, sid domain.SourceID) {
+			prov := dst.Provenance
+			if !isPrimary(old.Provenance, sid) {
+				*dst = old
+				dst.Provenance = prov
+			} else {
+				dst.Status, dst.Validation = old.Status, old.Validation
+				// A probe's safety review is a human decision; never reset it.
+				if dst.Probe != nil && old.Probe != nil {
+					p := *dst.Probe
+					p.SafetyReview = old.Probe.SafetyReview
+					dst.Probe = &p
+				}
+			}
+			if multiSource(prov) {
+				dst.Confidence = domain.LowestExplicitConfidence(prov, dst.Confidence)
 			}
 		},
 	}
 	relSpec = spec[domain.Relationship]{
-		id:      func(r domain.Relationship) string { return string(r.ID) },
-		prov:    func(r *domain.Relationship) *[]domain.Provenance { return &r.Provenance },
-		curated: func(*domain.Relationship, domain.Relationship) {},
+		id:   func(r domain.Relationship) string { return string(r.ID) },
+		prov: func(r *domain.Relationship) *[]domain.Provenance { return &r.Provenance },
+		curated: func(dst *domain.Relationship, old domain.Relationship, sid domain.SourceID) {
+			if !isPrimary(old.Provenance, sid) {
+				prov := dst.Provenance
+				*dst = old
+				dst.Provenance = prov
+			}
+		},
 	}
 )
 

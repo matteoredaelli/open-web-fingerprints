@@ -37,3 +37,18 @@ type Conflict struct {
 	CreatedAt  time.Time         `json:"created_at"`
 	UpdatedAt  time.Time         `json:"updated_at"`
 }
+
+// Alias maps the ID of a record that was merged away to the surviving record.
+// Later imports translate the old ID, so a merge is never undone by a
+// refresh.
+type Alias struct {
+	Kind  Kind   `json:"kind"`
+	OldID string `json:"old_id"`
+	NewID string `json:"new_id"`
+}
+
+// Additional conflict kinds raised by merges.
+const (
+	ConflictMetadata   = "metadata_conflict"
+	ConflictConfidence = "confidence_disagreement"
+)

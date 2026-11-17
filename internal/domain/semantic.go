@@ -34,3 +34,41 @@ func (f Fingerprint) SemanticKey() string {
 	}, "\x1f")))
 	return hex.EncodeToString(h.Sum(nil))[:32]
 }
+
+// UnionProvenance appends the entries of b that a does not already have. An
+// entry is identified by (source, original ID).
+func UnionProvenance(a, b []Provenance) []Provenance {
+	out := append([]Provenance(nil), a...)
+	seen := map[string]bool{}
+	for _, p := range out {
+		seen[string(p.SourceID)+"\x00"+p.OriginalID] = true
+	}
+	for _, p := range b {
+		k := string(p.SourceID) + "\x00" + p.OriginalID
+		if !seen[k] {
+			seen[k] = true
+			out = append(out, p)
+		}
+	}
+	return out
+}
+
+// LowestExplicitConfidence returns the lowest confidence a source stated
+// explicitly, or fallback when none did. Agreement between sources never
+// raises confidence.
+func LowestExplicitConfidence(p []Provenance, fallback float64) float64 {
+	found := false
+	lowest := 0.0
+	for _, x := range p {
+		if x.OriginalConfidence == nil {
+			continue
+		}
+		if !found || *x.OriginalConfidence < lowest {
+			lowest, found = *x.OriginalConfidence, true
+		}
+	}
+	if !found {
+		return fallback
+	}
+	return lowest
+}

@@ -31,6 +31,8 @@ owf stats
 owf technology show wordpress
 owf fingerprint list --technology nginx
 owf fingerprint validate
+owf conflict list --state open               # candidates from other sources
+owf conflict resolve --all --websites same_domain --merge --dry-run
 owf export -o registry.json                   # validated against schemas/
 ```
 

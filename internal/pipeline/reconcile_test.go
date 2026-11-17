@@ -10,10 +10,14 @@ import (
 	"sort"
 	"strings"
 	"testing"
+	"testing/fstest"
 
 	"github.com/matteoredaelli/open-web-fingerprints/internal/domain"
+	"github.com/matteoredaelli/open-web-fingerprints/internal/merge"
 	"github.com/matteoredaelli/open-web-fingerprints/internal/pipeline"
 	"github.com/matteoredaelli/open-web-fingerprints/internal/repository"
+	"github.com/matteoredaelli/open-web-fingerprints/internal/review"
+	"github.com/matteoredaelli/open-web-fingerprints/internal/validator"
 )
 
 func source2() domain.Source {
@@ -33,7 +37,7 @@ func runAs(t *testing.T, p *pipeline.Pipeline, src domain.Source, fsys fs.FS, re
 
 // secondSnapshot is the fixture with one changed website, one removed and
 // one new technology.
-func secondSnapshot(t *testing.T, website string) fs.FS {
+func secondSnapshot(t *testing.T, website string) fstest.MapFS {
 	m := mapFS(t)
 	editTechFile(t, m, "src/technologies/a.json", func(d map[string]map[string]any) {
 		d["A-Frame"]["website"] = website
@@ -278,4 +282,36 @@ func TestFullTwoSources(t *testing.T) {
 		t.Errorf("re-import not empty: %+v", again.Diff)
 	}
 	_ = rep
+
+	// Review: approve same-domain matches and shared categories in bulk.
+	res, err := review.Resolve(context.Background(), repo, review.Request{Bulk: true, Decision: merge.Merge, Websites: "same_domain"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	cat, err := review.Resolve(context.Background(), repo, review.Request{Bulk: true, Decision: merge.Merge, Kind: domain.ConflictCategoryCandidate})
+	if err != nil {
+		t.Fatal(err)
+	}
+	all, _ = repo.AllRecords(context.Background())
+	if issues := validator.Validate(all); len(issues) != 0 {
+		t.Fatalf("%d issues after merge, first: %v", len(issues), issues[0])
+	}
+	open := 0
+	for _, c := range conflictsOf(t, repo) {
+		if c.State == domain.ConflictOpen {
+			open++
+		}
+	}
+	t.Logf("merged %d technologies (%d rules combined, %d relationships absorbed, %d self refs dropped), %d categories; now technologies=%d fingerprints=%d open conflicts=%d",
+		res.Merged, len(res.Delete.Fingerprints), len(res.Delete.Relationships), res.SelfRelations, cat.Merged,
+		len(all.Technologies), len(all.Fingerprints), open)
+	for _, src := range []struct {
+		s   domain.Source
+		dir string
+	}{{source(), a}, {hb, b}} {
+		if again := imp(src.s, src.dir); !again.Diff.IsEmpty() {
+			t.Errorf("re-import of %s after merge is not empty: %+v", src.s.Slug,
+				[]int{len(again.Diff.Technologies.Modified), len(again.Diff.Fingerprints.Modified), len(again.Diff.Categories.Modified), len(again.Diff.Relationships.Modified), len(again.Diff.Conflicts.Added)})
+		}
+	}
 }

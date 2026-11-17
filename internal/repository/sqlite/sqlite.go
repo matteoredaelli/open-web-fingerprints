@@ -269,6 +269,24 @@ func (r *Repo) SourceRecords(ctx context.Context, id domain.SourceID) (domain.Re
 	return r.load(ctx, id, false)
 }
 
+// Aliases implements repository.Repository.
+func (r *Repo) Aliases(ctx context.Context) (map[string]string, error) {
+	rows, err := r.db.QueryContext(ctx, `SELECT old_id, new_id FROM aliases`)
+	if err != nil {
+		return nil, fmt.Errorf("sqlite: aliases: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+	out := map[string]string{}
+	for rows.Next() {
+		var o, n string
+		if err := rows.Scan(&o, &n); err != nil {
+			return nil, fmt.Errorf("sqlite: scan alias: %w", err)
+		}
+		out[o] = n
+	}
+	return out, rows.Err()
+}
+
 // Conflicts implements repository.Repository.
 func (r *Repo) Conflicts(ctx context.Context) ([]domain.Conflict, error) {
 	rows, err := r.db.QueryContext(ctx, `SELECT data FROM conflicts ORDER BY id`)
@@ -372,7 +390,44 @@ func (r *Repo) apply(ctx context.Context, tx *sql.Tx, cs repository.ChangeSet) e
 			return wrap("relationship provenance", string(x.ID), err)
 		}
 	}
+	if err := r.deleteRecords(ctx, tx, cs.Delete); err != nil {
+		return err
+	}
+	for _, a := range cs.Aliases {
+		if _, err := tx.ExecContext(ctx,
+			`INSERT INTO aliases(old_id, new_id, kind) VALUES (?,?,?)
+			 ON CONFLICT(old_id) DO UPDATE SET new_id=excluded.new_id, kind=excluded.kind`,
+			a.OldID, a.NewID, string(a.Kind)); err != nil {
+			return wrap("alias", a.OldID, err)
+		}
+	}
 	return r.markRemoved(ctx, tx, cs)
+}
+
+// deleteRecords removes records absorbed by a merge, children first.
+func (r *Repo) deleteRecords(ctx context.Context, tx *sql.Tx, d repository.RecordIDs) error {
+	for _, g := range []struct {
+		table string
+		ids   []string
+	}{
+		{"relationships", d.Relationships}, {"fingerprints", d.Fingerprints},
+		{"technologies", d.Technologies}, {"categories", d.Categories},
+	} {
+		for _, id := range g.ids {
+			// table comes from the fixed list above, never from input.
+			res, err := tx.ExecContext(ctx, `DELETE FROM `+g.table+` WHERE id=?`, id) //nolint:gosec
+			if err != nil {
+				return fmt.Errorf("sqlite: delete %s %s: %w", g.table, id, err)
+			}
+			if n, _ := res.RowsAffected(); n == 0 {
+				return fmt.Errorf("deleted record %s does not exist in %s", id, g.table)
+			}
+			if _, err := tx.ExecContext(ctx, `DELETE FROM provenance WHERE record_id=?`, id); err != nil {
+				return fmt.Errorf("sqlite: delete provenance %s: %w", id, err)
+			}
+		}
+	}
+	return nil
 }
 
 // markRemoved flags the source's provenance entry on each listed record.

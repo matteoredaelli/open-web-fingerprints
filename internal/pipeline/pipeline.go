@@ -124,7 +124,13 @@ func (p *Pipeline) Run(ctx context.Context, req Request) (*Report, error) {
 		return nil, fmt.Errorf("pipeline: normalize: %w", err)
 	}
 	rep.Warnings = norm.Warnings
-	fresh := norm.Records()
+	aliases, err := p.Repo.Aliases(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("pipeline: load aliases: %w", err)
+	}
+	tr := reconciler.Translate(norm.Records(), all, aliases)
+	rep.Warnings = append(rep.Warnings, tr.Warnings...)
+	fresh := tr.Records
 	rep.Counts = Counts{len(fresh.Categories), len(fresh.Technologies), len(fresh.Fingerprints), len(fresh.Relationships)}
 
 	rep.Issues = validator.Validate(fresh)
@@ -132,14 +138,11 @@ func (p *Pipeline) Run(ctx context.Context, req Request) (*Report, error) {
 		return rep, fmt.Errorf("pipeline: %w: %d issues", ErrValidation, len(rep.Issues))
 	}
 
-	stored, err := p.Repo.SourceRecords(ctx, src.ID)
-	if err != nil {
-		return nil, fmt.Errorf("pipeline: load stored records: %w", err)
-	}
-	cs, diff := diffRecords(src.ID, stored, fresh)
+	cs, diff := diffRecords(src.ID, all, fresh)
+	cs.Aliases = tr.Aliases
 
 	candidates, err := reconciler.Candidates(reconciler.Input{
-		Fresh: fresh, Other: withoutSource(all, src.ID), Now: now,
+		Fresh: effective(fresh, cs.Upsert, all), Other: withoutSource(all, src.ID), Now: now,
 		Alloc: func(k domain.Kind, key string) (string, error) { return p.Repo.Allocate(k, "", key) },
 	})
 	if err != nil {
@@ -247,4 +250,40 @@ func mergeConflicts(known, found []domain.Conflict, now time.Time) ([]domain.Con
 	sort.Strings(ch.Added)
 	sort.Strings(ch.Modified)
 	return upsert, ch
+}
+
+// effective returns the technologies and categories as they will be stored
+// after this import: the upserted version when there is one, the stored one
+// when the import leaves the record alone (for example when another source
+// owns its content), and the fresh one for new records. Conflict evidence is
+// computed on these, so it never depends on which source imported last.
+func effective(fresh, upsert, stored domain.Records) domain.Records {
+	ct := map[domain.TechnologyID]domain.Technology{}
+	for _, t := range stored.Technologies {
+		ct[t.ID] = t
+	}
+	for _, t := range upsert.Technologies {
+		ct[t.ID] = t
+	}
+	cc := map[domain.CategoryID]domain.Category{}
+	for _, c := range stored.Categories {
+		cc[c.ID] = c
+	}
+	for _, c := range upsert.Categories {
+		cc[c.ID] = c
+	}
+	var out domain.Records
+	for _, t := range fresh.Technologies {
+		if v, ok := ct[t.ID]; ok {
+			t = v
+		}
+		out.Technologies = append(out.Technologies, t)
+	}
+	for _, c := range fresh.Categories {
+		if v, ok := cc[c.ID]; ok {
+			c = v
+		}
+		out.Categories = append(out.Categories, c)
+	}
+	return out
 }

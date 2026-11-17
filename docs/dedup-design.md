@@ -1,6 +1,6 @@
 # Cross-source reconciliation and deduplication (draft)
 
-Status: **decisions taken, implementation in two steps**. Based on a
+Status: **implemented (steps 1 and 2)**. Based on a
 measurement of two real sources.
 
 ## Decisions
@@ -173,3 +173,61 @@ Real data, Enthec `9e52f10` plus HTTP Archive `35b0847`, imported as two
 sources: 11713 technologies (nothing merged), 3973 identity candidates with
 the same website domain, 27 with a different domain, 108 category candidates.
 Importing either source again changes nothing.
+
+## Step 2 results (implemented)
+
+Commands: `owf conflict show <id>` and
+`owf conflict resolve [id...] (--merge | --keep-separate) [--all --kind K --websites W] [--note ...] [--dry-run]`.
+A bulk request needs `--all` and at least one filter; a bulk merge only
+touches candidate conflicts. All decisions of one request are applied in one
+transaction.
+
+What a merge does (`internal/merge`, applied by `internal/review`):
+
+- The **older record survives** (UUIDv7 sorts by time). The other ID becomes
+  an **alias**; chains are collapsed, and imports translate old IDs.
+- Provenance is unioned, with the survivor's source first. Extra names go to
+  `aliases`, CPEs and categories are unioned, empty fields are filled.
+- Rules of the absorbed technology move to the survivor. A rule that means the
+  same as an existing one is combined with it (provenance unioned, canonical
+  confidence is the lowest explicit value). If sources stated different
+  confidence values, an open `confidence_disagreement` conflict is created.
+- Relationships follow; equivalent ones are combined, and one that became a
+  self reference is dropped.
+- If both technologies had a website and the domains differ, an open
+  `metadata_conflict` records both values.
+- Candidate conflicts that involved the absorbed record are closed as
+  superseded, and the pair that remains is opened again with the same key and
+  evidence the detector uses, so it is not lost and not duplicated.
+- Category merges rewrite references in technologies, parents and
+  relationships.
+
+Ownership of merged records. The source of the first provenance entry owns the
+content. A refresh from the owner updates it, but keeps what other sources
+contributed (extra names, CPEs, categories, and fields the owner leaves
+empty). A refresh from any other source only updates its own provenance
+entries, so one source cannot overwrite another. Provenance order is
+preserved on update. Fingerprint confidence is always the lowest explicit
+value over all entries. Reviewer decisions (status, validation, probe safety
+review) are never overwritten.
+
+New upstream rules that mean the same as a stored rule of a merged
+technology take the stored rule's ID and get an alias, so rules of different
+sources keep converging after the merge.
+
+Real data, Enthec `9e52f10` plus HTTP Archive `35b0847`:
+
+| | Before review | After approving `same_domain` + categories |
+|---|---|---|
+| Technologies | 11713 | 7743 |
+| Fingerprints | 21706 | 16034 (5672 rules combined) |
+| Relationships absorbed | | 644 |
+| Categories merged | | 108 |
+| Open conflicts | 4108 | 30 |
+
+Re-importing either source after the merge changes nothing. Merging in either
+import order gives the same registry (test on fixtures).
+
+Known limits: matching is by slugified name, so differently named products
+need a manual alias; there is no `unmerge`; alias and conflict data are
+internal and not part of export schema 0.1.0.

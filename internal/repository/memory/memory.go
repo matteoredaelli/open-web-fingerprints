@@ -26,6 +26,7 @@ type Repo struct {
 	fps       map[domain.FingerprintID]domain.Fingerprint
 	rels      map[domain.RelationshipID]domain.Relationship
 	conflicts map[domain.ConflictID]domain.Conflict
+	aliases   map[string]string
 }
 
 var _ repository.Repository = (*Repo)(nil)
@@ -41,6 +42,7 @@ func New() *Repo {
 		fps:       map[domain.FingerprintID]domain.Fingerprint{},
 		rels:      map[domain.RelationshipID]domain.Relationship{},
 		conflicts: map[domain.ConflictID]domain.Conflict{},
+		aliases:   map[string]string{},
 	}
 }
 
@@ -150,6 +152,20 @@ func (r *Repo) SourceRecords(ctx context.Context, id domain.SourceID) (domain.Re
 	return r.collect(func(p []domain.Provenance) bool { return hasSource(p, id) }), nil
 }
 
+// Aliases implements repository.Repository.
+func (r *Repo) Aliases(ctx context.Context) (map[string]string, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	out := make(map[string]string, len(r.aliases))
+	for k, v := range r.aliases {
+		out[k] = v
+	}
+	return out, nil
+}
+
 // Conflicts implements repository.Repository.
 func (r *Repo) Conflicts(ctx context.Context) ([]domain.Conflict, error) {
 	if err := ctx.Err(); err != nil {
@@ -249,8 +265,31 @@ func (r *Repo) Apply(ctx context.Context, cs repository.ChangeSet) error {
 			return fmt.Errorf("removed relationship %s does not exist", id)
 		}
 	}
+	for _, id := range cs.Delete.Categories {
+		if _, ok := r.cats[domain.CategoryID(id)]; !ok {
+			return fmt.Errorf("deleted category %s does not exist", id)
+		}
+	}
+	for _, id := range cs.Delete.Technologies {
+		if _, ok := r.techs[domain.TechnologyID(id)]; !ok {
+			return fmt.Errorf("deleted technology %s does not exist", id)
+		}
+	}
+	for _, id := range cs.Delete.Fingerprints {
+		if _, ok := r.fps[domain.FingerprintID(id)]; !ok {
+			return fmt.Errorf("deleted fingerprint %s does not exist", id)
+		}
+	}
+	for _, id := range cs.Delete.Relationships {
+		if _, ok := r.rels[domain.RelationshipID(id)]; !ok {
+			return fmt.Errorf("deleted relationship %s does not exist", id)
+		}
+	}
 	for _, c := range cs.Conflicts {
 		r.conflicts[c.ID] = c
+	}
+	for _, a := range cs.Aliases {
+		r.aliases[a.OldID] = a.NewID
 	}
 	for _, c := range cs.Upsert.Categories {
 		r.cats[c.ID] = c
@@ -263,6 +302,18 @@ func (r *Repo) Apply(ctx context.Context, cs repository.ChangeSet) error {
 	}
 	for _, x := range cs.Upsert.Relationships {
 		r.rels[x.ID] = x
+	}
+	for _, id := range cs.Delete.Relationships {
+		delete(r.rels, domain.RelationshipID(id))
+	}
+	for _, id := range cs.Delete.Fingerprints {
+		delete(r.fps, domain.FingerprintID(id))
+	}
+	for _, id := range cs.Delete.Technologies {
+		delete(r.techs, domain.TechnologyID(id))
+	}
+	for _, id := range cs.Delete.Categories {
+		delete(r.cats, domain.CategoryID(id))
 	}
 	for _, id := range cs.RemovedUpstream.Categories {
 		c := r.cats[domain.CategoryID(id)]

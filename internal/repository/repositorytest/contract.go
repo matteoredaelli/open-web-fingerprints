@@ -241,6 +241,52 @@ func Run(t *testing.T, newRepo Factory) {
 		}
 	})
 
+	t.Run("delete and aliases", func(t *testing.T) {
+		r := newRepo(t)
+		recs := domain.Records{Technologies: []domain.Technology{
+			tech("tech_1", "a", prov("src_1", "present")), tech("tech_2", "b", prov("src_1", "present")),
+		}}
+		if err := r.Apply(ctx, repository.ChangeSet{Upsert: recs}); err != nil {
+			t.Fatal(err)
+		}
+		err := r.Apply(ctx, repository.ChangeSet{
+			Delete:  repository.RecordIDs{Technologies: []string{"tech_2"}},
+			Aliases: []domain.Alias{{Kind: domain.KindTechnology, OldID: "tech_2", NewID: "tech_1"}},
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		all, _ := r.AllRecords(ctx)
+		if len(all.Technologies) != 1 || all.Technologies[0].ID != "tech_1" {
+			t.Fatalf("after delete: %+v", all.Technologies)
+		}
+		if got, _ := r.SourceRecords(ctx, "src_1"); len(got.Technologies) != 1 {
+			t.Fatalf("deleted record must leave no provenance behind: %+v", got.Technologies)
+		}
+		al, err := r.Aliases(ctx)
+		if err != nil || al["tech_2"] != "tech_1" || len(al) != 1 {
+			t.Fatalf("aliases = %v err=%v", al, err)
+		}
+		// Re-pointing an alias replaces it.
+		if err := r.Apply(ctx, repository.ChangeSet{Aliases: []domain.Alias{{Kind: domain.KindTechnology, OldID: "tech_2", NewID: "tech_9"}}}); err != nil {
+			t.Fatal(err)
+		}
+		if al, _ := r.Aliases(ctx); al["tech_2"] != "tech_9" {
+			t.Fatalf("alias not updated: %v", al)
+		}
+		// Deleting an unknown record fails and writes nothing.
+		err = r.Apply(ctx, repository.ChangeSet{
+			Aliases: []domain.Alias{{Kind: domain.KindTechnology, OldID: "tech_x", NewID: "tech_1"}},
+			Delete:  repository.RecordIDs{Technologies: []string{"tech_missing"}},
+		})
+		if err == nil {
+			t.Fatal("deleting an unknown record must fail")
+		}
+		if al, _ := r.Aliases(ctx); len(al) != 1 {
+			t.Fatalf("failed Apply must not store aliases: %v", al)
+		}
+	})
+
 	t.Run("public example round trips without loss", func(t *testing.T) {
 		b, err := os.ReadFile(ExamplePath)
 		if err != nil {

@@ -49,26 +49,12 @@ func Candidates(in Input) ([]domain.Conflict, error) {
 		}
 	}
 	for _, f := range in.Fresh.Technologies {
-		k := normalizer.Slugify(f.Name)
-		for _, o := range techs[k] {
+		for _, o := range techs[normalizer.Slugify(f.Name)] {
 			if o.ID == f.ID {
 				continue
 			}
-			// Sides are ordered by ID, not by which source is being imported,
-			// so the evidence is the same whichever import finds the pair.
-			a, b := o, f
-			if b.ID < a.ID {
-				a, b = b, a
-			}
-			c, err := build(in, domain.ConflictIdentityCandidate, string(o.ID), string(f.ID),
-				sources(o.Provenance, f.Provenance), map[string]string{
-					"identity":  k,
-					"name_a":    a.Name,
-					"name_b":    b.Name,
-					"website_a": a.Website,
-					"website_b": b.Website,
-					"websites":  WebsiteRelation(a.Website, b.Website),
-				})
+			c, err := build(in, domain.ConflictIdentityCandidate, IdentityDetail(o, f), string(o.ID), string(f.ID),
+				sources(o.Provenance, f.Provenance))
 			if err != nil {
 				return nil, err
 			}
@@ -83,19 +69,12 @@ func Candidates(in Input) ([]domain.Conflict, error) {
 		}
 	}
 	for _, f := range in.Fresh.Categories {
-		k := normalizer.Slugify(f.Name)
-		for _, o := range cats[k] {
+		for _, o := range cats[normalizer.Slugify(f.Name)] {
 			if o.ID == f.ID {
 				continue
 			}
-			a, b := o, f
-			if b.ID < a.ID {
-				a, b = b, a
-			}
-			c, err := build(in, domain.ConflictCategoryCandidate, string(o.ID), string(f.ID),
-				sources(o.Provenance, f.Provenance), map[string]string{
-					"identity": k, "name_a": a.Name, "name_b": b.Name,
-				})
+			c, err := build(in, domain.ConflictCategoryCandidate, CategoryDetail(o, f), string(o.ID), string(f.ID),
+				sources(o.Provenance, f.Provenance))
 			if err != nil {
 				return nil, err
 			}
@@ -106,10 +85,44 @@ func Candidates(in Input) ([]domain.Conflict, error) {
 	return out, nil
 }
 
-func build(in Input, kind, a, b string, srcs []domain.SourceID, detail map[string]string) (domain.Conflict, error) {
+// IdentityDetail is the evidence for a technology candidate. Sides are
+// ordered by ID, not by which source is being imported, so the evidence is
+// the same whichever import (or merge) finds the pair.
+func IdentityDetail(x, y domain.Technology) map[string]string {
+	a, b := x, y
+	if b.ID < a.ID {
+		a, b = b, a
+	}
+	return map[string]string{
+		"identity":  normalizer.Slugify(a.Name),
+		"name_a":    a.Name,
+		"name_b":    b.Name,
+		"website_a": a.Website,
+		"website_b": b.Website,
+		"websites":  WebsiteRelation(a.Website, b.Website),
+	}
+}
+
+// CategoryDetail is the evidence for a category candidate.
+func CategoryDetail(x, y domain.Category) map[string]string {
+	a, b := x, y
+	if b.ID < a.ID {
+		a, b = b, a
+	}
+	return map[string]string{"identity": normalizer.Slugify(a.Name), "name_a": a.Name, "name_b": b.Name}
+}
+
+// PairKey is the deterministic key of a candidate conflict for two records.
+func PairKey(kind, a, b string) string {
 	ids := []string{a, b}
 	sort.Strings(ids)
-	id, err := in.Alloc(domain.KindConflict, kind+"|"+strings.Join(ids, "|"))
+	return kind + "|" + strings.Join(ids, "|")
+}
+
+func build(in Input, kind string, detail map[string]string, a, b string, srcs []domain.SourceID) (domain.Conflict, error) {
+	ids := []string{a, b}
+	sort.Strings(ids)
+	id, err := in.Alloc(domain.KindConflict, PairKey(kind, a, b))
 	if err != nil {
 		return domain.Conflict{}, fmt.Errorf("reconciler: allocate conflict: %w", err)
 	}
@@ -120,13 +133,20 @@ func build(in Input, kind, a, b string, srcs []domain.SourceID, detail map[strin
 	}, nil
 }
 
-func sources(a, b []domain.Provenance) []domain.SourceID {
+// Sources lists the distinct sources of the given provenance lists, sorted.
+func Sources(lists ...[]domain.Provenance) []domain.SourceID {
+	return sources(lists...)
+}
+
+func sources(lists ...[]domain.Provenance) []domain.SourceID {
 	seen := map[domain.SourceID]bool{}
 	var out []domain.SourceID
-	for _, p := range append(append([]domain.Provenance{}, a...), b...) {
-		if !seen[p.SourceID] {
-			seen[p.SourceID] = true
-			out = append(out, p.SourceID)
+	for _, l := range lists {
+		for _, p := range l {
+			if !seen[p.SourceID] {
+				seen[p.SourceID] = true
+				out = append(out, p.SourceID)
+			}
 		}
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i] < out[j] })

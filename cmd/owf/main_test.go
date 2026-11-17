@@ -130,6 +130,33 @@ func TestEndToEnd(t *testing.T) {
 		t.Errorf("stats must count open conflicts: %s", out)
 	}
 
+	out = mustRun(t, db, "conflict", "show", "cfl_1")
+	if !strings.Contains(out, "identity_candidate") || !strings.Contains(out, "websites: different") {
+		t.Errorf("conflict show: %s", out)
+	}
+	for name, args := range map[string][]string{
+		"no decision":      {"conflict", "resolve", "cfl_1"},
+		"both decisions":   {"conflict", "resolve", "cfl_1", "--merge", "--keep-separate"},
+		"nothing selected": {"conflict", "resolve", "--merge"},
+		"bulk no filter":   {"conflict", "resolve", "--all", "--merge"},
+		"ids and all":      {"conflict", "resolve", "cfl_1", "--all", "--kind", "x", "--merge"},
+		"unknown":          {"conflict", "resolve", "cfl_nope", "--keep-separate"},
+	} {
+		if _, err := run(t, db, args...); err == nil {
+			t.Errorf("%s: expected an error", name)
+		}
+	}
+	out = mustRun(t, db, "conflict", "resolve", "cfl_1", "--keep-separate", "--note", "not the same")
+	if !strings.Contains(out, "1 kept separate") {
+		t.Errorf("resolve: %s", out)
+	}
+	if out := mustRun(t, db, "conflict", "list", "--state", "open"); !strings.Contains(out, "0 conflicts") {
+		t.Errorf("no open conflicts must remain: %s", out)
+	}
+	if out := mustRun(t, db, "conflict", "show", "cfl_1"); !strings.Contains(out, "kept separate: not the same") {
+		t.Errorf("resolution not shown: %s", out)
+	}
+
 	exp := filepath.Join(t.TempDir(), "registry.json")
 	mustRun(t, db, "export", "--format", "json", "-o", exp)
 	b, err := os.ReadFile(exp) //nolint:gosec // test temp file

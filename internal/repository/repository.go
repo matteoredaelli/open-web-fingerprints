@@ -34,6 +34,8 @@ type Repository interface {
 	// SourceRecords returns records that carry provenance from the source,
 	// including provenance entries of other sources.
 	SourceRecords(ctx context.Context, id domain.SourceID) (domain.Records, error)
+	// Aliases returns old ID -> surviving ID for merged records.
+	Aliases(ctx context.Context) (map[string]string, error)
 	// Conflicts returns all conflicts sorted by ID.
 	Conflicts(ctx context.Context) ([]domain.Conflict, error)
 	// AllRecords returns every canonical record.
@@ -49,6 +51,11 @@ type ChangeSet struct {
 	Upsert domain.Records
 	// Conflicts are stored or updated by ID.
 	Conflicts []domain.Conflict
+	// Delete lists records removed because a merge absorbed them. Upstream
+	// removals never use it. Deleting an unknown ID is an error.
+	Delete RecordIDs
+	// Aliases are stored or updated by old ID.
+	Aliases []domain.Alias
 	// RemovedUpstream lists records whose provenance from SourceID must be
 	// marked "removed_upstream". Records are never deleted.
 	SourceID        domain.SourceID
