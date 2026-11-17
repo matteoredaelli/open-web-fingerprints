@@ -1,0 +1,21 @@
+{
+  "Boba.js": {
+    "cats": [
+      59
+    ],
+    "implies": "Google Analytics",
+    "scriptSrc": "boba(?:\\.min)?\\.js",
+    "website": "https://boba.space150.com"
+  },
+  "Bunny": {
+    "cats": [
+      31
+    ],
+    "dom": "[src*='.b-cdn.net'],[data-src*='.b-cdn.net']",
+    "headers": {
+      "Server": "^BunnyCDN"
+    },
+    "icon": "Bunny.svg",
+    "website": "https://bunny.net"
+  }
+}

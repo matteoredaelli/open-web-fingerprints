@@ -1,0 +1,12 @@
+{
+  "Smartstore Page Builder": {
+    "cats": [
+      1
+    ],
+    "css": "\\.g-stage \\.g-stage-root",
+    "html": "<section[^>]+class=\"g-stage",
+    "icon": "Smartstore.png",
+    "implies": "Microsoft ASP.NET",
+    "website": "https://www.smartstore.com"
+  }
+}

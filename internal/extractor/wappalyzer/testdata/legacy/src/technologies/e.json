@@ -1,0 +1,25 @@
+{
+  "Envialia": {
+    "cats": [
+      99
+    ],
+    "description": "",
+    "icon": "Envialia.png",
+    "requiresCategory": 6,
+    "text": [
+      "\\bEnvialia\\b"
+    ],
+    "website": "https://www.envialia.com"
+  },
+  "Easylog": {
+    "cats": [
+      99
+    ],
+    "description": "EasyLog is a logistics company based in Brazil.",
+    "requiresCategory": 6,
+    "text": [
+      "\\bEasylog\\b"
+    ],
+    "website": "https://www.easylog.com.br"
+  }
+}

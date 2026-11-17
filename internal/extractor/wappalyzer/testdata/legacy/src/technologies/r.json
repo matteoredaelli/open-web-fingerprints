@@ -1,0 +1,10 @@
+{
+  "Ramda": {
+    "cats": [
+      59
+    ],
+    "icon": "Ramda.png",
+    "scriptSrc": "ramda.*\\.js",
+    "website": "https://ramdajs.com"
+  }
+}

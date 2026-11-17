@@ -1,10 +1,11 @@
 // Copyright 2026 Matteo Redaelli
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-package enthec
+package wappalyzer
 
 import (
 	"context"
+	"encoding/json"
 	"os"
 	"testing"
 	"testing/fstest"
@@ -318,5 +319,76 @@ func TestDOMSelectorModifiers(t *testing.T) {
 	}
 	if got[1].Target != "div.plain" || got[1].Confidence != nil {
 		t.Errorf("plain selector: %+v", got[1])
+	}
+}
+
+func legacySource() extractor.Source {
+	return extractor.Source{
+		ID: "httparchive-wappalyzer", URL: "https://github.com/HTTPArchive/wappalyzer",
+		Revision: "35b0847", License: "GPL-3.0-only", FS: os.DirFS("testdata/legacy"),
+	}
+}
+
+func TestLegacyShapesContract(t *testing.T) {
+	extractortest.RunContract(t, New(), legacySource())
+}
+
+// The HTTP Archive fork writes single values as plain strings. Reading them
+// must not lose rules or raise shape warnings.
+func TestLegacyShapes(t *testing.T) {
+	res, err := New().Extract(context.Background(), legacySource())
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, w := range res.Warnings {
+		if w.Code == "unexpected_shape" {
+			t.Errorf("legacy shape not understood: %+v", w)
+		}
+	}
+	seen := map[domain.Observation]bool{}
+	for _, f := range res.Fingerprints {
+		seen[f.Observation] = true
+	}
+	for _, want := range []domain.Observation{
+		domain.ObsHTML, domain.ObsScriptURL, domain.ObsDOM, domain.ObsXHR, domain.ObsDNSRecord,
+		domain.ObsMetaTag, "css_rule", "page_url", "page_text", "script_content",
+	} {
+		if !seen[want] {
+			t.Errorf("no %s fingerprint extracted from the legacy records", want)
+		}
+	}
+	types := map[string]bool{}
+	var catRel bool
+	for _, r := range res.Relationships {
+		types[r.Type] = true
+		if r.ToCategoryKey != "" {
+			catRel = true
+		}
+	}
+	if !types["implies"] || !types["requires"] || !types["excludes"] || !catRel {
+		t.Errorf("relationships: types=%v requiresCategory=%v", types, catRel)
+	}
+}
+
+func TestFlexShapes(t *testing.T) {
+	var l flexList
+	for in, want := range map[string]int{`"a"`: 1, `["a","b"]`: 2, `[]`: 0, `""`: 1} {
+		if err := json.Unmarshal([]byte(in), &l); err != nil || len(l) != want {
+			t.Errorf("flexList %s: %v err=%v", in, l, err)
+		}
+	}
+	for _, bad := range []string{`1`, `{"a":1}`, `[1]`} {
+		if err := json.Unmarshal([]byte(bad), &l); err == nil {
+			t.Errorf("flexList must reject %s", bad)
+		}
+	}
+	var n flexInts
+	for in, want := range map[string]int{`6`: 1, `[6,7]`: 2} {
+		if err := json.Unmarshal([]byte(in), &n); err != nil || len(n) != want {
+			t.Errorf("flexInts %s: %v err=%v", in, n, err)
+		}
+	}
+	if err := json.Unmarshal([]byte(`"x"`), &n); err == nil {
+		t.Error("flexInts must reject a string")
 	}
 }

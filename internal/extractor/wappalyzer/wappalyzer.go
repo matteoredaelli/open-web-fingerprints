@@ -1,8 +1,9 @@
 // Copyright 2026 Matteo Redaelli
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-// Package enthec extracts technologies and fingerprints from a snapshot of
-// https://github.com/enthec/webappanalyzer (Wappalyzer JSON format).
+// Package wappalyzer extracts technologies and fingerprints from snapshots in
+// the Wappalyzer JSON format. Enthec WebAppAnalyzer and the HTTP Archive fork
+// of Wappalyzer both use it, so one extractor serves both sources.
 //
 // Mapping notes:
 //   - Every pattern entry becomes one fingerprint. Wappalyzer combines the
@@ -11,7 +12,7 @@
 //   - Icons are not extracted (third-party marks); the file name stays in Raw.
 //   - Observation types beyond the domain's known set: script_content
 //     (inline scripts), page_url, page_text and css_rule.
-package enthec
+package wappalyzer
 
 import (
 	"context"
@@ -26,20 +27,58 @@ import (
 	"github.com/matteoredaelli/open-web-fingerprints/internal/extractor"
 )
 
-// ID is the stable extractor identifier.
-const ID = "enthec"
+// flexList decodes the two shapes the format has used for the same field: a
+// single string, and a list of strings. Older Wappalyzer data (still found in
+// the HTTP Archive fork) uses the single string for one value.
+type flexList []string
 
-// Extractor implements extractor.Extractor for Enthec WebAppAnalyzer.
+// UnmarshalJSON implements json.Unmarshaler.
+func (l *flexList) UnmarshalJSON(b []byte) error {
+	var one string
+	if err := json.Unmarshal(b, &one); err == nil {
+		*l = flexList{one}
+		return nil
+	}
+	var many []string
+	if err := json.Unmarshal(b, &many); err != nil {
+		return fmt.Errorf("want a string or a list of strings: %w", err)
+	}
+	*l = many
+	return nil
+}
+
+// flexInts is flexList for numbers (requiresCategory).
+type flexInts []int
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (l *flexInts) UnmarshalJSON(b []byte) error {
+	var one int
+	if err := json.Unmarshal(b, &one); err == nil {
+		*l = flexInts{one}
+		return nil
+	}
+	var many []int
+	if err := json.Unmarshal(b, &many); err != nil {
+		return fmt.Errorf("want a number or a list of numbers: %w", err)
+	}
+	*l = many
+	return nil
+}
+
+// ID is the stable extractor identifier.
+const ID = "wappalyzer"
+
+// Extractor implements extractor.Extractor for the Wappalyzer JSON format.
 type Extractor struct{}
 
-// New returns an Enthec extractor.
+// New returns a Wappalyzer-format extractor.
 func New() *Extractor { return &Extractor{} }
 
 // ID implements extractor.Extractor.
 func (*Extractor) ID() string { return ID }
 
 // Name implements extractor.Extractor.
-func (*Extractor) Name() string { return "Enthec WebAppAnalyzer" }
+func (*Extractor) Name() string { return "Wappalyzer JSON format" }
 
 // Capabilities implements extractor.CapabilityReporter.
 func (*Extractor) Capabilities() []extractor.Capability {
@@ -252,7 +291,7 @@ func extractTechnology(file, name string, raw json.RawMessage, res *extractor.Ex
 		case "excludes":
 			b.relations(k, v, "excludes")
 		case "requiresCategory":
-			var cats []int
+			var cats flexInts
 			if b.decode(k, v, &cats) {
 				for _, c := range cats {
 					res.Relationships = append(res.Relationships, extractor.ExtractedRelationship{
@@ -309,7 +348,7 @@ func (b *builder) add(field, key string, obs domain.Observation, target, pattern
 }
 
 func (b *builder) patternList(field string, raw json.RawMessage, obs domain.Observation) {
-	var l []string
+	var l flexList
 	if !b.decode(field, raw, &l) {
 		return
 	}
@@ -319,17 +358,19 @@ func (b *builder) patternList(field string, raw json.RawMessage, obs domain.Obse
 }
 
 func (b *builder) patternMap(field string, raw json.RawMessage, obs domain.Observation) {
-	var m map[string]string
+	var m map[string]flexList
 	if !b.decode(field, raw, &m) {
 		return
 	}
 	for _, k := range sortedKeys(m) {
-		b.add(field, k, obs, k, m[k])
+		for _, v := range m[k] {
+			b.add(field, k, obs, k, v)
+		}
 	}
 }
 
 func (b *builder) dns(field string, raw json.RawMessage) {
-	var m map[string][]string
+	var m map[string]flexList
 	if !b.decode(field, raw, &m) {
 		return
 	}
@@ -345,7 +386,7 @@ func (b *builder) dns(field string, raw json.RawMessage) {
 // "<selector>", "<selector>::text", "<selector>::attr(<name>)" and
 // "<selector>::prop(<name>)".
 func (b *builder) dom(field string, raw json.RawMessage) {
-	var list []string
+	var list flexList
 	if err := json.Unmarshal(raw, &list); err == nil {
 		for _, entry := range list {
 			// A selector can carry modifiers too, for example \;confidence:40.
@@ -434,7 +475,7 @@ func (b *builder) probe(field string, raw json.RawMessage) {
 }
 
 func (b *builder) relations(field string, raw json.RawMessage, typ string) {
-	var l []string
+	var l flexList
 	if !b.decode(field, raw, &l) {
 		return
 	}

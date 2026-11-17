@@ -17,7 +17,7 @@ import (
 
 	"github.com/matteoredaelli/open-web-fingerprints/internal/domain"
 	"github.com/matteoredaelli/open-web-fingerprints/internal/extractor"
-	"github.com/matteoredaelli/open-web-fingerprints/internal/extractor/enthec"
+	"github.com/matteoredaelli/open-web-fingerprints/internal/extractor/wappalyzer"
 	"github.com/matteoredaelli/open-web-fingerprints/internal/pipeline"
 	"github.com/matteoredaelli/open-web-fingerprints/internal/repository"
 	"github.com/matteoredaelli/open-web-fingerprints/internal/repository/memory"
@@ -25,12 +25,12 @@ import (
 	"github.com/matteoredaelli/open-web-fingerprints/internal/validator"
 )
 
-const fixtureDir = "../extractor/enthec/testdata/snapshot"
+const fixtureDir = "../extractor/wappalyzer/testdata/snapshot"
 
 func source() domain.Source {
 	return domain.Source{
 		Slug: "enthec-webappanalyzer", Name: "Enthec WebAppAnalyzer", License: "GPL-3.0-only",
-		ExtractorID: enthec.ID, Redistributable: "unreviewed",
+		ExtractorID: wappalyzer.ID, Redistributable: "unreviewed",
 	}
 }
 
@@ -63,7 +63,7 @@ func newRepo(t *testing.T) repository.Repository {
 func setup(t *testing.T) (*pipeline.Pipeline, repository.Repository) {
 	t.Helper()
 	reg := extractor.NewRegistry()
-	if err := reg.Register(enthec.New()); err != nil {
+	if err := reg.Register(wappalyzer.New()); err != nil {
 		t.Fatal(err)
 	}
 	repo := newRepo(t)

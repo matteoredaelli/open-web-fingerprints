@@ -157,7 +157,7 @@ their `safety_review` is `approved`.
 
 ## Enthec extractor (implemented)
 
-`internal/extractor/enthec` maps the fields above. Run against Enthec
+`internal/extractor/wappalyzer` maps the fields above. Run against Enthec
 `9e52f10`: 7704 technologies, 109 categories, 15843 fingerprints, 2290
 relationships. It emits 19 `unsupported_regex` warnings, matching the
 measurement above, and 16 `multiple_category_groups` warnings. Wappalyzer

@@ -125,6 +125,12 @@ below needs a legal review before any data is redistributed (see AGENTS.md).
 8. Raw source records must be preserved. Pattern modifiers and DSL
    details will need re-normalizing later.
 
+## Status in the catalogue
+
+Both Enthec and HTTP Archive are in the built-in catalogue and share the
+`wappalyzer` extractor (`internal/extractor/wappalyzer`). `owf source refresh
+<slug>` fetches either. Both are `redistributable: unreviewed`.
+
 ## Recommended import order
 
 1. Enthec: the largest source, a simple JSON format, a GPL-3.0 repo, and a

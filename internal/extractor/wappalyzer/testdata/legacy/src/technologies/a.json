@@ -1,0 +1,33 @@
+{
+  "AlternC": {
+    "cats": [
+      9
+    ],
+    "description": "AlternC is a set of software management on Linux shared hosting.",
+    "icon": "AlternC.png",
+    "oss": true,
+    "requires": "Debian",
+    "saas": false,
+    "scriptSrc": "js/alternc\\.js",
+    "website": "https://alternc.com"
+  },
+  "Abicart": {
+    "cats": [
+      6
+    ],
+    "description": "Abicart is an ecommerce platform developed by the Swedish company Abicart AB.",
+    "icon": "abicart.png",
+    "meta": {
+      "generator": [
+        "Abicart",
+        "Textalk Webshop"
+      ]
+    },
+    "pricing": [
+      "mid",
+      "recurring"
+    ],
+    "saas": true,
+    "website": "https://abicart.com/"
+  }
+}

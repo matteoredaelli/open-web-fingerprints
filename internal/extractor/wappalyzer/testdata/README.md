@@ -11,3 +11,10 @@ modifiers, and a lookahead regex that RE2 cannot compile.
 
 Do not use these files to infer upstream coverage. Refresh them only by
 re-copying records from a newer pinned revision and updating this note.
+
+`legacy/` holds real records from https://github.com/HTTPArchive/wappalyzer at
+revision `35b0847`, copied unmodified. That fork still uses the older
+Wappalyzer shapes in which a field with one value is a plain string instead of
+a list (`html`, `scriptSrc`, `implies`, `requires`, `excludes`, `dom`, `css`,
+`xhr`, `url`, `scripts`, `dns` values, `requiresCategory`) and `meta` values
+can be lists. The extractor must read both shapes.

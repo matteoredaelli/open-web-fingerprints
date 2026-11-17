@@ -19,7 +19,7 @@ import (
 
 // Extractor is the strategy implemented once per upstream source.
 type Extractor interface {
-	// ID is the stable extractor identifier, for example "enthec".
+	// ID is the stable extractor identifier, for example "wappalyzer".
 	ID() string
 	// Name is a human-readable name.
 	Name() string

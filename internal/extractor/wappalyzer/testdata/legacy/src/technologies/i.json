@@ -1,0 +1,16 @@
+{
+  "ip-api": {
+    "cats": [
+      79
+    ],
+    "icon": "ip-api.png",
+    "pricing": [
+      "freemium",
+      "low",
+      "payg"
+    ],
+    "saas": true,
+    "website": "https://ip-api.com/",
+    "xhr": "ip-api\\.com"
+  }
+}

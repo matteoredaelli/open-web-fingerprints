@@ -11,7 +11,7 @@ import (
 
 	"github.com/matteoredaelli/open-web-fingerprints/internal/domain"
 	"github.com/matteoredaelli/open-web-fingerprints/internal/extractor"
-	"github.com/matteoredaelli/open-web-fingerprints/internal/extractor/enthec"
+	"github.com/matteoredaelli/open-web-fingerprints/internal/extractor/wappalyzer"
 )
 
 // Entry describes a known upstream source.
@@ -29,21 +29,32 @@ type Entry struct {
 // Sources returns the known sources sorted by slug. IDs are assigned by the
 // repository on first import.
 func Sources() []Entry {
+	// Both sources use the Wappalyzer JSON layout, so they share the
+	// extractor, the snapshot filter and the sparse checkout.
+	include := func(p string) bool {
+		return p == "src/categories.json" || p == "src/groups.json" ||
+			(strings.HasPrefix(p, "src/technologies/") && strings.HasSuffix(p, ".json"))
+	}
+	// Cone mode also checks out the files directly in src/.
+	sparse := []string{"src/technologies"}
 	out := []Entry{{
 		Source: domain.Source{
 			Slug: "enthec-webappanalyzer", Name: "Enthec WebAppAnalyzer",
 			URL:         "https://github.com/enthec/webappanalyzer",
 			License:     "GPL-3.0-only",
-			ExtractorID: enthec.ID, Redistributable: "unreviewed",
+			ExtractorID: wappalyzer.ID, Redistributable: "unreviewed",
 			Notes: "Community continuation of Wappalyzer. Data lineage and the exact GPL-3.0 variant need legal review (docs/sources.md).",
 		},
-		Branch: "main",
-		// Cone mode also checks out the files directly in src/.
-		SparsePaths: []string{"src/technologies"},
-		IncludeFile: func(p string) bool {
-			return p == "src/categories.json" || p == "src/groups.json" ||
-				(strings.HasPrefix(p, "src/technologies/") && strings.HasSuffix(p, ".json"))
+		Branch: "main", SparsePaths: sparse, IncludeFile: include,
+	}, {
+		Source: domain.Source{
+			Slug: "httparchive-wappalyzer", Name: "HTTP Archive Wappalyzer",
+			URL:         "https://github.com/HTTPArchive/wappalyzer",
+			License:     "GPL-3.0-only",
+			ExtractorID: wappalyzer.ID, Redistributable: "unreviewed",
+			Notes: "Fork of the last open-source Wappalyzer, used for the HTTP Archive crawl. It shares an ancestor with Enthec, so agreement between the two is not independent evidence. Lineage and license need legal review (docs/sources.md).",
 		},
+		Branch: "main", SparsePaths: sparse, IncludeFile: include,
 	}}
 	sort.Slice(out, func(i, j int) bool { return out[i].Source.Slug < out[j].Source.Slug })
 	return out
@@ -62,7 +73,7 @@ func Find(slug string) (Entry, bool) {
 // Extractors returns a registry with every built-in extractor.
 func Extractors() *extractor.Registry {
 	r := extractor.NewRegistry()
-	if err := r.Register(enthec.New()); err != nil {
+	if err := r.Register(wappalyzer.New()); err != nil {
 		panic(err) // static registration cannot collide
 	}
 	return r

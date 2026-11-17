@@ -26,6 +26,14 @@ Implementation steps:
 
 ## Measurement: Enthec `9e52f10` vs HTTP Archive `35b0847`
 
+> **Correction.** The numbers in this section were taken before the extractor
+> could read the older Wappalyzer shapes used by the HTTP Archive fork (single
+> values written as plain strings). It extracted only 5870 of that source's
+> 8925 rules and 676 of its 1905 relationships, so every HTTP Archive figure
+> below is an undercount. The extractor now reads both shapes (real records
+> are in `internal/extractor/wappalyzer/testdata/legacy`). Corrected
+> end-to-end figures are in the last section.
+
 Both were normalized with the current normalizer and compared by slug and by
 a candidate semantic key (technology, observation, target, operator, pattern,
 version extract).
@@ -231,3 +239,20 @@ import order gives the same registry (test on fixtures).
 Known limits: matching is by slugified name, so differently named products
 need a manual alias; there is no `unmerge`; alias and conflict data are
 internal and not part of export schema 0.1.0.
+
+## Corrected figures (extractor reads both Wappalyzer shapes)
+
+Enthec `9e52f10` plus HTTP Archive `35b0847`, imported as two sources, then
+all `same_domain` candidates and category candidates approved:
+
+| | Before review | After review |
+|---|---|---|
+| Technologies | 11713 | 7743 |
+| Fingerprints | 24754 | 16137 (8617 rules combined) |
+| Relationships absorbed | | 1744 |
+| Categories merged | | 108 |
+| Open conflicts | 4108 | 30 |
+
+8617 of the 8925 HTTP Archive rules (96.5%) mean the same as an Enthec rule.
+Technology and category counts are unchanged by the correction.
+Re-importing either source afterwards changes nothing.

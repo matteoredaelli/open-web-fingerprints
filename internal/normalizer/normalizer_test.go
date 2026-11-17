@@ -13,7 +13,7 @@ import (
 
 	"github.com/matteoredaelli/open-web-fingerprints/internal/domain"
 	"github.com/matteoredaelli/open-web-fingerprints/internal/extractor"
-	"github.com/matteoredaelli/open-web-fingerprints/internal/extractor/enthec"
+	"github.com/matteoredaelli/open-web-fingerprints/internal/extractor/wappalyzer"
 	"github.com/matteoredaelli/open-web-fingerprints/internal/normalizer"
 	"github.com/matteoredaelli/open-web-fingerprints/schemas"
 )
@@ -29,7 +29,7 @@ func testSource() domain.Source {
 
 func extractFixture(t *testing.T, dir string) *extractor.ExtractionResult {
 	t.Helper()
-	res, err := enthec.New().Extract(context.Background(), extractor.Source{
+	res, err := wappalyzer.New().Extract(context.Background(), extractor.Source{
 		ID: "enthec-webappanalyzer", Revision: "9e52f10", FS: os.DirFS(dir),
 	})
 	if err != nil {
@@ -76,7 +76,7 @@ func validate(t *testing.T, res *normalizer.Result) {
 
 func TestFixtureOutputIsSchemaValid(t *testing.T) {
 	res := normalize(t, normalizer.New(normalizer.NewMemoryAllocator()),
-		extractFixture(t, "../extractor/enthec/testdata/snapshot"))
+		extractFixture(t, "../extractor/wappalyzer/testdata/snapshot"))
 	validate(t, res)
 	if len(res.Technologies) != 22 {
 		t.Errorf("technologies = %d", len(res.Technologies))
@@ -86,7 +86,7 @@ func TestFixtureOutputIsSchemaValid(t *testing.T) {
 func TestIdempotentIDs(t *testing.T) {
 	alloc := normalizer.NewMemoryAllocator()
 	n := normalizer.New(alloc)
-	ex := extractFixture(t, "../extractor/enthec/testdata/snapshot")
+	ex := extractFixture(t, "../extractor/wappalyzer/testdata/snapshot")
 	a := normalize(t, n, ex)
 	b := normalize(t, n, ex)
 	if !reflect.DeepEqual(a, b) {
@@ -105,7 +105,7 @@ func byName(res *normalizer.Result, name string) domain.Technology {
 
 func TestMapping(t *testing.T) {
 	res := normalize(t, normalizer.New(normalizer.NewMemoryAllocator()),
-		extractFixture(t, "../extractor/enthec/testdata/snapshot"))
+		extractFixture(t, "../extractor/wappalyzer/testdata/snapshot"))
 
 	af := byName(res, "A-Frame")
 	if af.Slug != "a-frame" || af.Status != domain.StatusActive || len(af.CategoryIDs) != 2 {

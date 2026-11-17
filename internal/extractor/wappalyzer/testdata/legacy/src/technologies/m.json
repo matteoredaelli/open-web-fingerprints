@@ -1,0 +1,24 @@
+{
+  "Mambo": {
+    "cats": [
+      1
+    ],
+    "excludes": "Joomla",
+    "icon": "Mambo.png",
+    "meta": {
+      "generator": "Mambo"
+    },
+    "website": "https://mambo-foundation.org"
+  },
+  "Mozard Suite": {
+    "cats": [
+      1
+    ],
+    "icon": "Mozard Suite.png",
+    "meta": {
+      "author": "Mozard"
+    },
+    "url": "/mozard/!suite",
+    "website": "https://mozard.nl"
+  }
+}

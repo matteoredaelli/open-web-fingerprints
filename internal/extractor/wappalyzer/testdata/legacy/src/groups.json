@@ -1,0 +1,32 @@
+{
+  "1": {
+    "name": "Sales"
+  },
+  "3": {
+    "name": "Content"
+  },
+  "4": {
+    "name": "Communication"
+  },
+  "5": {
+    "name": "Utilities"
+  },
+  "6": {
+    "name": "Other"
+  },
+  "7": {
+    "name": "Servers"
+  },
+  "9": {
+    "name": "Web development"
+  },
+  "10": {
+    "name": "Media"
+  },
+  "17": {
+    "name": "Location"
+  },
+  "18": {
+    "name": "User generated content"
+  }
+}

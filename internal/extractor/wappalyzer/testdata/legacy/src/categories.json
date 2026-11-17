@@ -1,0 +1,85 @@
+{
+  "1": {
+    "description": "Platforms used to create, manage, and modify content on a website without needing specialized technical knowledge",
+    "groups": [
+      3
+    ],
+    "name": "CMS",
+    "priority": 1
+  },
+  "2": {
+    "description": "Online platforms where users can post and discuss topics, fostering online communities",
+    "groups": [
+      3,
+      4,
+      18
+    ],
+    "name": "Message boards",
+    "priority": 1
+  },
+  "6": {
+    "description": "Platforms providing the infrastructure to sell products and services online, managing everything from product catalogs to payments",
+    "groups": [
+      1
+    ],
+    "name": "Ecommerce",
+    "priority": 1
+  },
+  "9": {
+    "description": "Interfaces for managing web servers and hosting environments",
+    "groups": [
+      5,
+      7
+    ],
+    "name": "Hosting panels",
+    "priority": 2
+  },
+  "31": {
+    "description": "(Content Delivery Network) Distribute website content globally to improve load times for users",
+    "groups": [
+      7
+    ],
+    "name": "CDN",
+    "priority": 9
+  },
+  "59": {
+    "description": "Collections of pre-written JavaScript code",
+    "groups": [
+      9
+    ],
+    "name": "JavaScript libraries",
+    "priority": 9
+  },
+  "79": {
+    "description": "Technologies that use user location data for site features",
+    "groups": [
+      17
+    ],
+    "name": "Geolocation",
+    "priority": 9
+  },
+  "95": {
+    "description": "Systems that store and manage media files",
+    "groups": [
+      10
+    ],
+    "name": "Digital asset management",
+    "priority": 9
+  },
+  "99": {
+    "description": "Integration that provides shipping options during checkout",
+    "groups": [
+      1
+    ],
+    "name": "Shipping carriers",
+    "priority": 9
+  },
+  "109": {
+    "description": "Solutions that redirect domains to a different location or page",
+    "groups": [
+      6
+    ],
+    "name": "Domain parking",
+    "priority": 9
+  }
+}

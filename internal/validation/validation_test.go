@@ -13,7 +13,7 @@ import (
 
 	"github.com/matteoredaelli/open-web-fingerprints/internal/domain"
 	"github.com/matteoredaelli/open-web-fingerprints/internal/extractor"
-	"github.com/matteoredaelli/open-web-fingerprints/internal/extractor/enthec"
+	"github.com/matteoredaelli/open-web-fingerprints/internal/extractor/wappalyzer"
 	"github.com/matteoredaelli/open-web-fingerprints/internal/matcher"
 	"github.com/matteoredaelli/open-web-fingerprints/internal/pipeline"
 	"github.com/matteoredaelli/open-web-fingerprints/internal/repository/memory"
@@ -26,13 +26,13 @@ var now = time.Date(2026, 11, 17, 12, 0, 0, 0, time.UTC)
 func registry(t *testing.T) domain.Records {
 	t.Helper()
 	reg := extractor.NewRegistry()
-	if err := reg.Register(enthec.New()); err != nil {
+	if err := reg.Register(wappalyzer.New()); err != nil {
 		t.Fatal(err)
 	}
 	repo := memory.New()
 	_, err := pipeline.New(reg, repo).Run(context.Background(), pipeline.Request{
-		Source:   domain.Source{Slug: "enthec-webappanalyzer", ExtractorID: enthec.ID, License: "GPL-3.0-only"},
-		Revision: "x", FS: os.DirFS("../extractor/enthec/testdata/snapshot"),
+		Source:   domain.Source{Slug: "enthec-webappanalyzer", ExtractorID: wappalyzer.ID, License: "GPL-3.0-only"},
+		Revision: "x", FS: os.DirFS("../extractor/wappalyzer/testdata/snapshot"),
 	})
 	if err != nil {
 		t.Fatal(err)

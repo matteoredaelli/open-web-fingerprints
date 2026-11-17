@@ -1,7 +1,7 @@
 // Copyright 2026 Matteo Redaelli
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-package enthec
+package wappalyzer
 
 import (
 	"regexp"

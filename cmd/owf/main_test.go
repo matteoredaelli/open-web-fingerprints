@@ -18,7 +18,7 @@ import (
 	"github.com/matteoredaelli/open-web-fingerprints/schemas"
 )
 
-const fixture = "../../internal/extractor/enthec/testdata/snapshot"
+const fixture = "../../internal/extractor/wappalyzer/testdata/snapshot"
 
 // run executes the CLI in-process and returns stdout.
 func run(t *testing.T, db string, args ...string) (string, error) {
