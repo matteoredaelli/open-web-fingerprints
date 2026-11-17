@@ -182,6 +182,7 @@ func TestWarningsAndSkips(t *testing.T) {
 			{FromKey: "A", ToCategoryKey: "77", Type: "requires"},
 			{FromKey: "Q", ToTechnologyKey: "B", Type: "implies"},
 			{FromKey: "A", Type: "implies"},
+			{FromKey: "A", ToTechnologyKey: "A", Type: "implies"},
 		},
 	}
 	res := normalize(t, normalizer.New(normalizer.NewMemoryAllocator()), ex)
@@ -190,7 +191,7 @@ func TestWarningsAndSkips(t *testing.T) {
 		got[w.Code]++
 	}
 	for _, want := range []string{"from_extractor", "unknown_parent_category", "unknown_category",
-		"duplicate_rule", "unknown_technology", "duplicate_relationship", "unresolved_relationship", "invalid_relationship"} {
+		"duplicate_rule", "unknown_technology", "duplicate_relationship", "unresolved_relationship", "invalid_relationship", "self_relationship"} {
 		if got[want] == 0 {
 			t.Errorf("missing warning %s: %v", want, got)
 		}

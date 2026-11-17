@@ -187,3 +187,33 @@ local clone.
   (4 skipped as `duplicate_rule`), 2290 relationships (none unresolved). The
   result validates against the JSON Schema.
 - Vendors are not created yet (open question 4 earlier: manual only).
+
+## Repository, validator and pipeline (implemented)
+
+- `internal/repository`: backend-independent interface. An in-memory
+  implementation lives in `repository/memory`. `Apply` is atomic.
+- `internal/validator`: referential integrity, unique IDs and slugs,
+  regex/flavor consistency, and probe rules (allowed methods, absolute
+  path, no active probe without approved review). Errors stop the import.
+- `internal/pipeline`: checksum, extract, normalize, validate, diff, persist.
+  `DryRun` computes the diff without writing (new IDs may still be
+  reserved).
+
+Import rules:
+
+- A pinned revision must not change: the same revision with another
+  checksum is rejected.
+- The diff is computed per source as added, modified and removed records.
+  Re-importing the same revision gives an empty diff and an unchanged store.
+- Records the source no longer provides are never deleted. Their provenance
+  entry becomes `removed_upstream` and they are listed as removed. If they
+  come back they show up as modified and return to `present`.
+- Reviewer decisions survive re-imports: `status`, `validation`, and a
+  probe's `safety_review`.
+- Provenance of other sources is kept untouched. Unchanged records keep the
+  revision where they last changed.
+
+Full Enthec snapshot through the pipeline: 7704 technologies, 15839
+fingerprints, 2289 relationships, valid and idempotent. Real-data finding:
+`Niagahoster` lists itself in `implies`; the normalizer drops it with a
+`self_relationship` warning.

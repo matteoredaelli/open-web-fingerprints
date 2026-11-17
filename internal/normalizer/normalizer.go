@@ -251,6 +251,11 @@ func (r *run) relationships() error {
 					fmt.Sprintf("%s -> technology %q not in source; skipped", x.Type, x.ToTechnologyKey))
 				continue
 			}
+			if to == from {
+				r.warn("self_relationship", x.FromKey,
+					fmt.Sprintf("%s points to the technology itself; skipped", x.Type))
+				continue
+			}
 			rel.ToTechnologyID, target = to, "technology:"+x.ToTechnologyKey
 		case x.ToCategoryKey != "":
 			to, ok := r.cats[x.ToCategoryKey]
@@ -279,4 +284,12 @@ func (r *run) relationships() error {
 		r.res.Relationships = append(r.res.Relationships, rel)
 	}
 	return nil
+}
+
+// Records returns the canonical records of the result.
+func (r *Result) Records() domain.Records {
+	return domain.Records{
+		Categories: r.Categories, Technologies: r.Technologies,
+		Fingerprints: r.Fingerprints, Relationships: r.Relationships,
+	}
 }
