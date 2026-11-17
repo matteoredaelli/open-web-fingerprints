@@ -148,3 +148,42 @@ Both Enthec and HTTP Archive are in the built-in catalogue and share the
   (GPL-3.0-or-later). Sources with incompatible or unclear terms are not
   redistributed until reviewed. WhatWeb is the main open case.
 - Pin snapshots by commit SHA and store a checksum of each imported file.
+
+## Value of the sources (measured 2026-11-17)
+
+**HTTP Archive adds almost nothing to Enthec.** It is a fork of the same
+ancestor. Compared by technology (slugified name) and by rule (technology,
+observation, normalized target, operator, pattern, version extract):
+
+| | Enthec `9e52f10` | HTTP Archive `35b0847` |
+|---|---|---|
+| Technologies | 7696 | 4009 (13 not in Enthec) |
+| Distinct rules | 15830 | 8918 (8680 identical to Enthec) |
+| Rules only here | | 238 (212 on technologies Enthec has, 26 on the 13 new ones) |
+
+Combined, HTTP Archive adds 1.5% of the rules. Its use is as a drift check and
+as a test of the reconciliation machinery, not as coverage. Agreement between
+the two is not independent evidence.
+
+**Candidate sources with different data** (all surveyed through the GitHub
+API; repository licenses are not proof of the license of the data, and some of
+these derive from Wappalyzer data, which would carry its lineage):
+
+| Source | Repo license | Active | What it holds |
+|---|---|---|---|
+| projectdiscovery/nuclei-templates (`http/technologies`) | MIT | yes | 766 per-product detection templates plus ~400 in subfolders, mostly self-hosted and enterprise products; a name match finds only 120 of the 766 in Enthec, so up to ~650 may be new. `tech-detect.yaml` is itself Wappalyzer-derived. Templates use matchers (words, regex, status, favicon) and extractors for versions. |
+| same repo, `http/exposed-panels` | MIT | yes | 1589 login/admin panel detections, ~1489 with no name match. Path probes: they would become `draft` probes with `safety_review: pending`. |
+| rapid7/recog | BSD-2-Clause (Debian copyright file) | yes | Banner and header fingerprints with product, vendor, version and CPE: 458 `Server` headers, 548 favicons, 460 HTML titles, 86 cookies, 80 `WWW-Authenticate`. Different data from Wappalyzer, and it carries CPE vendor/product. |
+| RetireJS/retire.js | Apache-2.0 | yes | 77 JavaScript libraries with version extractors (uri, filename, file content, hashes). Small; also holds vulnerability data, out of scope. |
+| EnableSecurity/wafw00f | BSD-3-Clause | slowly | 173 WAF plugins written as Python code, hard to import faithfully. |
+| 0x727/FingerprintHub | MIT | yes | Nuclei-style web fingerprints; lineage unclear (may reuse other projects' rules). |
+| EdgeSecurityTeam/EHole | Apache-2.0 | stale (2024-04) | Fingerprints focused on Chinese systems. |
+| urbanadventurer/WhatWeb | GPL-2.0 | yes | 1835 Ruby plugins; each plugin header says it may carry redistribution restrictions. Not before a license review. |
+| CMSeeK | GPL-3.0 | yes | CMS detection inside Python code. |
+
+Out of scope by AGENTS.md: the CVE, vulnerability, misconfiguration and
+default-login templates of nuclei-templates. They are exploit or
+authentication checks, not fingerprints.
+
+These overlap figures are rough: they match names, not rules. Real rule
+overlap is known only after an extractor exists.
