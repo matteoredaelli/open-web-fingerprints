@@ -243,6 +243,10 @@
           "items": {
             "$ref": "#/$defs/provenance"
           }
+        },
+        "curated": {
+          "type": "boolean",
+          "description": "True once a person reviewed the vendor; imported names are otherwise a guess."
         }
       }
     },

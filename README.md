@@ -30,7 +30,8 @@ owf source refresh enthec-webappanalyzer --revision <40-char sha>   # pin a comm
 owf import enthec-webappanalyzer --snapshot /path/to/clone --revision <sha>
 owf stats
 owf technology show wordpress
-owf vendor list
+owf vendor list --uncurated                  # vendor names that are still guesses
+owf vendor set php --name "The PHP Group" --website https://www.php.net
 owf fingerprint list --technology nginx
 owf fingerprint validate
 owf conflict list --state open               # candidates from other sources

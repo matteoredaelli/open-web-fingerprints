@@ -115,7 +115,10 @@ type Vendor struct {
 	Website string   `json:"website,omitempty"`
 	// CPEVendor is the vendor identifier of the CPE dictionary. It is the key
 	// that identifies the same vendor across sources.
-	CPEVendor  string       `json:"cpe_vendor,omitempty"`
+	CPEVendor string `json:"cpe_vendor,omitempty"`
+	// Curated is true once a person reviewed the record. Until then the name
+	// of an imported vendor is only a guess derived from the identifier.
+	Curated    bool         `json:"curated,omitempty"`
 	Provenance []Provenance `json:"provenance,omitempty"`
 }
 

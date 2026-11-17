@@ -7,7 +7,9 @@ package validator
 
 import (
 	"fmt"
+	"net/url"
 	"regexp"
+	"strings"
 
 	"github.com/matteoredaelli/open-web-fingerprints/internal/domain"
 )
@@ -66,6 +68,14 @@ func Validate(r domain.Records) []Issue {
 	for _, x := range r.Vendors {
 		dup(string(x.ID))
 		vendors[x.ID] = true
+		if strings.TrimSpace(x.Name) == "" {
+			c.err("empty_name", string(x.ID), "vendor has no name")
+		}
+		if x.Website != "" {
+			if u, err := url.Parse(x.Website); err != nil || u.Host == "" || (u.Scheme != "https" && u.Scheme != "http") {
+				c.err("invalid_website", string(x.ID), "vendor website %q is not an http(s) URL", x.Website)
+			}
+		}
 		if slugs["v:"+x.Slug] {
 			c.err("duplicate_slug", string(x.ID), "vendor slug %q used twice", x.Slug)
 		}

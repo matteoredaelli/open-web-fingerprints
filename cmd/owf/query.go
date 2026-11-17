@@ -7,10 +7,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"sort"
+	"strings"
 	"text/tabwriter"
 
 	"github.com/spf13/cobra"
 
+	"github.com/matteoredaelli/open-web-fingerprints/internal/curate"
 	"github.com/matteoredaelli/open-web-fingerprints/internal/domain"
 	"github.com/matteoredaelli/open-web-fingerprints/internal/export"
 	"github.com/matteoredaelli/open-web-fingerprints/internal/validator"
@@ -186,7 +188,7 @@ func printFingerprints(cmd *cobra.Command, fps []domain.Fingerprint) {
 
 func newVendorCmd(o *options) *cobra.Command {
 	c := &cobra.Command{Use: "vendor", Short: "Browse vendors"}
-	var asJSON bool
+	var asJSON, uncurated bool
 	list := &cobra.Command{
 		Use:   "list",
 		Short: "List vendors with the number of technologies they have",
@@ -207,21 +209,119 @@ func newVendorCmd(o *options) *cobra.Command {
 					n[t.VendorID]++
 				}
 			}
-			out := all.Vendors
+			var out []domain.Vendor
+			for _, v := range all.Vendors {
+				if !uncurated || !v.Curated {
+					out = append(out, v)
+				}
+			}
 			sort.Slice(out, func(i, j int) bool { return out[i].Slug < out[j].Slug })
 			if asJSON {
 				return printJSON(cmd, out)
 			}
 			w := tabwriter.NewWriter(cmd.OutOrStdout(), 0, 4, 2, ' ', 0)
-			fmt.Fprintln(w, "SLUG\tNAME\tCPE VENDOR\tTECHNOLOGIES")
+			fmt.Fprintln(w, "SLUG\tNAME\tCPE VENDOR\tTECHNOLOGIES\tCURATED")
 			for _, v := range out {
-				fmt.Fprintf(w, "%s\t%s\t%s\t%d\n", v.Slug, v.Name, v.CPEVendor, n[v.ID])
+				fmt.Fprintf(w, "%s\t%s\t%s\t%d\t%v\n", v.Slug, v.Name, v.CPEVendor, n[v.ID], v.Curated)
 			}
 			return w.Flush()
 		},
 	}
 	list.Flags().BoolVar(&asJSON, "json", false, "output JSON")
-	c.AddCommand(list)
+	list.Flags().BoolVar(&uncurated, "uncurated", false, "only vendors nobody has reviewed (their names are guesses)")
+	c.AddCommand(list, newVendorShowCmd(o), newVendorSetCmd(o))
+	return c
+}
+
+func newVendorShowCmd(o *options) *cobra.Command {
+	return &cobra.Command{
+		Use:   "show <slug>",
+		Short: "Show a vendor and its technologies",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			r, err := o.open(cmd.Context())
+			if err != nil {
+				return err
+			}
+			defer func() { _ = r.Close() }()
+			all, err := r.AllRecords(cmd.Context())
+			if err != nil {
+				return err
+			}
+			var v *domain.Vendor
+			for i := range all.Vendors {
+				if all.Vendors[i].Slug == args[0] {
+					v = &all.Vendors[i]
+				}
+			}
+			if v == nil {
+				return fmt.Errorf("vendor %q not found", args[0])
+			}
+			out := cmd.OutOrStdout()
+			state := "uncurated (the name is a guess)"
+			if v.Curated {
+				state = "curated"
+			}
+			fmt.Fprintf(out, "%s (%s)\n  id:       %s\n  cpe:      %s\n  website:  %s\n  aliases:  %s\n  state:    %s\n",
+				v.Name, v.Slug, v.ID, v.CPEVendor, v.Website, strings.Join(v.Aliases, ", "), state)
+			var techs []string
+			for _, t := range all.Technologies {
+				if t.VendorID == v.ID {
+					techs = append(techs, t.Slug)
+				}
+			}
+			sort.Strings(techs)
+			fmt.Fprintf(out, "Technologies (%d): %s\n", len(techs), strings.Join(techs, ", "))
+			return nil
+		},
+	}
+}
+
+func newVendorSetCmd(o *options) *cobra.Command {
+	var name, website string
+	var add, remove []string
+	var clearWebsite bool
+	c := &cobra.Command{
+		Use:   "set <slug>",
+		Short: "Correct a vendor's name, website or aliases",
+		Long: "set edits a vendor and marks it curated. Refreshes never overwrite curated\n" +
+			"content. The slug and the CPE identifier do not change. Do not run it while\n" +
+			"an import is running.",
+		Args: cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			p := curate.VendorPatch{AddAliases: add, RemoveAliases: remove}
+			if cmd.Flags().Changed("name") {
+				p.Name = &name
+			}
+			if cmd.Flags().Changed("website") {
+				if clearWebsite {
+					return fmt.Errorf("use either --website or --clear-website")
+				}
+				p.Website = &website
+			}
+			if clearWebsite {
+				empty := ""
+				p.Website = &empty
+			}
+			r, err := o.open(cmd.Context())
+			if err != nil {
+				return err
+			}
+			defer func() { _ = r.Close() }()
+			v, err := curate.Vendor(cmd.Context(), r, args[0], p)
+			if err != nil {
+				return err
+			}
+			fmt.Fprintf(cmd.OutOrStdout(), "%s: name %q, website %q, aliases [%s], curated\n",
+				v.Slug, v.Name, v.Website, strings.Join(v.Aliases, ", "))
+			return nil
+		},
+	}
+	c.Flags().StringVar(&name, "name", "", "display name")
+	c.Flags().StringVar(&website, "website", "", "website (http or https URL)")
+	c.Flags().BoolVar(&clearWebsite, "clear-website", false, "remove the website")
+	c.Flags().StringArrayVar(&add, "alias", nil, "add an alias (repeatable)")
+	c.Flags().StringArrayVar(&remove, "remove-alias", nil, "remove an alias (repeatable)")
 	return c
 }
 

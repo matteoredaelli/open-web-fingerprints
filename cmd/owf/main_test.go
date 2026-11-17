@@ -95,6 +95,41 @@ func TestEndToEnd(t *testing.T) {
 	if out := mustRun(t, db, "technology", "show", "php"); !strings.Contains(out, "vendor:   Php (cpe: php)") {
 		t.Errorf("technology show must name the vendor:\n%s", out)
 	}
+	// Curating a vendor: the guessed name is replaced, and a refresh keeps it.
+	if out := mustRun(t, db, "vendor", "list", "--uncurated"); !strings.Contains(out, "php") || !strings.Contains(out, "false") {
+		t.Errorf("uncurated list:\n%s", out)
+	}
+	out = mustRun(t, db, "vendor", "set", "php", "--name", "The PHP Group", "--website", "https://www.php.net", "--alias", "PHP")
+	if !strings.Contains(out, `name "The PHP Group"`) || !strings.Contains(out, "curated") {
+		t.Errorf("vendor set:\n%s", out)
+	}
+	if out := mustRun(t, db, "vendor", "show", "php"); !strings.Contains(out, "The PHP Group (php)") ||
+		!strings.Contains(out, "state:    curated") || !strings.Contains(out, "Technologies (1): php") {
+		t.Errorf("vendor show:\n%s", out)
+	}
+	if out := mustRun(t, db, "vendor", "list", "--uncurated"); strings.Contains(out, "The PHP Group") {
+		t.Errorf("a curated vendor must leave the uncurated list:\n%s", out)
+	}
+	if out := mustRun(t, db, "import", "enthec-webappanalyzer", "--snapshot", fixture, "--revision", "9e52f10"); !strings.Contains(out, "no changes") {
+		t.Errorf("re-import after curation:\n%s", out)
+	}
+	if out := mustRun(t, db, "technology", "show", "php"); !strings.Contains(out, "vendor:   The PHP Group (cpe: php)") {
+		t.Errorf("curated name must survive:\n%s", out)
+	}
+	for name, args := range map[string][]string{
+		"nothing to change":  {"vendor", "set", "php"},
+		"unknown vendor":     {"vendor", "set", "nope", "--name", "x"},
+		"bad website":        {"vendor", "set", "php", "--website", "php.net"},
+		"empty name":         {"vendor", "set", "php", "--name", ""},
+		"both website flags": {"vendor", "set", "php", "--website", "https://a.example", "--clear-website"},
+	} {
+		if _, err := run(t, db, args...); err == nil {
+			t.Errorf("%s: expected an error", name)
+		}
+	}
+	if out := mustRun(t, db, "vendor", "set", "php", "--clear-website", "--remove-alias", "php"); !strings.Contains(out, `website ""`) {
+		t.Errorf("clear website:\n%s", out)
+	}
 	out = mustRun(t, db, "technology", "list")
 	if !strings.Contains(out, "a-frame") || !strings.Contains(out, "typo3-cms") {
 		t.Errorf("technology list: %s", out)

@@ -306,5 +306,21 @@ A technology's first usable CPE 2.3 string gives its vendor
 - Real data (Enthec + HTTP Archive, merged): 407 vendors, 468 of 7743
   technologies have one (only 6% of technologies carry a CPE), export valid.
 
-Not done: vendor websites and aliases (they need curation), and merging two
-vendors that are the same organization under different CPE identifiers.
+### Curating vendors
+
+```sh
+owf vendor list --uncurated          # names that are still guesses
+owf vendor show php
+owf vendor set php --name "The PHP Group" --website https://www.php.net --alias PHP
+owf vendor set php --clear-website --remove-alias PHP
+```
+
+`set` changes the name, website and aliases, validates them (non-empty name,
+http(s) URL without credentials, no duplicate or self aliases), and marks the
+vendor `curated` (new optional field, `curated: true` in the export). The slug,
+the CPE identifier and the provenance never change. Refreshes do not overwrite
+a stored vendor, curated or not. Read-modify-write is not locked against a
+concurrent import: run them one at a time.
+
+Not done: merging two vendors that are the same organization under different
+CPE identifiers, and a bulk way to curate (for example from a CSV).
