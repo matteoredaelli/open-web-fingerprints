@@ -71,6 +71,13 @@ func Run(t *testing.T, newRepo Factory) {
 		if err := r.UpsertSource(ctx, s); err != nil {
 			t.Fatal(err)
 		}
+		if err := r.UpsertSource(ctx, source("src_0", "zero")); err != nil {
+			t.Fatal(err)
+		}
+		list, err := r.Sources(ctx)
+		if err != nil || len(list) != 2 || list[0].Slug != "one" || list[1].Slug != "zero" {
+			t.Fatalf("Sources = %+v err=%v", list, err)
+		}
 		got, ok, err := r.GetSourceBySlug(ctx, "one")
 		if err != nil || !ok || got.Name != "renamed" || got.ID != "src_1" {
 			t.Fatalf("got %+v ok=%v err=%v", got, ok, err)

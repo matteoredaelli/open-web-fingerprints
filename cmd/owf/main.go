@@ -5,11 +5,17 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
+	"os/signal"
 )
 
 func main() {
-	fmt.Fprintln(os.Stderr, "owf: not implemented yet")
-	os.Exit(1)
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+	defer stop()
+	if err := newRootCmd().ExecuteContext(ctx); err != nil {
+		fmt.Fprintln(os.Stderr, "owf:", err)
+		os.Exit(1)
+	}
 }

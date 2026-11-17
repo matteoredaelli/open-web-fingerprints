@@ -73,6 +73,21 @@ func (r *Repo) GetSourceBySlug(ctx context.Context, slug string) (domain.Source,
 	return domain.Source{}, false, nil
 }
 
+// Sources implements repository.Repository.
+func (r *Repo) Sources(ctx context.Context) ([]domain.Source, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	out := make([]domain.Source, 0, len(r.sources))
+	for _, s := range r.sources {
+		out = append(out, s)
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i].Slug < out[j].Slug })
+	return out, nil
+}
+
 // UpsertSource implements repository.Repository.
 func (r *Repo) UpsertSource(ctx context.Context, s domain.Source) error {
 	if err := ctx.Err(); err != nil {

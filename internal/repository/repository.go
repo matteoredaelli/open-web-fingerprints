@@ -20,6 +20,8 @@ type Repository interface {
 
 	// GetSourceBySlug returns the source with the given slug, if any.
 	GetSourceBySlug(ctx context.Context, slug string) (domain.Source, bool, error)
+	// Sources lists all sources sorted by slug.
+	Sources(ctx context.Context) ([]domain.Source, error)
 	// UpsertSource inserts or updates a source by ID.
 	UpsertSource(ctx context.Context, s domain.Source) error
 	// PutSnapshot records a snapshot. Putting the same revision with the

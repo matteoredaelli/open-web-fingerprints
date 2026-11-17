@@ -217,3 +217,20 @@ Full Enthec snapshot through the pipeline: 7704 technologies, 15839
 fingerprints, 2289 relationships, valid and idempotent. Real-data finding:
 `Niagahoster` lists itself in `implies`; the normalizer drops it with a
 `self_relationship` warning.
+
+## SQLite, CLI and export (implemented)
+
+- `internal/repository/sqlite`: pure-Go driver (`modernc.org/sqlite`), goose
+  migrations embedded in the binary, explicit SQL. Each entity has indexed
+  columns plus the full record as JSON, so the public model stays the source
+  of truth. Foreign keys and unique slugs are enforced. Memory and SQLite
+  both pass the shared contract in `repositorytest`, and the pipeline tests
+  run on both.
+- `cmd/owf` (Cobra, thin): `init`, `source list|info`, `import`,
+  `technology list|show`, `fingerprint list|validate`, `export`, `stats`.
+- `internal/export` builds the document in a stable order and refuses to
+  return anything that violates the JSON Schema.
+- Full Enthec `9e52f10`: import 2.4 s, 37 MB database, 21.7 MB export.
+
+Not implemented yet: snapshot fetching (`source add|refresh`),
+`fingerprint diff`, vendors, and deduplication across sources.

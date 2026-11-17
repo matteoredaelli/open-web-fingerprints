@@ -143,6 +143,15 @@ func (r *Repo) GetSourceBySlug(ctx context.Context, slug string) (domain.Source,
 	return s, true, nil
 }
 
+// Sources implements repository.Repository.
+func (r *Repo) Sources(ctx context.Context) ([]domain.Source, error) {
+	rows, err := r.db.QueryContext(ctx, `SELECT data FROM sources ORDER BY slug`)
+	if err != nil {
+		return nil, fmt.Errorf("sqlite: sources: %w", err)
+	}
+	return scanAll[domain.Source](rows)
+}
+
 // UpsertSource implements repository.Repository.
 func (r *Repo) UpsertSource(ctx context.Context, s domain.Source) error {
 	_, err := r.db.ExecContext(ctx,
