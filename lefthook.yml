@@ -1,0 +1,16 @@
+pre-commit:
+  parallel: true
+  commands:
+    fmt:
+      glob: "*.go"
+      run: test -z "$(gofmt -s -l {staged_files})" || (gofmt -s -l {staged_files}; exit 1)
+    vet:
+      glob: "*.go"
+      run: go vet ./...
+    lint:
+      glob: "*.go"
+      run: golangci-lint run ./...
+pre-push:
+  commands:
+    test:
+      run: make test
