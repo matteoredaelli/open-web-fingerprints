@@ -315,7 +315,18 @@ func newStatsCmd(o *options) *cobra.Command {
 			if err != nil {
 				return err
 			}
+			conflicts, err := r.Conflicts(cmd.Context())
+			if err != nil {
+				return err
+			}
+			open := 0
+			for _, c := range conflicts {
+				if c.State == domain.ConflictOpen {
+					open++
+				}
+			}
 			out := cmd.OutOrStdout()
+			fmt.Fprintf(out, "open conflicts  %d\n", open)
 			fmt.Fprintf(out, "sources         %d\ncategories      %d\ntechnologies    %d\nfingerprints    %d\nrelationships   %d\n",
 				len(srcs), len(all.Categories), len(all.Technologies), len(all.Fingerprints), len(all.Relationships))
 			byObs := map[domain.Observation]int{}

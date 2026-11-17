@@ -269,6 +269,15 @@ func (r *Repo) SourceRecords(ctx context.Context, id domain.SourceID) (domain.Re
 	return r.load(ctx, id, false)
 }
 
+// Conflicts implements repository.Repository.
+func (r *Repo) Conflicts(ctx context.Context) ([]domain.Conflict, error) {
+	rows, err := r.db.QueryContext(ctx, `SELECT data FROM conflicts ORDER BY id`)
+	if err != nil {
+		return nil, fmt.Errorf("sqlite: conflicts: %w", err)
+	}
+	return scanAll[domain.Conflict](rows)
+}
+
 // AllRecords implements repository.Repository.
 func (r *Repo) AllRecords(ctx context.Context) (domain.Records, error) {
 	return r.load(ctx, "", true)
@@ -307,6 +316,14 @@ func (r *Repo) Apply(ctx context.Context, cs repository.ChangeSet) error {
 func (r *Repo) apply(ctx context.Context, tx *sql.Tx, cs repository.ChangeSet) error {
 	wrap := func(what, id string, err error) error {
 		return fmt.Errorf("sqlite: apply %s %s: %w", what, id, err)
+	}
+	for _, c := range cs.Conflicts {
+		if _, err := tx.ExecContext(ctx,
+			`INSERT INTO conflicts(id, kind, state, data) VALUES (?,?,?,?)
+			 ON CONFLICT(id) DO UPDATE SET kind=excluded.kind, state=excluded.state, data=excluded.data`,
+			string(c.ID), c.Kind, c.State, mustJSON(c)); err != nil {
+			return wrap("conflict", string(c.ID), err)
+		}
 	}
 	for _, c := range cs.Upsert.Categories {
 		if _, err := tx.ExecContext(ctx,

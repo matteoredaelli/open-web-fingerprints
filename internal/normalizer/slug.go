@@ -14,6 +14,9 @@ import (
 // slugify turns a display name into a lower-case ASCII slug that matches
 // ^[a-z0-9]+(-[a-z0-9]+)*$. Letters outside ASCII are reduced to their base
 // letter when they have one and dropped otherwise.
+// Slugify is the exported slug function, used for identity matching.
+func Slugify(name string) string { return slugify(name) }
+
 func slugify(name string) string {
 	r := strings.NewReplacer("+", " plus ", "#", " sharp ", "&", " and ")
 	var b strings.Builder
@@ -47,6 +50,9 @@ type slugSet struct {
 func newSlugSet(fallback string) *slugSet {
 	return &slugSet{used: map[string]bool{}, fallback: fallback}
 }
+
+// reserve marks a slug as taken (it belongs to an existing record).
+func (s *slugSet) reserve(slug string) { s.used[slug] = true }
 
 func (s *slugSet) unique(name string) string {
 	base := slugify(name)

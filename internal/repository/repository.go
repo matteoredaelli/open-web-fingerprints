@@ -34,6 +34,8 @@ type Repository interface {
 	// SourceRecords returns records that carry provenance from the source,
 	// including provenance entries of other sources.
 	SourceRecords(ctx context.Context, id domain.SourceID) (domain.Records, error)
+	// Conflicts returns all conflicts sorted by ID.
+	Conflicts(ctx context.Context) ([]domain.Conflict, error)
 	// AllRecords returns every canonical record.
 	AllRecords(ctx context.Context) (domain.Records, error)
 
@@ -45,6 +47,8 @@ type Repository interface {
 type ChangeSet struct {
 	// Upsert holds complete records, replacing any record with the same ID.
 	Upsert domain.Records
+	// Conflicts are stored or updated by ID.
+	Conflicts []domain.Conflict
 	// RemovedUpstream lists records whose provenance from SourceID must be
 	// marked "removed_upstream". Records are never deleted.
 	SourceID        domain.SourceID

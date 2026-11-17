@@ -197,6 +197,50 @@ func Run(t *testing.T, newRepo Factory) {
 		}
 	})
 
+	t.Run("conflicts", func(t *testing.T) {
+		r := newRepo(t)
+		now := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
+		c := domain.Conflict{
+			ID: "cfl_b", Kind: domain.ConflictIdentityCandidate, State: domain.ConflictOpen,
+			RecordIDs: []string{"tech_1", "tech_2"}, SourceIDs: []domain.SourceID{"src_1", "src_2"},
+			Detail: map[string]string{"websites": "same_domain"}, CreatedAt: now, UpdatedAt: now,
+		}
+		a := c
+		a.ID = "cfl_a"
+		if err := r.Apply(ctx, repository.ChangeSet{Conflicts: []domain.Conflict{c, a}}); err != nil {
+			t.Fatal(err)
+		}
+		c.State, c.Resolution = domain.ConflictIgnored, "not the same product"
+		if err := r.Apply(ctx, repository.ChangeSet{Conflicts: []domain.Conflict{c}}); err != nil {
+			t.Fatal(err)
+		}
+		got, err := r.Conflicts(ctx)
+		if err != nil || len(got) != 2 || got[0].ID != "cfl_a" || got[1].ID != "cfl_b" {
+			t.Fatalf("conflicts = %+v err=%v", got, err)
+		}
+		if got[1].State != domain.ConflictIgnored || got[1].Resolution == "" || got[1].Detail["websites"] != "same_domain" {
+			t.Fatalf("update lost: %+v", got[1])
+		}
+		if !got[1].CreatedAt.Equal(now) || len(got[1].RecordIDs) != 2 {
+			t.Fatalf("fields lost: %+v", got[1])
+		}
+	})
+
+	t.Run("conflicts are applied atomically with records", func(t *testing.T) {
+		r := newRepo(t)
+		err := r.Apply(ctx, repository.ChangeSet{
+			Conflicts:       []domain.Conflict{{ID: "cfl_1", Kind: "k", State: "open"}},
+			SourceID:        "src_1",
+			RemovedUpstream: repository.RecordIDs{Technologies: []string{"tech_missing"}},
+		})
+		if err == nil {
+			t.Fatal("must fail")
+		}
+		if got, _ := r.Conflicts(ctx); len(got) != 0 {
+			t.Fatal("failed Apply must not store conflicts")
+		}
+	})
+
 	t.Run("public example round trips without loss", func(t *testing.T) {
 		b, err := os.ReadFile(ExamplePath)
 		if err != nil {

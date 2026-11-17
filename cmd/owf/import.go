@@ -78,6 +78,9 @@ func printReport(cmd *cobra.Command, rep *pipeline.Report, dry bool) {
 	row("technologies", rep.Diff.Technologies)
 	row("fingerprints", rep.Diff.Fingerprints)
 	row("relationships", rep.Diff.Relationships)
+	if c := rep.Diff.Conflicts; len(c.Added)+len(c.Modified) > 0 {
+		fmt.Fprintf(out, "  conflicts      %d new, %d changed (see `owf conflict list`)\n", len(c.Added), len(c.Modified))
+	}
 	if rep.Diff.IsEmpty() {
 		fmt.Fprintln(out, "  no changes")
 	}

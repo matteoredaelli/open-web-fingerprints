@@ -1,7 +1,28 @@
 # Cross-source reconciliation and deduplication (draft)
 
-Status: **proposal, not implemented**. It is the design for Phase 5, based on
-a measurement of two real sources.
+Status: **decisions taken, implementation in two steps**. Based on a
+measurement of two real sources.
+
+## Decisions
+
+1. **No automatic merge between sources.** A same-slug match is only a
+   *candidate*. Technologies and categories from different sources stay
+   separate records until a reviewer approves the merge.
+2. Target normalization as in section 2 (cookie names stay case-sensitive).
+3. Canonical confidence is the **lowest explicit** value; each source's value
+   stays in its provenance.
+4. Conflicts are **stored**. Step 1 adds `owf conflict list`; step 2 adds
+   `owf conflict resolve` (merge or keep separate), which is required because
+   nothing merges without it.
+
+Implementation steps:
+
+- **Step 1 (this change):** semantic key, merging of equivalent rules inside a
+  source, stable slugs across sources, stored conflicts, identity and category
+  candidates, `owf conflict list`.
+- **Step 2:** `conflict resolve`, record merge with aliases for old IDs,
+  cross-source rule merge, metadata and confidence conflicts, order
+  independence test.
 
 ## Measurement: Enthec `9e52f10` vs HTTP Archive `35b0847`
 
@@ -13,7 +34,7 @@ version extract).
 |---|---|
 | Technologies Enthec / HTTP Archive | 7704 / 4009 |
 | Same slug in both | 3996 (99.7% of HTTP Archive) |
-| Common technologies with a different website | 65 |
+| Common technologies with a different website (exact string compare) | 65 |
 | Common technologies with different categories | 49 |
 | Distinct semantic keys Enthec / HTTP Archive | 15803 / 5848 |
 | Identical rules in both | 5700 (97% of HTTP Archive) |
@@ -22,7 +43,7 @@ version extract).
 | Only in Enthec, on technologies both have | 3749 |
 | Enthec rules with the same technology, observation and target as an HTTP Archive rule, but a different pattern | 61 |
 | Enthec rules with a mixed-case target (header, cookie, meta names) | 5373 |
-| Semantic duplicates inside Enthec alone (15839 rules, 15803 keys) | 36 |
+| Equivalent rules inside Enthec alone, with the final semantic key | 3 (plus 4 byte-identical ones) |
 
 Reading: the sources overlap heavily and mostly agree. True disagreements are
 rare, but they exist and must be visible. The two datasets share an ancestor,
@@ -35,13 +56,15 @@ proposal adds a *reconcile* stage between normalize and diff.
 
 - **Identity key:** the slug of the name, plus the registrable domain of the
   website when both sides have one.
-- Same slug and compatible website (same domain, or one side empty): the
-  fresh record takes the existing canonical ID and gains one more provenance
-  entry.
-- Same slug but different website (65 cases here): **not merged**. Both stay
-  separate and an `identity_conflict` is recorded for review.
-- Different slug, same website: not merged, no conflict. Manual aliases can
-  join them later.
+- Same slug: an `identity_candidate` conflict is recorded with the evidence
+  (`websites`: `same_domain`, `different` or `unknown`). Nothing is merged.
+  Reviewers can approve the cases with `same_domain` in bulk.
+- Different slug, same website: no candidate. Manual aliases can join them
+  later.
+- Categories follow the same rule (`category_candidate`, same normalized
+  name).
+- Until a merge is approved, the later record gets a suffixed slug
+  (`wordpress-2`). Slugs of existing records never change.
 - Slugs stay unique. A manual alias table (`slug -> canonical technology`) is
   the escape hatch.
 
@@ -76,7 +99,7 @@ header is another rule, not a contradiction. Only these cases are conflicts:
 
 | Kind | Trigger | Handling |
 |---|---|---|
-| `identity_conflict` | same slug, different website | not merged, review |
+| `identity_candidate`, `category_candidate` | same normalized name in two sources | never merged automatically; review |
 | `metadata_conflict` | merged technologies differ in website, description or categories | canonical value from the higher-priority source; alternatives kept in the conflict |
 | `confidence_disagreement` | sources give different explicit confidence | canonical value is the lowest explicit one (conservative); each source's value stays in its provenance |
 | `variant_candidate` | same technology, observation and target, different pattern | informational only, no change |
@@ -125,11 +148,28 @@ as today. If one of two sources drops it, only that provenance entry changes.
 
 ## Open questions
 
-1. Is slug plus website domain acceptable for technology identity, or do you
-   want every cross-source merge to be reviewed first?
-2. Is the target normalization table right? In particular, are cookie names
-   case-sensitive for this project?
-3. Should the canonical confidence be the lowest explicit value (proposed),
-   or the value of the highest-priority source?
-4. Are stored conflicts with a later resolve command wanted now, or is a
-   report-only first step enough?
+None for step 1. For step 2: which technology survives a merge. Proposal:
+the older record (UUIDv7 sorts by time), with the other ID kept as an alias.
+
+## Step 1 results (implemented)
+
+- `domain.Fingerprint.SemanticKey`, with the case rules of section 2.
+- The normalizer merges equivalent rules inside a source into one record
+  with one provenance entry per upstream rule. The canonical ID comes from
+  the semantic key, not from the order of the duplicates, and the canonical
+  confidence is the lowest explicit value (`confidence_disagreement` warning).
+- Slugs are stable (a known record keeps its slug) and unique across sources.
+  The later source gets `-2`.
+- `internal/reconciler` proposes `identity_candidate` and
+  `category_candidate` conflicts. The evidence uses sides ordered by record
+  ID, so it is identical whichever source is imported first. Websites are
+  compared by registrable domain (public suffix list).
+- Conflicts are stored (migration `00002`). A known conflict keeps its state
+  and resolution on re-import and is reopened only if its evidence changes.
+- `owf conflict list [--kind --state --websites --json]`, and open conflicts
+  in `owf stats`.
+
+Real data, Enthec `9e52f10` plus HTTP Archive `35b0847`, imported as two
+sources: 11713 technologies (nothing merged), 3973 identity candidates with
+the same website domain, 27 with a different domain, 108 category candidates.
+Importing either source again changes nothing.

@@ -25,6 +25,7 @@ type Repo struct {
 	techs     map[domain.TechnologyID]domain.Technology
 	fps       map[domain.FingerprintID]domain.Fingerprint
 	rels      map[domain.RelationshipID]domain.Relationship
+	conflicts map[domain.ConflictID]domain.Conflict
 }
 
 var _ repository.Repository = (*Repo)(nil)
@@ -39,6 +40,7 @@ func New() *Repo {
 		techs:     map[domain.TechnologyID]domain.Technology{},
 		fps:       map[domain.FingerprintID]domain.Fingerprint{},
 		rels:      map[domain.RelationshipID]domain.Relationship{},
+		conflicts: map[domain.ConflictID]domain.Conflict{},
 	}
 }
 
@@ -148,6 +150,23 @@ func (r *Repo) SourceRecords(ctx context.Context, id domain.SourceID) (domain.Re
 	return r.collect(func(p []domain.Provenance) bool { return hasSource(p, id) }), nil
 }
 
+// Conflicts implements repository.Repository.
+func (r *Repo) Conflicts(ctx context.Context) ([]domain.Conflict, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	out := make([]domain.Conflict, 0, len(r.conflicts))
+	for _, c := range r.conflicts {
+		c.RecordIDs = append([]string(nil), c.RecordIDs...)
+		c.SourceIDs = append([]domain.SourceID(nil), c.SourceIDs...)
+		out = append(out, c)
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i].ID < out[j].ID })
+	return out, nil
+}
+
 // AllRecords implements repository.Repository.
 func (r *Repo) AllRecords(ctx context.Context) (domain.Records, error) {
 	if err := ctx.Err(); err != nil {
@@ -229,6 +248,9 @@ func (r *Repo) Apply(ctx context.Context, cs repository.ChangeSet) error {
 		if _, ok := r.rels[domain.RelationshipID(id)]; !ok {
 			return fmt.Errorf("removed relationship %s does not exist", id)
 		}
+	}
+	for _, c := range cs.Conflicts {
+		r.conflicts[c.ID] = c
 	}
 	for _, c := range cs.Upsert.Categories {
 		r.cats[c.ID] = c

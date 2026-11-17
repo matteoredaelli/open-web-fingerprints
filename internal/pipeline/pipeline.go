@@ -11,11 +11,14 @@ import (
 	"fmt"
 	"io/fs"
 	"log/slog"
+	"reflect"
+	"sort"
 	"time"
 
 	"github.com/matteoredaelli/open-web-fingerprints/internal/domain"
 	"github.com/matteoredaelli/open-web-fingerprints/internal/extractor"
 	"github.com/matteoredaelli/open-web-fingerprints/internal/normalizer"
+	"github.com/matteoredaelli/open-web-fingerprints/internal/reconciler"
 	"github.com/matteoredaelli/open-web-fingerprints/internal/repository"
 	"github.com/matteoredaelli/open-web-fingerprints/internal/validator"
 )
@@ -110,8 +113,12 @@ func (p *Pipeline) Run(ctx context.Context, req Request) (*Report, error) {
 		return nil, fmt.Errorf("pipeline: extract: %w", err)
 	}
 
+	all, err := p.Repo.AllRecords(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("pipeline: load existing records: %w", err)
+	}
 	norm, err := p.NewNormalizer(p.Repo).Normalize(normalizer.Input{
-		Source: src, Revision: req.Revision, ImportedAt: now, Extraction: res,
+		Source: src, Revision: req.Revision, ImportedAt: now, Extraction: res, Existing: all,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("pipeline: normalize: %w", err)
@@ -130,6 +137,19 @@ func (p *Pipeline) Run(ctx context.Context, req Request) (*Report, error) {
 		return nil, fmt.Errorf("pipeline: load stored records: %w", err)
 	}
 	cs, diff := diffRecords(src.ID, stored, fresh)
+
+	candidates, err := reconciler.Candidates(reconciler.Input{
+		Fresh: fresh, Other: withoutSource(all, src.ID), Now: now,
+		Alloc: func(k domain.Kind, key string) (string, error) { return p.Repo.Allocate(k, "", key) },
+	})
+	if err != nil {
+		return nil, fmt.Errorf("pipeline: reconcile: %w", err)
+	}
+	known, err := p.Repo.Conflicts(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("pipeline: load conflicts: %w", err)
+	}
+	cs.Conflicts, diff.Conflicts = mergeConflicts(known, candidates, now)
 	rep.Diff = diff
 
 	if req.DryRun {
@@ -183,4 +203,48 @@ func (p *Pipeline) checkSnapshotUnchanged(ctx context.Context, s domain.Snapshot
 		}
 	}
 	return nil
+}
+
+// withoutSource keeps the records that carry no provenance from the source.
+func withoutSource(r domain.Records, sid domain.SourceID) domain.Records {
+	has := func(p []domain.Provenance) bool { return len(sourceEntries(p, sid)) > 0 }
+	var out domain.Records
+	for _, x := range r.Categories {
+		if !has(x.Provenance) {
+			out.Categories = append(out.Categories, x)
+		}
+	}
+	for _, x := range r.Technologies {
+		if !has(x.Provenance) {
+			out.Technologies = append(out.Technologies, x)
+		}
+	}
+	return out
+}
+
+// mergeConflicts returns the conflicts to store and what changed. A known
+// conflict is left alone, with its state and resolution, unless the evidence
+// changed; then it is reopened so that a reviewer sees the new facts.
+func mergeConflicts(known, found []domain.Conflict, now time.Time) ([]domain.Conflict, Change) {
+	byID := make(map[domain.ConflictID]domain.Conflict, len(known))
+	for _, k := range known {
+		byID[k.ID] = k
+	}
+	var upsert []domain.Conflict
+	var ch Change
+	for _, f := range found {
+		k, ok := byID[f.ID]
+		switch {
+		case !ok:
+			upsert = append(upsert, f)
+			ch.Added = append(ch.Added, string(f.ID))
+		case !reflect.DeepEqual(k.Detail, f.Detail) || !reflect.DeepEqual(k.RecordIDs, f.RecordIDs):
+			f.CreatedAt, f.State, f.Resolution, f.UpdatedAt = k.CreatedAt, domain.ConflictOpen, "", now
+			upsert = append(upsert, f)
+			ch.Modified = append(ch.Modified, string(f.ID))
+		}
+	}
+	sort.Strings(ch.Added)
+	sort.Strings(ch.Modified)
+	return upsert, ch
 }

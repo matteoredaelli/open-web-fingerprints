@@ -26,6 +26,9 @@ type Input struct {
 	Revision   string // snapshot revision
 	ImportedAt time.Time
 	Extraction *extractor.ExtractionResult
+	// Existing holds every stored record, from all sources. It keeps slugs
+	// stable (a known record keeps its slug) and unique across sources.
+	Existing domain.Records
 }
 
 // Result holds canonical records and the warnings raised while mapping.
@@ -119,6 +122,11 @@ func (r *run) prov(originalID, file string, conf *float64) []domain.Provenance {
 
 func (r *run) categories() error {
 	slugs := newSlugSet("category")
+	known := map[domain.CategoryID]string{}
+	for _, c := range r.in.Existing.Categories {
+		known[c.ID] = c.Slug
+		slugs.reserve(c.Slug)
+	}
 	for _, c := range r.in.Extraction.Categories {
 		id, err := r.alloc(domain.KindCategory, "category:"+c.Key)
 		if err != nil {
@@ -127,8 +135,13 @@ func (r *run) categories() error {
 		r.cats[c.Key] = domain.CategoryID(id)
 	}
 	for _, c := range r.in.Extraction.Categories {
+		id := r.cats[c.Key]
+		slug, ok := known[id]
+		if !ok {
+			slug = slugs.unique(c.Name)
+		}
 		cat := domain.Category{
-			ID: r.cats[c.Key], Slug: slugs.unique(c.Name), Name: c.Name, Group: c.Group,
+			ID: id, Slug: slug, Name: c.Name, Group: c.Group,
 			Provenance: r.prov(c.Key, c.File, nil),
 		}
 		if c.ParentKey != "" {
@@ -145,14 +158,23 @@ func (r *run) categories() error {
 
 func (r *run) technologies() error {
 	slugs := newSlugSet("technology")
+	known := map[domain.TechnologyID]string{}
+	for _, t := range r.in.Existing.Technologies {
+		known[t.ID] = t.Slug
+		slugs.reserve(t.Slug)
+	}
 	for _, t := range r.in.Extraction.Technologies {
 		id, err := r.alloc(domain.KindTechnology, "technology:"+t.Key)
 		if err != nil {
 			return err
 		}
 		r.techs[t.Key] = domain.TechnologyID(id)
+		slug, ok := known[domain.TechnologyID(id)]
+		if !ok {
+			slug = slugs.unique(t.Name)
+		}
 		tech := domain.Technology{
-			ID: domain.TechnologyID(id), Slug: slugs.unique(t.Name), Name: t.Name,
+			ID: domain.TechnologyID(id), Slug: slug, Name: t.Name,
 			Description: t.Description, Website: t.Website, Kind: t.Kind, CPE: t.CPE,
 			OpenSource: t.OpenSource, SaaS: t.SaaS, Status: domain.StatusActive,
 			Provenance: r.prov(t.Key, t.File, nil),
@@ -184,6 +206,11 @@ func ruleKey(f extractor.ExtractedFingerprint) string {
 }
 
 func (r *run) fingerprints() error {
+	conf := r.n.DefaultConfidence
+	if conf == 0 {
+		conf = DefaultConfidence
+	}
+	bySK := map[string]int{} // semantic key -> index in res.Fingerprints
 	for _, f := range r.in.Extraction.Fingerprints {
 		tid, ok := r.techs[f.TechnologyKey]
 		if !ok {
@@ -196,23 +223,16 @@ func (r *run) fingerprints() error {
 			continue
 		}
 		r.usedFP[key] = true
-		id, err := r.alloc(domain.KindFingerprint, "fingerprint:"+key)
-		if err != nil {
-			return err
-		}
-		conf := r.n.DefaultConfidence
-		if conf == 0 {
-			conf = DefaultConfidence
-		}
-		if f.Confidence != nil {
-			conf = *f.Confidence
-		}
+
 		fp := domain.Fingerprint{
-			ID: domain.FingerprintID(id), TechnologyID: tid, Observation: f.Observation,
+			TechnologyID: tid, Observation: f.Observation,
 			Target: f.Target, Operator: f.Operator, Pattern: f.Pattern,
 			RegexFlavor: f.RegexFlavor, VersionExtract: f.VersionExtract, Confidence: conf,
 			Status: domain.StatusActive, Validation: &domain.Validation{Health: "unknown"},
 			Provenance: r.prov(key, f.File, f.Confidence), Raw: f.Raw,
+		}
+		if f.Confidence != nil {
+			fp.Confidence = *f.Confidence
 		}
 		if f.GroupKey != "" {
 			gid, err := r.alloc(domain.KindGroup, "group:"+f.TechnologyKey+"#"+f.GroupKey)
@@ -227,9 +247,52 @@ func (r *run) fingerprints() error {
 			fp.Probe = &p
 			fp.Status = domain.StatusDraft
 		}
+		sk := fp.SemanticKey()
+
+		// Equivalent rules inside one source are one canonical rule with one
+		// provenance entry per upstream rule.
+		if i, dup := bySK[sk]; dup {
+			cur := &r.res.Fingerprints[i]
+			cur.Provenance = append(cur.Provenance, fp.Provenance...)
+			r.warn("merged_duplicate_rule", key,
+				fmt.Sprintf("equivalent to %s; merged as an extra provenance entry", cur.Provenance[0].OriginalID))
+			r.mergeConfidence(cur, conf)
+			continue
+		}
+		id, err := r.alloc(domain.KindFingerprint, "fingerprint:"+sk)
+		if err != nil {
+			return err
+		}
+		fp.ID = domain.FingerprintID(id)
+		bySK[sk] = len(r.res.Fingerprints)
 		r.res.Fingerprints = append(r.res.Fingerprints, fp)
 	}
 	return nil
+}
+
+// mergeConfidence sets the canonical confidence to the lowest explicit value
+// among the rule's provenance entries, or the default when none is explicit.
+func (r *run) mergeConfidence(f *domain.Fingerprint, def float64) {
+	var explicit []float64
+	for _, p := range f.Provenance {
+		if p.OriginalConfidence != nil {
+			explicit = append(explicit, *p.OriginalConfidence)
+		}
+	}
+	if len(explicit) == 0 {
+		f.Confidence = def
+		return
+	}
+	lowest := explicit[0]
+	for _, v := range explicit[1:] {
+		if v != lowest {
+			r.warn("confidence_disagreement", string(f.ID), "equivalent rules carry different confidence; the lowest is used")
+		}
+		if v < lowest {
+			lowest = v
+		}
+	}
+	f.Confidence = lowest
 }
 
 func (r *run) relationships() error {

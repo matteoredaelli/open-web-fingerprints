@@ -28,11 +28,13 @@ type Diff struct {
 	Technologies  Change
 	Fingerprints  Change
 	Relationships Change
+	// Conflicts lists review items opened (Added) or changed (Modified).
+	Conflicts Change
 }
 
 // IsEmpty reports whether nothing changes.
 func (d Diff) IsEmpty() bool {
-	for _, c := range []Change{d.Categories, d.Technologies, d.Fingerprints, d.Relationships} {
+	for _, c := range []Change{d.Categories, d.Technologies, d.Fingerprints, d.Relationships, d.Conflicts} {
 		if len(c.Added)+len(c.Modified)+len(c.Removed) > 0 {
 			return false
 		}
@@ -47,13 +49,34 @@ type spec[T any] struct {
 	curated func(dst *T, old T) // keeps fields owned by reviewers
 }
 
-func sourceEntry(p []domain.Provenance, sid domain.SourceID) (domain.Provenance, bool) {
+// sourceEntries returns the provenance entries a source contributed to a
+// record. One canonical record may have several (equivalent upstream rules).
+func sourceEntries(p []domain.Provenance, sid domain.SourceID) []domain.Provenance {
+	var out []domain.Provenance
 	for _, x := range p {
 		if x.SourceID == sid {
-			return x, true
+			out = append(out, x)
 		}
 	}
-	return domain.Provenance{}, false
+	return out
+}
+
+func anyState(p []domain.Provenance, state string) bool {
+	for _, x := range p {
+		if x.State == state {
+			return true
+		}
+	}
+	return false
+}
+
+func allState(p []domain.Provenance, state string) bool {
+	for _, x := range p {
+		if x.State != state {
+			return false
+		}
+	}
+	return len(p) > 0
 }
 
 func mergeProvenance(existing, fresh []domain.Provenance, sid domain.SourceID) []domain.Provenance {
@@ -68,14 +91,14 @@ func mergeProvenance(existing, fresh []domain.Provenance, sid domain.SourceID) [
 
 // comparable strips what is allowed to differ between two imports of
 // equivalent data: other sources' provenance, and this source's snapshot
-// revision and import time.
+// revision and import time. Entries are ordered by upstream ID.
 func comparable[T any](s spec[T], rec T, sid domain.SourceID) T {
 	p := s.prov(&rec)
-	var keep []domain.Provenance
-	if e, ok := sourceEntry(*p, sid); ok {
-		e.SnapshotRevision, e.ImportedAt = "", time.Time{}
-		keep = append(keep, e)
+	keep := sourceEntries(*p, sid)
+	for i := range keep {
+		keep[i].SnapshotRevision, keep[i].ImportedAt = "", time.Time{}
 	}
+	sort.Slice(keep, func(i, j int) bool { return keep[i].OriginalID < keep[j].OriginalID })
 	*p = keep
 	return rec
 }
@@ -101,8 +124,7 @@ func compute[T any](s spec[T], sid domain.SourceID, stored, fresh []T) (upsert [
 		s.curated(&merged, o)
 		fp := s.prov(&merged)
 		*fp = mergeProvenance(*s.prov(&o), *fp, sid)
-		oe, _ := sourceEntry(*s.prov(&o), sid)
-		if oe.State == "present" &&
+		if allState(sourceEntries(*s.prov(&o), sid), "present") &&
 			reflect.DeepEqual(comparable(s, o, sid), comparable(s, merged, sid)) {
 			continue
 		}
@@ -113,7 +135,7 @@ func compute[T any](s spec[T], sid domain.SourceID, stored, fresh []T) (upsert [
 		if seen[id] {
 			continue
 		}
-		if e, ok := sourceEntry(*s.prov(&o), sid); ok && e.State == "present" {
+		if anyState(sourceEntries(*s.prov(&o), sid), "present") {
 			ch.Removed = append(ch.Removed, id)
 		}
 	}

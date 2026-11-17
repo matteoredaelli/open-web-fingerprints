@@ -229,3 +229,90 @@ func TestFullSnapshot(t *testing.T) {
 		len(res.Technologies), len(res.Categories), len(res.Fingerprints), len(res.Relationships), codes)
 	validate(t, res)
 }
+
+func conf(v float64) *float64 { return &v }
+
+func TestEquivalentRulesMergeWithProvenance(t *testing.T) {
+	ex := &extractor.ExtractionResult{
+		Technologies: []extractor.ExtractedTechnology{{Key: "A", Name: "A"}},
+		Fingerprints: []extractor.ExtractedFingerprint{
+			// Header names are case-insensitive: same rule.
+			{TechnologyKey: "A", Observation: domain.ObsHTTPHeader, Target: "X-Powered-By", Operator: domain.OpExists, Raw: json.RawMessage(`{"n":1}`), Confidence: conf(0.8)},
+			{TechnologyKey: "A", Observation: domain.ObsHTTPHeader, Target: "x-powered-by", Operator: domain.OpExists, Raw: json.RawMessage(`{"n":2}`), Confidence: conf(0.6)},
+			// Cookie names are case-sensitive: different rule.
+			{TechnologyKey: "A", Observation: domain.ObsCookie, Target: "SID", Operator: domain.OpExists, Raw: json.RawMessage(`{"n":3}`)},
+			{TechnologyKey: "A", Observation: domain.ObsCookie, Target: "sid", Operator: domain.OpExists, Raw: json.RawMessage(`{"n":4}`)},
+		},
+	}
+	n := normalizer.New(normalizer.NewMemoryAllocator())
+	res := normalize(t, n, ex)
+	if len(res.Fingerprints) != 3 {
+		t.Fatalf("fingerprints = %d, want 3", len(res.Fingerprints))
+	}
+	h := res.Fingerprints[0]
+	if len(h.Provenance) != 2 || h.Provenance[0].OriginalID == h.Provenance[1].OriginalID {
+		t.Errorf("provenance: %+v", h.Provenance)
+	}
+	if h.Confidence != 0.6 {
+		t.Errorf("canonical confidence must be the lowest explicit value, got %v", h.Confidence)
+	}
+	got := map[string]int{}
+	for _, w := range res.Warnings {
+		got[w.Code]++
+	}
+	if got["merged_duplicate_rule"] != 1 || got["confidence_disagreement"] != 1 {
+		t.Errorf("warnings: %v", got)
+	}
+	// The ID depends on the meaning of the rule, not on which duplicate came first.
+	rev := &extractor.ExtractionResult{Technologies: ex.Technologies,
+		Fingerprints: []extractor.ExtractedFingerprint{ex.Fingerprints[1], ex.Fingerprints[0]}}
+	again := normalize(t, n, rev)
+	if again.Fingerprints[0].ID != h.ID {
+		t.Errorf("ID must not depend on duplicate order: %s vs %s", again.Fingerprints[0].ID, h.ID)
+	}
+}
+
+func TestSlugsStayStableAndUniqueAcrossSources(t *testing.T) {
+	n := normalizer.New(normalizer.NewMemoryAllocator())
+	ex := func(names ...string) *extractor.ExtractionResult {
+		r := &extractor.ExtractionResult{}
+		for _, nm := range names {
+			r.Technologies = append(r.Technologies, extractor.ExtractedTechnology{Key: nm, Name: nm})
+		}
+		return r
+	}
+	first := normalize(t, n, ex("WordPress"))
+	if first.Technologies[0].Slug != "wordpress" {
+		t.Fatal(first.Technologies[0].Slug)
+	}
+	// Another source with the same name must not take the slug.
+	other := testSource()
+	other.ID = "src_0192f0a0-0000-7000-8000-000000000002"
+	res, err := n.Normalize(normalizer.Input{
+		Source: other, Revision: "r", ImportedAt: importedAt, Extraction: ex("WordPress"),
+		Existing: domain.Records{Technologies: first.Technologies},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.Technologies[0].Slug != "wordpress-2" {
+		t.Errorf("slug = %q, want wordpress-2", res.Technologies[0].Slug)
+	}
+	// Re-importing the first source keeps its slug even though the new
+	// record exists.
+	all := append(append([]domain.Technology{}, first.Technologies...), res.Technologies...)
+	again, err := n.Normalize(normalizer.Input{
+		Source: testSource(), Revision: "r2", ImportedAt: importedAt, Extraction: ex("Brand New", "WordPress"),
+		Existing: domain.Records{Technologies: all},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	slugs := map[string]string{}
+	for _, x := range again.Technologies {
+		slugs[x.Name] = x.Slug
+	}
+	if slugs["WordPress"] != "wordpress" || slugs["Brand New"] != "brand-new" {
+		t.Errorf("slugs: %v", slugs)
+	}
+}

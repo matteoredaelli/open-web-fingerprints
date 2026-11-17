@@ -12,6 +12,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/matteoredaelli/open-web-fingerprints/internal/domain"
+	"github.com/matteoredaelli/open-web-fingerprints/internal/repository"
+	"github.com/matteoredaelli/open-web-fingerprints/internal/repository/sqlite"
 	"github.com/matteoredaelli/open-web-fingerprints/schemas"
 )
 
@@ -111,6 +114,22 @@ func TestEndToEnd(t *testing.T) {
 		t.Errorf("validate: %s", out)
 	}
 
+	if out := mustRun(t, db, "conflict", "list"); !strings.Contains(out, "0 conflicts") {
+		t.Errorf("a single source has nothing to reconcile: %s", out)
+	}
+	seedConflicts(t, db)
+	out = mustRun(t, db, "conflict", "list")
+	if !strings.Contains(out, "identity_candidate") || !strings.Contains(out, "2 conflicts") {
+		t.Errorf("conflict list: %s", out)
+	}
+	out = mustRun(t, db, "conflict", "list", "--websites", "different", "--state", "open")
+	if !strings.Contains(out, "1 conflicts") || !strings.Contains(out, "wordpress") {
+		t.Errorf("filtered list: %s", out)
+	}
+	if out := mustRun(t, db, "stats"); !strings.Contains(out, "open conflicts  1") {
+		t.Errorf("stats must count open conflicts: %s", out)
+	}
+
 	exp := filepath.Join(t.TempDir(), "registry.json")
 	mustRun(t, db, "export", "--format", "json", "-o", exp)
 	b, err := os.ReadFile(exp) //nolint:gosec // test temp file
@@ -142,5 +161,30 @@ func TestImportErrors(t *testing.T) {
 		if _, err := run(t, db, args...); err == nil {
 			t.Errorf("%s: expected error", name)
 		}
+	}
+}
+
+// seedConflicts stores one open and one ignored conflict, as a second source
+// would produce.
+func seedConflicts(t *testing.T, db string) {
+	t.Helper()
+	ctx := context.Background()
+	r, err := sqlite.Open(ctx, db)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = r.Close() }()
+	now := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
+	mk := func(id, state, websites string) domain.Conflict {
+		return domain.Conflict{
+			ID: domain.ConflictID(id), Kind: domain.ConflictIdentityCandidate, State: state,
+			RecordIDs: []string{"tech_a", "tech_b"}, SourceIDs: []domain.SourceID{"src_1", "src_2"},
+			Detail: map[string]string{"identity": "wordpress", "websites": websites}, CreatedAt: now, UpdatedAt: now,
+		}
+	}
+	if err := r.Apply(ctx, repository.ChangeSet{Conflicts: []domain.Conflict{
+		mk("cfl_1", domain.ConflictOpen, "different"), mk("cfl_2", domain.ConflictIgnored, "same_domain"),
+	}}); err != nil {
+		t.Fatal(err)
 	}
 }

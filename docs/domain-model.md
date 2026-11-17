@@ -234,3 +234,11 @@ fingerprints, 2289 relationships, valid and idempotent. Real-data finding:
 
 Not implemented yet: snapshot fetching (`source add|refresh`),
 `fingerprint diff`, vendors, and deduplication across sources.
+
+## Reconciliation, step 1 (implemented)
+
+See [dedup-design.md](dedup-design.md). Records of different sources are
+never merged automatically. Equivalent rules of one source share a canonical
+ID derived from the semantic key, with one provenance entry per upstream
+rule. Conflicts are internal review items and are not part of the public
+schema 0.1.0.
