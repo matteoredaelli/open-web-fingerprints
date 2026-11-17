@@ -1,0 +1,29 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<fingerprints matches="favicon.md5">
+  <!--
+  This fingerprint set matches favicon.ico files based on their MD5 hash
+  -->
+
+  <!-- Services -->
+
+  <fingerprint pattern="^(?:4297c114f263c206ed12aaff4b0c7a50|e5af3b68e837498a85b25ef2c36a0825)$">
+    <description>Metabase</description>
+    <example>4297c114f263c206ed12aaff4b0c7a50</example>
+    <example>e5af3b68e837498a85b25ef2c36a0825</example>
+    <param pos="0" name="service.product" value="Metabase"/>
+    <param pos="0" name="service.vendor" value="Metabase"/>
+    <param pos="0" name="service.cpe23" value="cpe:/a:metabase:metabase:-"/>
+  </fingerprint>
+<fingerprint pattern="^(?:268ee26a1219a611828d5fd4bc4d69c0|5a84c349c00d95c8ebd174ded3b50a86|2b37c7f35285c341ec1f2cf7e40a3c22|23e8c7bd78e8cd826c5a6073b15068b1)$">
+    <description>Jenkins</description>
+    <example>268ee26a1219a611828d5fd4bc4d69c0</example>
+    <example>5a84c349c00d95c8ebd174ded3b50a86</example>
+    <example>2b37c7f35285c341ec1f2cf7e40a3c22</example>
+    <example>23e8c7bd78e8cd826c5a6073b15068b1</example>
+    <param pos="0" name="service.vendor" value="Jenkins"/>
+    <param pos="0" name="service.product" value="Jenkins"/>
+    <param pos="0" name="service.certainty" value="0.5"/>
+    <param pos="0" name="service.cpe23" value="cpe:/a:jenkins:jenkins:-"/>
+  </fingerprint>
+
+</fingerprints>

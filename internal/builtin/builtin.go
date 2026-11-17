@@ -11,6 +11,7 @@ import (
 
 	"github.com/matteoredaelli/open-web-fingerprints/internal/domain"
 	"github.com/matteoredaelli/open-web-fingerprints/internal/extractor"
+	"github.com/matteoredaelli/open-web-fingerprints/internal/extractor/recog"
 	"github.com/matteoredaelli/open-web-fingerprints/internal/extractor/wappalyzer"
 )
 
@@ -55,6 +56,16 @@ func Sources() []Entry {
 			Notes: "Fork of the last open-source Wappalyzer, used for the HTTP Archive crawl. It shares an ancestor with Enthec, so agreement between the two is not independent evidence. Lineage and license need legal review (docs/sources.md).",
 		},
 		Branch: "main", SparsePaths: sparse, IncludeFile: include,
+	}, {
+		Source: domain.Source{
+			Slug: "rapid7-recog", Name: "Rapid7 Recog",
+			URL:         "https://github.com/rapid7/recog",
+			License:     "BSD-2-Clause",
+			ExtractorID: recog.ID, Redistributable: "unreviewed",
+			Notes: "Banner, header, cookie, title and favicon fingerprints that give product, vendor, version and CPE. Only the web databases are read. The repository states BSD-2-Clause in debian/copyright (the GitHub API reports none); the data has many contributors, so it still needs review (docs/sources.md).",
+		},
+		Branch: "main", SparsePaths: []string{"xml"},
+		IncludeFile: func(p string) bool { return recog.IsDatabase(p) },
 	}}
 	sort.Slice(out, func(i, j int) bool { return out[i].Source.Slug < out[j].Source.Slug })
 	return out
@@ -73,8 +84,10 @@ func Find(slug string) (Entry, bool) {
 // Extractors returns a registry with every built-in extractor.
 func Extractors() *extractor.Registry {
 	r := extractor.NewRegistry()
-	if err := r.Register(wappalyzer.New()); err != nil {
-		panic(err) // static registration cannot collide
+	for _, e := range []extractor.Extractor{wappalyzer.New(), recog.New()} {
+		if err := r.Register(e); err != nil {
+			panic(err) // static registration cannot collide
+		}
 	}
 	return r
 }

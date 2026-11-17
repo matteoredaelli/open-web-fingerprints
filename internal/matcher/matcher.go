@@ -118,7 +118,15 @@ func candidates(f domain.Fingerprint, o *Observation, d *derived) (vals []string
 	case domain.ObsRobots:
 		return text(o.Robots)
 	case domain.ObsFaviconHash:
+		if f.Target != "" {
+			v, ok := o.FaviconHashes[f.Target]
+			return one(v, ok)
+		}
 		return text(o.FaviconHash)
+	case "set_cookie":
+		return many(o.SetCookies)
+	case "page_title":
+		return text(d.title)
 	case domain.ObsProbeResponse:
 		if f.Probe == nil {
 			return nil, false, fmt.Errorf("probe_response rule without probe")

@@ -46,6 +46,13 @@ type Observation struct {
 	XHR         []string            `json:"xhr,omitempty"`
 	Robots      string              `json:"robots,omitempty"`
 	FaviconHash string              `json:"favicon_hash,omitempty"`
+	// FaviconHashes holds hashes by algorithm ("md5"); a rule's target names
+	// the algorithm. FaviconHash is used when the target is empty.
+	FaviconHashes map[string]string `json:"favicon_hashes,omitempty"`
+	// SetCookies are the raw Set-Cookie header lines, one per cookie.
+	SetCookies []string `json:"set_cookies,omitempty"`
+	// Title is the page title, derived from the HTML unless given.
+	Title string `json:"title,omitempty"`
 	// Probes holds recorded answers to active probes, by path. Nothing is
 	// ever requested: these come from fixtures.
 	Probes map[string]ProbeResponse `json:"probes,omitempty"`
@@ -65,6 +72,7 @@ type derived struct {
 	stylesheets   []string
 	css           string
 	text          string
+	title         string
 }
 
 func derive(o *Observation) derived {
@@ -86,6 +94,9 @@ func derive(o *Observation) derived {
 	}
 	if o.Text != "" {
 		d.text = o.Text
+	}
+	if o.Title != "" {
+		d.title = o.Title
 	}
 	return d
 }
@@ -126,6 +137,10 @@ func parseHTML(src string, d *derived) {
 				}
 			case "style":
 				raw = "style"
+			case "title":
+				if d.title == "" {
+					raw = "title"
+				}
 			}
 		case html.EndTagToken:
 			raw = ""
@@ -136,6 +151,8 @@ func parseHTML(src string, d *derived) {
 				d.inlineScripts = append(d.inlineScripts, t)
 			case "style":
 				d.css += t
+			case "title":
+				d.title = strings.Join(strings.Fields(t), " ")
 			default:
 				text.WriteString(t)
 				text.WriteByte(' ')

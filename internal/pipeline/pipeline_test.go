@@ -17,6 +17,7 @@ import (
 
 	"github.com/matteoredaelli/open-web-fingerprints/internal/domain"
 	"github.com/matteoredaelli/open-web-fingerprints/internal/extractor"
+	"github.com/matteoredaelli/open-web-fingerprints/internal/extractor/recog"
 	"github.com/matteoredaelli/open-web-fingerprints/internal/extractor/wappalyzer"
 	"github.com/matteoredaelli/open-web-fingerprints/internal/pipeline"
 	"github.com/matteoredaelli/open-web-fingerprints/internal/repository"
@@ -63,8 +64,10 @@ func newRepo(t *testing.T) repository.Repository {
 func setup(t *testing.T) (*pipeline.Pipeline, repository.Repository) {
 	t.Helper()
 	reg := extractor.NewRegistry()
-	if err := reg.Register(wappalyzer.New()); err != nil {
-		t.Fatal(err)
+	for _, e := range []extractor.Extractor{wappalyzer.New(), recog.New()} {
+		if err := reg.Register(e); err != nil {
+			t.Fatal(err)
+		}
 	}
 	repo := newRepo(t)
 	p := pipeline.New(reg, repo)

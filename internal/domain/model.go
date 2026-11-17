@@ -38,6 +38,9 @@ type RegexFlavor string
 const (
 	FlavorRE2        RegexFlavor = "re2"
 	FlavorECMAScript RegexFlavor = "ecmascript"
+	// FlavorPCRE is for Perl/Ruby-style patterns that RE2 cannot run (lookaround,
+	// backreferences, possessive quantifiers).
+	FlavorPCRE RegexFlavor = "pcre"
 )
 
 // Observation is an open set of observation types. Unknown values are kept.

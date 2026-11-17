@@ -65,6 +65,9 @@ These were an open question; the matcher fixes them so they are explicit:
   group 1 is not empty and `b` otherwise;
 - rules flagged `ecmascript` are **not** evaluated (RE2 would give different
   results). They are reported as `unsupported`;
+- `page_title` is the HTML `<title>` (or `input.title`); `set_cookie` is evaluated
+  on each raw `Set-Cookie` line (`input.set_cookies`); a `favicon_hash` rule with
+  a target such as `md5` reads `input.favicon_hashes[target]`;
 - `dom` rules are evaluated on the page's HTML with a CSS selector engine
   (`cascadia`). The target is `selector`, `selector::text`,
   `selector::attr(name)` or `selector::prop(name)`. `exists` means an element
@@ -112,3 +115,12 @@ It is advisory and stores nothing. Enthec `9e52f10`: 23 findings on 22 of
 15836 rules. Many are legitimate (`(.*)` on a version global is an existence
 check, `h2` is a real protocol token), so a finding is a prompt for review and
 not a verdict.
+
+## Upstream examples as a conformance check
+
+Recog ships `<example>` strings with each fingerprint. They are not turned
+into stored validation cases yet, but `go test` runs them against the
+extractor's rules with the matcher (1662 examples on the full snapshot, all
+pass; `OWF_RECOG_SNAPSHOT=<clone> go test ./internal/extractor/recog -run
+FullSnapshot -v`). They are positive examples only, so they cannot give a
+rule `health: ok` by themselves.

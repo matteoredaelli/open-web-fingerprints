@@ -332,3 +332,12 @@ never exports `no`, and writes an `export` section (new optional object in the
 schema) when it was filtered or includes unreviewed data. `owf source review`
 records the decision with a required note; `Source` has new optional
 `review_note` and `reviewed_at`. See [redistribution.md](redistribution.md).
+
+## Recog source and new observation types (implemented)
+
+`regex_flavor` gains `pcre` for patterns that need a backtracking engine and
+come from a Perl/Ruby-style dialect (RE2 cannot run them, and they are not
+ECMAScript). New open observation types: `page_title` (the HTML `<title>`),
+`set_cookie` (a raw `Set-Cookie` line) and `favicon_hash` with the algorithm in
+the target (`md5`). The matcher evaluates them offline; fixtures use `title`,
+`set_cookies` and `favicon_hashes`. See [sources.md](sources.md#recog-imported-rapid7-recog).

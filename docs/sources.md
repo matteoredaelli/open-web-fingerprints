@@ -187,3 +187,54 @@ authentication checks, not fingerprints.
 
 These overlap figures are rough: they match names, not rules. Real rule
 overlap is known only after an extractor exists.
+
+## Recog (imported, `rapid7-recog`)
+
+Extractor: `internal/extractor/recog`. Snapshot `f1191e2`, 3.6 MB, refresh in
+about 2 s. Only the web databases are read: `http_servers`, `http_cookies`,
+`http_xpoweredby`, `http_wwwauth`, `http_header.x-fortisandbox-version`,
+`html_title` and `favicons`. The other 45 databases (SSH, SMTP, SNMP, DHCP,
+x509, JARM, ...) are not web data and are out of scope for now.
+
+| | |
+|---|---|
+| Fingerprints in the 7 databases | 1630 |
+| Imported as rules | 1176 (317 with a version) |
+| Skipped, counted in warnings | 454: 448 identify only an OS or hardware, 6 take the product from a capture group |
+| Technologies | 794 (758 product names; names shared by several vendors are shown as `<vendor> <product>`) |
+| Rules by kind | favicon MD5 460, header 411, page title 226, Set-Cookie line 79 |
+| Vendors | 190, of which 65 already existed from Enthec's CPEs |
+| Identity candidates with Enthec | 74, all with unknown websites: about 9% of Recog's technologies match an Enthec name, so about 720 are new |
+| Patterns RE2 cannot run | 0 |
+
+What is different from the Wappalyzer-format sources:
+
+- **New kinds of observation.** Enthec has no favicon, page title or raw
+  `Set-Cookie` rules. Recog's 686 of them are new data. (Favicon rules carry
+  the algorithm in the target, `md5`.)
+- **Source confidence.** Recog states a preference per database (0.85 to
+  0.90) and, sometimes, a per-fingerprint certainty. Both are kept as the
+  rule's original confidence.
+- **Case sensitivity.** Recog patterns are case-sensitive unless flagged
+  `REG_ICASE`; the registry matches case-insensitively by default, so
+  case-sensitive patterns get an explicit `(?-i)` prefix. Patterns RE2 cannot
+  run would be marked `pcre` (new `regex_flavor`); none of these do.
+- **Product names are not identities.** `Dashboard`, `HTTP`, `Media Server`,
+  `CMS` and `Horizon` are products of several vendors. A technology is a
+  (vendor, product) pair. This was found by importing real data: keying by
+  product name alone merged unrelated products.
+- **Upstream ships its own tests.** Every fingerprint has `<example>` strings
+  (1662 on the imported rules), often with the expected version. They are kept
+  in each rule's raw fragment. As a conformance check, all 1662 pass with the
+  registry's matcher, including version extraction and case sensitivity.
+  That confirms the mapping; it does not show that the rules are free of
+  false positives. The examples are positive only.
+
+Licensing: `debian/copyright` says BSD-2-Clause, Copyright 2014 Rapid7, Inc.
+The GitHub API reports no license for the repository. The data has many
+contributors. The source stays `unreviewed` until someone reviews it; the BSD
+notice must be kept when redistributing.
+
+Not done: the vendor name of a Recog product without a CPE is not used (vendors
+are keyed by CPE identifier), and the operating-system and hardware entries
+(448) are skipped rather than modelled.

@@ -169,6 +169,18 @@
                   }
                 }
               }
+            },
+            "set_cookies": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "title": {
+              "type": "string"
+            },
+            "favicon_hashes": {
+              "$ref": "#/$defs/str_map"
             }
           }
         },

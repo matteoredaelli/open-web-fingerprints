@@ -445,7 +445,8 @@
         "regex_flavor": {
           "enum": [
             "re2",
-            "ecmascript"
+            "ecmascript",
+            "pcre"
           ]
         },
         "version_extract": {

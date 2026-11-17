@@ -1,0 +1,67 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<fingerprints matches="http_header.cookie" protocol="http" database_type="service">
+  <!--
+  Set-Cookie HTTP header values are matched against these patterns to fingerprint HTTP
+  servers.
+  -->
+
+  <fingerprint pattern="^__cfd?uid=">
+    <description>CloudFlare web load balancer endpoint</description>
+    <example>__cfuid=1337</example>
+    <example>__cfduid=dd450f2431e1e611a61a15f68974de9a41618794671; expires=Wed, 19-May-21 01:11:11 GMT; path=/; domain=.foo.bar; HttpOnly; SameSite=Lax</example>
+    <param pos="0" name="service.vendor" value="CloudFlare"/>
+    <param pos="0" name="service.product" value="CloudFlare Load Balancer"/>
+    <param pos="0" name="service.family" value="CloudFlare"/>
+    <param pos="0" name="service.cpe23" value="cpe:/a:cloudflare:load_balancing:-"/>
+  </fingerprint>
+<fingerprint pattern="^(PHPSESSI(?:D|ON))=">
+    <description>PHP - http://www.php.net/ref.session</description>
+    <example cookie="PHPSESSID">PHPSESSID=deleted; expires=Thu, 01-Jan-1970 00:00:01 GMT; Max-Age=0; path=/</example>
+    <example cookie="PHPSESSION">PHPSESSION=vt2ag6n7t6ngvlg8adk4860h46; path=/</example>
+    <param pos="1" name="cookie"/>
+    <param pos="0" name="service.vendor" value="PHP"/>
+    <param pos="0" name="service.family" value="PHP"/>
+    <param pos="0" name="service.product" value="PHP"/>
+    <param pos="0" name="service.cpe23" value="cpe:/a:php:php:-"/>
+  </fingerprint>
+<fingerprint pattern="^(AMWEBJCT!([^!]+)!([^=]+))=">
+    <description>IBM Tivoli Access Manager for e-business WebSEAL
+      http://publib.boulder.ibm.com/infocenter/tivihelp/v2r1/index.jsp?topic=/com.ibm.itame.doc/am60_webseal_admin180.htm
+    </description>
+    <example cookie="AMWEBJCT!%2F4plportal!JSESSIONID" junction.name="%2F4plportal" junction.cookie="JSESSIONID">AMWEBJCT!%2F4plportal!JSESSIONID=fQDCzpljFPMhMVaDUOD+uOBe.undefined; Path=/</example>
+    <param pos="1" name="cookie"/>
+    <param pos="2" name="junction.name"/>
+    <param pos="3" name="junction.cookie"/>
+    <param pos="0" name="service.vendor" value="IBM"/>
+    <param pos="0" name="service.family" value="Tivoli"/>
+    <param pos="0" name="service.product" value="Tivoli Access Manager for e-business WebSEAL"/>
+  </fingerprint>
+<fingerprint pattern="^(JSESSIONIDADMP|admpcsrf)=">
+    <description>ManageEngine ADManager Plus</description>
+    <example cookie="JSESSIONIDADMP">JSESSIONIDADMP=3A92A25349FECF56B7D7D6FF915545B5; Path=/; HttpOnly</example>
+    <example cookie="admpcsrf">admpcsrf=f5fe4a87-0365-4d04-a8e2-87b3c640092e;path=/;priority=high</example>
+    <param pos="1" name="cookie"/>
+    <param pos="0" name="service.vendor" value="ManageEngine"/>
+    <param pos="0" name="service.product" value="ADManager Plus"/>
+    <param pos="0" name="service.cpe23" value="cpe:/a:zohocorp:manageengine_admanager_plus:-"/>
+  </fingerprint>
+<fingerprint pattern="^(JSESSIONIDADAP|adapcsrf)=">
+    <description>ManageEngine ADAudit Plus</description>
+    <example cookie="JSESSIONIDADAP">JSESSIONIDADAP=BB472B7AD767571D913190056ED594CB; Path=/; HttpOnly</example>
+    <example cookie="adapcsrf">adapcsrf=97fcd4a1-078f-487b-bd73-ca492ef05121;path=/;priority=high</example>
+    <param pos="1" name="cookie"/>
+    <param pos="0" name="service.vendor" value="ManageEngine"/>
+    <param pos="0" name="service.product" value="ADAudit Plus"/>
+    <param pos="0" name="service.cpe23" value="cpe:/a:zohocorp:manageengine_adaudit_plus:-"/>
+  </fingerprint>
+<fingerprint pattern="^(JSESSIONIDADSSP|adscsrf)=">
+    <description>ManageEngine ADSelfService Plus</description>
+    <example cookie="JSESSIONIDADSSP">JSESSIONIDADSSP=A7FECBD71C67184E929AF80715C29C20; Path=/; Secure; HttpOnly</example>
+    <example cookie="adscsrf">adscsrf=cffff6b5-bd68-4c35-92ef-e45127e68289;path=/;priority=high</example>
+    <param pos="1" name="cookie"/>
+    <param pos="0" name="service.vendor" value="ManageEngine"/>
+    <param pos="0" name="service.product" value="ADSelfService Plus"/>
+    <param pos="0" name="service.cpe23" value="cpe:/a:zohocorp:manageengine_adselfservice_plus:-"/>
+  </fingerprint>
+
+</fingerprints>

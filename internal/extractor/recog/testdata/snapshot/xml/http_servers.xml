@@ -1,0 +1,102 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<fingerprints matches="http_header.server" protocol="http" database_type="service" preference="0.90">
+  <!-- HTTP Server headers are matched against these patterns to fingerprint HTTP servers. -->
+
+  <fingerprint pattern="^Transmission$">
+    <description>Transmission</description>
+    <example>Transmission</example>
+    <param pos="0" name="service.vendor" value="TransmissionBT"/>
+    <param pos="0" name="service.product" value="Transmission"/>
+    <param pos="0" name="service.cpe23" value="cpe:/a:transmissionbt:transmission:-"/>
+  </fingerprint>
+<fingerprint pattern="^nginx$">
+    <description>nginx without version info</description>
+    <example>nginx</example>
+    <param pos="0" name="service.product" value="nginx"/>
+    <param pos="0" name="service.family" value="nginx"/>
+    <param pos="0" name="service.vendor" value="nginx"/>
+    <param pos="0" name="service.cpe23" value="cpe:/a:f5:nginx:-"/>
+  </fingerprint>
+<fingerprint pattern="^nginx\/?([\d.]+)?">
+    <description>nginx with version info and/or mods</description>
+    <example service.version="0.8.53">nginx/0.8.53 + Phusion Passenger 3.0.0 (mod_rails/mod_rack)</example>
+    <example service.version="0.8.53">nginx/0.8.53</example>
+    <example>nginx + Phusion Passenger 5.1.11</example>
+    <example>nginx + Phusion Passenger</example>
+    <param pos="0" name="service.product" value="nginx"/>
+    <param pos="0" name="service.family" value="nginx"/>
+    <param pos="0" name="service.vendor" value="nginx"/>
+    <param pos="1" name="service.version"/>
+    <param pos="0" name="service.cpe23" value="cpe:/a:f5:nginx:{service.version}"/>
+  </fingerprint>
+<fingerprint pattern="^Microsoft-IIS/([1234]\.0)$">
+    <description>Microsoft IIS 1.0 - 4.0 runs on Windows NT 4.0</description>
+    <example service.version="4.0">Microsoft-IIS/4.0</example>
+    <param pos="0" name="service.vendor" value="Microsoft"/>
+    <param pos="0" name="service.product" value="IIS"/>
+    <param pos="0" name="service.family" value="IIS"/>
+    <param pos="1" name="service.version"/>
+    <param pos="0" name="service.cpe23" value="cpe:/a:microsoft:iis:{service.version}"/>
+    <param pos="0" name="os.vendor" value="Microsoft"/>
+    <param pos="0" name="os.family" value="Windows"/>
+    <param pos="0" name="os.product" value="Windows NT"/>
+    <param pos="0" name="os.version" value="4.0"/>
+    <param pos="0" name="os.cpe23" value="cpe:/o:microsoft:windows_nt:4.0"/>
+  </fingerprint>
+<fingerprint pattern="^Microsoft-IIS/5.0$">
+    <description>Microsoft IIS 5.0 runs on Windows 2000</description>
+    <example>Microsoft-IIS/5.0</example>
+    <param pos="0" name="service.vendor" value="Microsoft"/>
+    <param pos="0" name="service.product" value="IIS"/>
+    <param pos="0" name="service.family" value="IIS"/>
+    <param pos="0" name="service.version" value="5.0"/>
+    <param pos="0" name="service.cpe23" value="cpe:/a:microsoft:iis:5.0"/>
+    <param pos="0" name="os.vendor" value="Microsoft"/>
+    <param pos="0" name="os.family" value="Windows"/>
+    <param pos="0" name="os.product" value="Windows 2000"/>
+    <param pos="0" name="os.cpe23" value="cpe:/o:microsoft:windows_2000:-"/>
+  </fingerprint>
+<fingerprint pattern="^Microsoft-IIS/5.1$">
+    <description>Microsoft IIS 5.1 runs on Windows XP</description>
+    <example>Microsoft-IIS/5.1</example>
+    <param pos="0" name="service.vendor" value="Microsoft"/>
+    <param pos="0" name="service.product" value="IIS"/>
+    <param pos="0" name="service.family" value="IIS"/>
+    <param pos="0" name="service.version" value="5.1"/>
+    <param pos="0" name="service.cpe23" value="cpe:/a:microsoft:iis:5.1"/>
+    <param pos="0" name="os.vendor" value="Microsoft"/>
+    <param pos="0" name="os.family" value="Windows"/>
+    <param pos="0" name="os.product" value="Windows XP"/>
+    <param pos="0" name="os.cpe23" value="cpe:/o:microsoft:windows_xp:-"/>
+  </fingerprint>
+<fingerprint pattern="^BASHttpd/([\d.]+)">
+    <description>BASHttpd</description>
+    <example service.version="4.3.24">BASHttpd/4.3.24-release</example>
+    <param pos="0" name="service.product" value="bashttpd"/>
+    <param pos="0" name="service.vendor" value="Avleen Vig"/>
+    <param pos="1" name="service.version"/>
+  </fingerprint>
+<fingerprint pattern="^Logitech Media Server \(([0-9.]+) - [0-9]+\)$">
+    <description>Logitech Media server</description>
+    <example service.version="7.9.3">Logitech Media Server (7.9.3 - 1586752599)</example>
+    <param pos="0" name="service.vendor" value="Logitech"/>
+    <param pos="0" name="service.product" value="Squeezebox"/>
+    <param pos="1" name="service.version"/>
+  </fingerprint>
+<fingerprint pattern="^Microsoft (Commerce Server\s*(?:2002|2007)?, (?:Enterprise|Standard|Evaluation|Developer) Edition)$">
+    <description>Microsoft Commerce Server</description>
+    <param pos="0" name="service.vendor" value="Microsoft"/>
+    <param pos="1" name="service.product"/>
+    <param pos="0" name="service.family" value="Commerce Server"/>
+    <param pos="0" name="os.vendor" value="Microsoft"/>
+    <param pos="0" name="os.family" value="Windows"/>
+    <param pos="0" name="os.product" value="Windows"/>
+    <param pos="0" name="os.cpe23" value="cpe:/o:microsoft:windows:-"/>
+  </fingerprint>
+<fingerprint pattern="^support@arraynetworks.net$">
+    <description>Array Networks device</description>
+    <example>support@arraynetworks.net</example>
+    <param pos="0" name="service.vendor" value="Array Networks"/>
+  </fingerprint>
+
+</fingerprints>

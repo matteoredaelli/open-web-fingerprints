@@ -169,7 +169,7 @@ func (c *checker) fingerprint(f domain.Fingerprint) {
 			if _, err := regexp.Compile("(?i)" + f.Pattern); err != nil {
 				c.err("invalid_regex", ref, "flavor re2 but pattern does not compile: %v", err)
 			}
-		case domain.FlavorECMAScript:
+		case domain.FlavorECMAScript, domain.FlavorPCRE:
 		default:
 			c.err("missing_regex_flavor", ref, "regex needs a flavor")
 		}

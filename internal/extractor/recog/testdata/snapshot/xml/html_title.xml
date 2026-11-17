@@ -1,0 +1,67 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<fingerprints matches="html_title" protocol="http" database_type="service" preference="0.90">
+  <!-- HTML Title elements found in HTTP response bodies are matched against these patterns to fingerprint HTTP servers. -->
+
+  <fingerprint pattern="^301 Moved Permanently$">
+    <description>301 Moved Permanently - generic -- assert nothing.</description>
+    <example>301 Moved Permanently</example>
+    <param pos="0" name="hw.certainty" value="0.0"/>
+    <param pos="0" name="os.certainty" value="0.0"/>
+    <param pos="0" name="service.certainty" value="0.0"/>
+  </fingerprint>
+<fingerprint pattern="^(?:Elastic\s+)?Kibana$">
+    <description>Kibana Web Interface</description>
+    <example>Kibana</example>
+    <example>Elastic Kibana</example>
+    <param pos="0" name="service.vendor" value="Elastic"/>
+    <param pos="0" name="service.product" value="Kibana"/>
+    <param pos="0" name="service.cpe23" value="cpe:/a:elastic:kibana:-"/>
+  </fingerprint>
+<fingerprint pattern="^Grafana$">
+    <description>Grafana Web Interface</description>
+    <example>Grafana</example>
+    <param pos="0" name="service.vendor" value="Grafana"/>
+    <param pos="0" name="service.product" value="Grafana"/>
+    <param pos="0" name="service.cpe23" value="cpe:/a:grafana:grafana:-"/>
+  </fingerprint>
+<fingerprint pattern="^Metabase$">
+    <description>Metabase</description>
+    <example>Metabase</example>
+    <param pos="0" name="service.vendor" value="Metabase"/>
+    <param pos="0" name="service.product" value="Metabase"/>
+    <param pos="0" name="service.cpe23" value="cpe:/a:metabase:metabase:-"/>
+  </fingerprint>
+<fingerprint pattern="(?:(\S{1,512}):\d{1,5} / \S{1,512} \| )?phpMyAdmin(?: ([\d.]+(?:-[a-zA-Z0-9]+)?(?:\+\d{8}\.[a-f0-9]{4,40})?))?">
+    <description>phpMyAdmin web interface for MySQL and MariaDB</description>
+    <example>phpMyAdmin</example>
+    <example service.version="2.10.0.2">phpMyAdmin 2.10.0.2</example>
+    <example service.version="5.0.0-rc1">phpMyAdmin 5.0.0-rc1</example>
+    <example service.version="5.3.0-dev">phpMyAdmin 5.3.0-dev</example>
+    <example host.name="10.10.10.10" service.version="5.0.4">10.10.10.10:8080 / db.foo.bar | phpMyAdmin 5.0.4</example>
+    <example host.name="localhost" service.version="5.3.0-dev+20220208.47252f9cf8">localhost:8080 / mysql-server | phpMyAdmin 5.3.0-dev+20220208.47252f9cf8</example>
+    <example host.name="[::ffff:10.10.10.10]" service.version="5.3.0-dev+20220208.47252f9cf8">[::ffff:10.10.10.10]:8080 / mysql-server | phpMyAdmin 5.3.0-dev+20220208.47252f9cf8</example>
+    <param pos="0" name="service.vendor" value="phpMyAdmin"/>
+    <param pos="0" name="service.product" value="phpMyAdmin"/>
+    <param pos="1" name="host.name"/>
+    <param pos="2" name="service.version"/>
+    <param pos="0" name="service.cpe23" value="cpe:/a:phpmyadmin:phpmyadmin:{service.version}"/>
+  </fingerprint>
+<fingerprint pattern="^Windows CE$">
+    <description>Windows CE</description>
+    <example>Windows CE</example>
+    <param pos="0" name="os.vendor" value="Microsoft"/>
+    <param pos="0" name="os.family" value="Windows"/>
+    <param pos="0" name="os.product" value="Windows CE"/>
+    <param pos="0" name="os.cpe23" value="cpe:/o:microsoft:windows_ce:-"/>
+  </fingerprint>
+<fingerprint pattern="(?i)^(?:Dell )?Sonicwall - Authentication$">
+    <description>Sonicwall firewalls</description>
+    <example>SonicWall - Authentication</example>
+    <param pos="0" name="os.vendor" value="SonicWall"/>
+    <param pos="0" name="os.device" value="Firewall"/>
+    <param pos="0" name="os.family" value="SonicOS"/>
+    <param pos="0" name="os.product" value="SonicOS"/>
+    <param pos="0" name="os.cpe23" value="cpe:/o:sonicwall:sonicos:-"/>
+  </fingerprint>
+
+</fingerprints>

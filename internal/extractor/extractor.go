@@ -13,6 +13,7 @@ import (
 	"context"
 	"encoding/json"
 	"io/fs"
+	"regexp"
 
 	"github.com/matteoredaelli/open-web-fingerprints/internal/domain"
 )
@@ -124,4 +125,15 @@ type ExtractedRelationship struct {
 	Confidence      *float64 // nil when the source gives none
 	File            string
 	Raw             json.RawMessage
+}
+
+// RegexFlavorFor reports whether a pattern runs under RE2 and otherwise
+// returns fallback, the flavor of the source's own regex dialect. Matching is
+// case-insensitive in the registry's semantics, so (?i) is applied for the
+// check.
+func RegexFlavorFor(pattern string, fallback domain.RegexFlavor) domain.RegexFlavor {
+	if _, err := regexp.Compile("(?i)" + pattern); err != nil {
+		return fallback
+	}
+	return domain.FlavorRE2
 }
