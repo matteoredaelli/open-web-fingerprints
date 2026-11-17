@@ -138,7 +138,7 @@ below needs a legal review before any data is redistributed (see AGENTS.md).
 
 - Legal review of data lineage (Wappalyzer MIT → GPL) and of WhatWeb's
   per-plugin redistribution terms.
-- Does Enthec's GPL-3.0 apply to the data, and will a GPL-licensed data set
-  force the same terms on exports? Decide the license of published data
-  (for example, separate data license vs. code license).
+- **Decided:** published data uses the same license as the code
+  (GPL-3.0-or-later). Sources with incompatible or unclear terms are not
+  redistributed until reviewed. WhatWeb is the main open case.
 - Pin snapshots by commit SHA and store a checksum of each imported file.
