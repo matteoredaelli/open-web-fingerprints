@@ -1,0 +1,88 @@
+id: favicon-detect
+
+info:
+  name: favicon-detection
+  author: un-fmunozs,DhiyaneshDk,idealphase,rxerium
+  severity: info
+  reference:
+    - https://twitter.com/brsn76945860/status/1171233054951501824
+    - https://gist.github.com/yehgdotnet/b9dfc618108d2f05845c4d8e28c5fc6a
+    - https://medium.com/@Asm0d3us/weaponizing-favicon-ico-for-bugbounties-osint-and-what-not-ace3c214e139
+    - https://github.com/devanshbatham/FavFreak
+    - https://github.com/sansatart/scrapts/blob/master/shodan-favicon-hashes.csv
+  metadata:
+    max-request: 2
+  tags: tech,favicon,discovery
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/favicon.ico"
+      - "{{BaseURL}}/images/favicon.ico"
+
+    stop-at-first-match: true
+    host-redirects: true
+    max-redirects: 2
+    matchers:
+
+      - type: dsl
+        name: "skysea-clientview"
+        dsl:
+          - "status_code==200 && (\"385597939\" == mmh3(base64_py(body)))"
+
+      - type: dsl
+        name: "ictbroadcast"
+        dsl:
+          - "status_code==200 && (\"-60395993\" == mmh3(base64_py(body)))"
+
+      - type: dsl
+        name: "brightdata-proxies"
+        dsl:
+          - "status_code==200 && (\"394527072\" == mmh3(base64_py(body)))"
+
+      - type: dsl
+        name: "proxmox"
+        dsl:
+          - "status_code==200 && (\"213144638\" == mmh3(base64_py(body)))"
+
+      - type: dsl
+        name: "blogger"
+        dsl:
+          - "status_code==200 && (\"-503480258\" == mmh3(base64_py(body)))"
+
+      - type: dsl
+        name: "oracle"
+        dsl:
+          - "status_code==200 && (\"1414300307\" == mmh3(base64_py(body)))"
+
+      - type: dsl
+        name: "hitachi"
+        dsl:
+          - "status_code==200 && (\"92627686\" == mmh3(base64_py(body)))"
+
+      - type: dsl
+        name: "hitachi-management"
+        dsl:
+          - "status_code==200 && (\"94231047\" == mmh3(base64_py(body)))"
+
+      - type: dsl
+        name: "meinberg"
+        dsl:
+          - "status_code==200 && (\"-676779906\" == mmh3(base64_py(body)))"
+
+      - type: dsl
+        name: "slack-instance"
+        dsl:
+          - "status_code==200 && (\"99395752\" == mmh3(base64_py(body)))"
+
+      - type: dsl
+        name: "spring-boot"
+        dsl:
+          - "status_code==200 && (\"116323821\" == mmh3(base64_py(body)))"
+
+
+      - type: dsl
+        name: "cnservers-llc"
+        dsl:
+          - "status_code==200 && (\"-235701012\" == mmh3(base64_py(body)))"
+

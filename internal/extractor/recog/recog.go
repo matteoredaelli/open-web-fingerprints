@@ -160,7 +160,7 @@ func (x *Extractor) Extract(ctx context.Context, src extractor.Source) (*extract
 	if read == 0 {
 		return nil, fmt.Errorf("recog: no Recog database found under xml/")
 	}
-	qualified := qualifyNames(res, vendors)
+	qualified := extractor.QualifyNames(res, vendors)
 	res.Metadata["databases"] = read
 	res.Metadata["qualified_names"] = qualified
 	return res, nil
@@ -305,36 +305,14 @@ func parseUnit(s string) *float64 {
 	return &v
 }
 
-// cpeOf converts a literal service.cpe23 value (CPE 2.2 URI or 2.3 string)
-// into a CPE 2.3 string with only the part, vendor and product. Values with
-// placeholders such as {service.version} keep only what is literal.
+// cpeOf converts a literal service.cpe23 value into a CPE 2.3 string with
+// only the part, vendor and product.
 func cpeOf(ps []paramXML) (string, bool) {
 	v, ok := literal(ps)
 	if !ok {
 		return "", false
 	}
-	var fields []string
-	switch {
-	case strings.HasPrefix(v, "cpe:2.3:"):
-		fields = strings.Split(strings.TrimPrefix(v, "cpe:2.3:"), ":")
-	case strings.HasPrefix(v, "cpe:/"):
-		fields = strings.Split(strings.TrimPrefix(v, "cpe:/"), ":")
-	default:
-		return "", false
-	}
-	if len(fields) < 3 {
-		return "", false
-	}
-	part, vendor, product := fields[0], strings.ToLower(fields[1]), strings.ToLower(fields[2])
-	for _, s := range []string{vendor, product} {
-		if s == "" || s == "*" || s == "-" || strings.ContainsAny(s, `{}%\ `) {
-			return "", false
-		}
-	}
-	if part != "a" && part != "o" && part != "h" {
-		return "", false
-	}
-	return "cpe:2.3:" + part + ":" + vendor + ":" + product + ":*:*:*:*:*:*:*:*", true
+	return extractor.NormalizeCPE(v)
 }
 
 func contains(l []string, s string) bool {
@@ -388,29 +366,4 @@ func mustJSON(v any) json.RawMessage {
 		panic(err) // inputs are plain structs of strings and numbers
 	}
 	return b
-}
-
-// qualifyNames prefixes the vendor to a product name that several vendors use,
-// so that "Dashboard" becomes "Kubernetes Dashboard" and "Ceph Dashboard". A
-// name is not qualified when it already contains the vendor. It returns how
-// many technologies were renamed.
-func qualifyNames(res *extractor.ExtractionResult, vendors map[string]string) int {
-	byName := map[string]map[string]bool{}
-	for _, t := range res.Technologies {
-		n := strings.ToLower(t.Name)
-		if byName[n] == nil {
-			byName[n] = map[string]bool{}
-		}
-		byName[n][strings.ToLower(vendors[t.Key])] = true
-	}
-	renamed := 0
-	for i, t := range res.Technologies {
-		v := vendors[t.Key]
-		if len(byName[strings.ToLower(t.Name)]) < 2 || v == "" || strings.Contains(strings.ToLower(t.Name), strings.ToLower(v)) {
-			continue
-		}
-		res.Technologies[i].Name = v + " " + t.Name
-		renamed++
-	}
-	return renamed
 }

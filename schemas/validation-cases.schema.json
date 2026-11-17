@@ -166,6 +166,9 @@
                   },
                   "body": {
                     "type": "string"
+                  },
+                  "headers": {
+                    "$ref": "#/$defs/str_map"
                   }
                 }
               }

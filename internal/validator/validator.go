@@ -127,6 +127,7 @@ func Validate(r domain.Records) []Issue {
 		}
 		c.fingerprint(f)
 	}
+	c.groups(r.Fingerprints)
 	for _, x := range r.Relationships {
 		dup(string(x.ID))
 		ref := string(x.ID)
@@ -188,6 +189,43 @@ func (c *checker) fingerprint(f domain.Fingerprint) {
 		}
 		if f.Status == domain.StatusActive && p.SafetyReview != "approved" {
 			c.err("unreviewed_probe", ref, "active probe without approved safety review")
+		}
+	}
+}
+
+// groups checks that rules sharing a group ID can hold together: they must be
+// at least two, belong to one technology and look at the same probe path.
+func (c *checker) groups(fps []domain.Fingerprint) {
+	type info struct {
+		n     int
+		tech  domain.TechnologyID
+		probe string
+	}
+	byGroup := map[domain.GroupID]*info{}
+	for _, f := range fps {
+		if f.GroupID == "" {
+			continue
+		}
+		probe := ""
+		if f.Probe != nil {
+			probe = f.Probe.Method + " " + f.Probe.Path
+		}
+		g := byGroup[f.GroupID]
+		if g == nil {
+			byGroup[f.GroupID] = &info{n: 1, tech: f.TechnologyID, probe: probe}
+			continue
+		}
+		g.n++
+		if g.tech != f.TechnologyID {
+			c.err("inconsistent_group", string(f.GroupID), "group spans technologies %s and %s", g.tech, f.TechnologyID)
+		}
+		if g.probe != probe {
+			c.err("inconsistent_group", string(f.GroupID), "group mixes requests %q and %q", g.probe, probe)
+		}
+	}
+	for id, g := range byGroup {
+		if g.n < 2 {
+			c.err("singleton_group", string(id), "a group of one rule is just a rule")
 		}
 	}
 }

@@ -341,3 +341,20 @@ ECMAScript). New open observation types: `page_title` (the HTML `<title>`),
 `set_cookie` (a raw `Set-Cookie` line) and `favicon_hash` with the algorithm in
 the target (`md5`). The matcher evaluates them offline; fixtures use `title`,
 `set_cookies` and `favicon_hashes`. See [sources.md](sources.md#recog-imported-rapid7-recog).
+
+## Nuclei source, groups and new observation types (implemented)
+
+`group_id` is now used: rules that share one must all hold, on the same
+request. A rule inside a group is a different rule from the same condition on
+its own, so the group is part of the semantic key. The validator checks that a
+group has at least two rules, one technology and one probe path.
+`matcher.EvaluateGroup` evaluates a group.
+
+New open observation types: `response_headers` (the raw header block, as
+`Name: value` lines sorted by name), `http_response` (headers and body),
+`http_status` (the status code), and `probe_response` now takes the targets
+`status`, `body`, `headers`, `response`, `content_type` and `server`. Probed
+answers are read whatever their status; only a rule on `status` with the
+`exists` operator means "any 2xx". `favicon_hash` with target `mmh3` carries the
+hash used by Shodan-style databases. See
+[sources.md](sources.md#nuclei-technology-templates-imported-projectdiscovery-nuclei-templates).

@@ -14,6 +14,7 @@ import (
 	"encoding/json"
 	"io/fs"
 	"regexp"
+	"strings"
 
 	"github.com/matteoredaelli/open-web-fingerprints/internal/domain"
 )
@@ -136,4 +137,59 @@ func RegexFlavorFor(pattern string, fallback domain.RegexFlavor) domain.RegexFla
 		return fallback
 	}
 	return domain.FlavorRE2
+}
+
+// NormalizeCPE converts a CPE 2.2 URI ("cpe:/a:f5:nginx:-") or a CPE 2.3
+// string into a CPE 2.3 string that keeps only the part, vendor and product.
+// It returns false when vendor or product is missing, a wildcard or contains a
+// placeholder such as {service.version}.
+func NormalizeCPE(v string) (string, bool) {
+	var fields []string
+	switch {
+	case strings.HasPrefix(v, "cpe:2.3:"):
+		fields = strings.Split(strings.TrimPrefix(v, "cpe:2.3:"), ":")
+	case strings.HasPrefix(v, "cpe:/"):
+		fields = strings.Split(strings.TrimPrefix(v, "cpe:/"), ":")
+	default:
+		return "", false
+	}
+	if len(fields) < 3 {
+		return "", false
+	}
+	part, vendor, product := fields[0], strings.ToLower(fields[1]), strings.ToLower(fields[2])
+	for _, s := range []string{vendor, product} {
+		if s == "" || s == "*" || s == "-" || strings.ContainsAny(s, `{}%\ `) {
+			return "", false
+		}
+	}
+	if part != "a" && part != "o" && part != "h" {
+		return "", false
+	}
+	return "cpe:2.3:" + part + ":" + vendor + ":" + product + ":*:*:*:*:*:*:*:*", true
+}
+
+// QualifyNames prefixes the vendor to a product name that several vendors
+// use, so that "Dashboard" becomes "Kubernetes Dashboard" and "Ceph
+// Dashboard". A name is not qualified when it already contains the vendor.
+// vendorOf maps a technology key to its vendor. It returns how many
+// technologies were renamed.
+func QualifyNames(res *ExtractionResult, vendorOf map[string]string) int {
+	byName := map[string]map[string]bool{}
+	for _, t := range res.Technologies {
+		n := strings.ToLower(t.Name)
+		if byName[n] == nil {
+			byName[n] = map[string]bool{}
+		}
+		byName[n][strings.ToLower(vendorOf[t.Key])] = true
+	}
+	renamed := 0
+	for i, t := range res.Technologies {
+		v := vendorOf[t.Key]
+		if len(byName[strings.ToLower(t.Name)]) < 2 || v == "" || strings.Contains(strings.ToLower(t.Name), strings.ToLower(v)) {
+			continue
+		}
+		res.Technologies[i].Name = v + " " + t.Name
+		renamed++
+	}
+	return renamed
 }

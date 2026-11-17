@@ -11,6 +11,7 @@ import (
 
 	"github.com/matteoredaelli/open-web-fingerprints/internal/domain"
 	"github.com/matteoredaelli/open-web-fingerprints/internal/extractor"
+	"github.com/matteoredaelli/open-web-fingerprints/internal/extractor/nuclei"
 	"github.com/matteoredaelli/open-web-fingerprints/internal/extractor/recog"
 	"github.com/matteoredaelli/open-web-fingerprints/internal/extractor/wappalyzer"
 )
@@ -66,6 +67,18 @@ func Sources() []Entry {
 		},
 		Branch: "main", SparsePaths: []string{"xml"},
 		IncludeFile: func(p string) bool { return recog.IsDatabase(p) },
+	}, {
+		Source: domain.Source{
+			Slug: "projectdiscovery-nuclei-templates", Name: "Nuclei technology templates",
+			URL:         "https://github.com/projectdiscovery/nuclei-templates",
+			License:     "MIT",
+			ExtractorID: nuclei.ID, Redistributable: "unreviewed",
+			Notes: "Only http/technologies is read; CVE, vulnerability, misconfiguration and default-login templates are out of scope. Templates generated from Wappalyzer and FingerprintHub data are skipped. Templates with a path other than the base URL become probes, imported as drafts with a pending safety review. The repository is MIT, but individual templates have many authors and some derive from other projects, so the data still needs review (docs/sources.md).",
+		},
+		Branch: "main", SparsePaths: []string{nuclei.Root},
+		IncludeFile: func(p string) bool {
+			return strings.HasPrefix(p, nuclei.Root+"/") && strings.HasSuffix(p, ".yaml")
+		},
 	}}
 	sort.Slice(out, func(i, j int) bool { return out[i].Source.Slug < out[j].Source.Slug })
 	return out
@@ -84,7 +97,7 @@ func Find(slug string) (Entry, bool) {
 // Extractors returns a registry with every built-in extractor.
 func Extractors() *extractor.Registry {
 	r := extractor.NewRegistry()
-	for _, e := range []extractor.Extractor{wappalyzer.New(), recog.New()} {
+	for _, e := range []extractor.Extractor{wappalyzer.New(), recog.New(), nuclei.New()} {
 		if err := r.Register(e); err != nil {
 			panic(err) // static registration cannot collide
 		}

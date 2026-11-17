@@ -1,0 +1,42 @@
+id: tech-detect
+
+info:
+  name: Wappalyzer Technology Detection
+  author: hakluke,righettod,matejsmycka
+  severity: info
+  metadata:
+    max-request: 1
+  tags: tech,discovery
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    host-redirects: true
+    max-redirects: 2
+
+    matchers-condition: or
+    matchers:
+      - type: regex
+        name: mollom
+        regex:
+          - <img[^>]+\.mollom\.com
+        condition: or
+        part: body
+
+      - type: word
+        name: atlassian-jira
+        words:
+          - "Project Management Software"
+          - "atlassian.com/software/jira"
+        condition: and
+        part: body
+
+      - type: regex
+        name: genexus
+        regex:
+          - <link[^>]+?id="gxtheme_css_reference"
+        condition: or
+        part: body
+

@@ -238,3 +238,60 @@ notice must be kept when redistributing.
 Not done: the vendor name of a Recog product without a CPE is not used (vendors
 are keyed by CPE identifier), and the operating-system and hardware entries
 (448) are skipped rather than modelled.
+
+## Nuclei technology templates (imported, `projectdiscovery-nuclei-templates`)
+
+Extractor: `internal/extractor/nuclei`. Snapshot `91be390`, `http/technologies`
+only (27 MB with git data, about 4 s). The repository is MIT, Copyright 2025
+ProjectDiscovery, Inc. Out of scope by AGENTS.md: CVE, vulnerability,
+misconfiguration and default-login templates, which are exploit or
+authentication checks.
+
+A template is a request plus matchers combined with `and`/`or`. The extractor
+turns that formula into an OR of clauses; a clause with several terms becomes a
+**group** of rules that must all hold (`group_id`), which is what the model had
+been reserving it for. Real data:
+
+| | |
+|---|---|
+| Templates in `http/technologies` | 1164 |
+| Templates that produced at least one rule | 779 (67%); 5 generated ones are not read as products |
+| Technologies | 1421 (775 from the favicon table, the rest from per-product templates) |
+| Rules | 4994 stored (5151 extracted; equivalent rules merged) |
+| Groups | 1627 groups, 3866 grouped rules |
+| Probe rules | 2172, on 304 distinct paths, all `GET`; each is a draft with a pending safety review |
+| Favicon hashes | 765 mmh3 (new: Recog's 460 are md5) |
+| Vendors | 128, of which 63 were already known from CPEs |
+| Identity candidates with Enthec and Recog | 207, so about 85% of the technologies have no name match |
+
+**Skipped, counted in warnings:** payload lists (241 templates, wordlist-driven
+probes), `dsl` outside the supported subset (58 blocks), `POST` (23), raw
+requests (22), request headers or bodies (7), flows (8), negative matchers (3),
+paths with variables (8), and a favicon hash on a probed path (53). A clause is
+all or nothing: if one term cannot be represented the whole clause is dropped,
+because keeping the rest would make the rule match more than the template does.
+
+**Generated templates are not read as products:** `tech-detect` is generated
+from Wappalyzer data (it duplicates the Wappalyzer-format sources and has its
+lineage), `fingerprinthub-web-fingerprints` from FingerprintHub data, and the
+WordPress plugin and theme lists and `waf-detect` are lists of thousands of
+entries. `favicon-detect` is read as a table of favicon hashes (the status
+condition is dropped, because a matching hash already implies a favicon was
+served).
+
+**Not mapped yet: version extractors.** 209 templates have extractors that read
+versions. Their rules detect the product but not the version, so version
+information from this source is missing. The DSL subset is deliberately small.
+Redirect settings of the requests (`host-redirects`, `max-redirects`) are
+ignored, and `{{RootURL}}` is treated like `{{BaseURL}}`.
+
+**Safety.** Probes are only imported, never run by this project. Review them
+before approving: `owf fingerprint list --observation probe_response`, and
+`owf fingerprint lint` flags the 83 whose path has a query string. Several
+paths are error-page triggers or configuration files; a reviewer decides whether
+a probe is harmless before its `safety_review` becomes `approved`.
+
+**Licensing.** The repository license is MIT. Templates have many authors, and
+some derive from other projects; the generated ones that say so are skipped, but
+nothing proves that the others are free of such lineage. The source stays
+`unreviewed`.

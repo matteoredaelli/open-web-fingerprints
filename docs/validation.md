@@ -68,6 +68,14 @@ These were an open question; the matcher fixes them so they are explicit:
 - `page_title` is the HTML `<title>` (or `input.title`); `set_cookie` is evaluated
   on each raw `Set-Cookie` line (`input.set_cookies`); a `favicon_hash` rule with
   a target such as `md5` reads `input.favicon_hashes[target]`;
+- `response_headers` is the raw header block (`Name: value` lines sorted by name),
+  `http_response` is that block, a blank line and the body, `http_status` is the
+  status code; `probe_response` reads the recorded answer to the rule's probe path
+  (`input.probes`) with the targets `status`, `body`, `headers`, `response`,
+  `content_type` and `server`;
+- rules that share a `group_id` hold only together: `matcher.EvaluateGroup`.
+  Validation cases do not select groups yet, so grouped rules cannot get test
+  evidence and stay `unknown`;
 - `dom` rules are evaluated on the page's HTML with a CSS selector engine
   (`cascadia`). The target is `selector`, `selector::text`,
   `selector::attr(name)` or `selector::prop(name)`. `exists` means an element

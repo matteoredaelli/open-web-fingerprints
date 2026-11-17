@@ -86,3 +86,14 @@ func TestEcmaScriptRegexNeedsNoCompile(t *testing.T) {
 		t.Fatalf("unexpected: %v", issues)
 	}
 }
+
+func TestAConsistentGroupIsValid(t *testing.T) {
+	r := valid()
+	second := r.Fingerprints[0]
+	second.ID = "fp_2"
+	r.Fingerprints[0].GroupID, second.GroupID = "fpg_1", "fpg_1"
+	r.Fingerprints = append(r.Fingerprints, second)
+	if issues := Validate(r); len(issues) != 0 {
+		t.Fatalf("unexpected: %v", issues)
+	}
+}

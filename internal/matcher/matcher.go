@@ -127,18 +127,17 @@ func candidates(f domain.Fingerprint, o *Observation, d *derived) (vals []string
 		return many(o.SetCookies)
 	case "page_title":
 		return text(d.title)
-	case domain.ObsProbeResponse:
-		if f.Probe == nil {
-			return nil, false, fmt.Errorf("probe_response rule without probe")
-		}
-		r, ok := o.Probes[f.Probe.Path]
-		if !ok || r.Status < 200 || r.Status > 299 {
+	case "response_headers":
+		return text(headerBlock(o.Headers))
+	case "http_response":
+		return text(headerBlock(o.Headers) + "\n\n" + o.HTML)
+	case "http_status":
+		if o.Status == 0 {
 			return nil, false, nil
 		}
-		if f.Target == "body" {
-			return one(r.Body, true)
-		}
-		return one(fmt.Sprint(r.Status), true)
+		return one(fmt.Sprint(o.Status), true)
+	case domain.ObsProbeResponse:
+		return probeValues(f, o)
 	}
 	return nil, false, fmt.Errorf("%w: observation %q", ErrUnsupported, f.Observation)
 }
@@ -185,4 +184,65 @@ func renderVersion(tpl string, groups []string) string {
 		return m[3]
 	}
 	return groupRE.ReplaceAllStringFunc(tpl, func(s string) string { return group(s[1:]) })
+}
+
+// probeValues reads the recorded answer to a rule's probe. The target says what
+// the rule looks at: status, body, headers (the raw block), response (headers
+// and body), content_type or server. A rule with target "status" and the
+// exists operator means "the path answers": any 2xx status.
+func probeValues(f domain.Fingerprint, o *Observation) (vals []string, present bool, err error) {
+	if f.Probe == nil {
+		return nil, false, fmt.Errorf("probe_response rule without probe")
+	}
+	r, ok := o.Probes[f.Probe.Path]
+	if !ok {
+		return nil, false, nil
+	}
+	switch f.Target {
+	case "body":
+		return []string{r.Body}, r.Body != "", nil
+	case "headers":
+		b := headerBlock(r.Headers)
+		return []string{b}, b != "", nil
+	case "response":
+		return []string{headerBlock(r.Headers) + "\n\n" + r.Body}, true, nil
+	case "content_type", "server":
+		name := map[string]string{"content_type": "Content-Type", "server": "Server"}[f.Target]
+		v, ok := headerValue(r.Headers, name)
+		return []string{v}, ok, nil
+	case "status", "":
+		exists := r.Status >= 200 && r.Status <= 299
+		if f.Operator != domain.OpExists {
+			exists = r.Status != 0
+		}
+		return []string{fmt.Sprint(r.Status)}, exists, nil
+	}
+	return nil, false, fmt.Errorf("%w: probe target %q", ErrUnsupported, f.Target)
+}
+
+// EvaluateGroup applies rules that must all hold together (they share a
+// group ID). It matches only if every rule matches; the version comes from the
+// first rule that yields one. An unsupported rule makes the group unsupported.
+func EvaluateGroup(rules []domain.Fingerprint, o *Observation) (Outcome, error) {
+	if len(rules) == 0 {
+		return Outcome{}, fmt.Errorf("empty group")
+	}
+	out := Outcome{Matched: true}
+	for _, r := range rules {
+		got, err := Evaluate(r, o)
+		if err != nil {
+			return Outcome{}, err
+		}
+		if !got.Matched {
+			out.Matched, out.Version = false, ""
+			continue
+		}
+		if out.Version == "" {
+			out.Version = got.Version
+		}
+	}
+	if !out.Matched {
+		out.Version = ""
+	}
+	return out, nil
 }

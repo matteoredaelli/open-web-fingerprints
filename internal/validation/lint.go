@@ -24,6 +24,7 @@ const (
 	PatternTooShort   = "pattern_too_short"
 	UbiquitousHeader  = "ubiquitous_header"
 	UbiquitousMeta    = "ubiquitous_meta"
+	ProbeQuery        = "probe_query"
 )
 
 // Headers and meta names that almost every site has: an "exists" rule on
@@ -69,6 +70,9 @@ func Lint(f domain.Fingerprint) []Finding {
 				add(UbiquitousMeta, "meta "+f.Target+" is present on almost every site")
 			}
 		}
+	}
+	if f.Probe != nil && strings.Contains(f.Probe.Path, "?") {
+		add(ProbeQuery, "the probe path carries a query string; check at review that it is harmless")
 	}
 	return out
 }

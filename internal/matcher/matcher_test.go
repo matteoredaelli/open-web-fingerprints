@@ -200,3 +200,86 @@ func TestDOM(t *testing.T) {
 		t.Errorf("bad selector: %v", err)
 	}
 }
+
+func TestResponseObservationsAndProbeTargets(t *testing.T) {
+	o := &Observation{
+		Status:  200,
+		Headers: map[string]string{"Server": "nginx/1.25", "X-Powered-By": "PHP/8.2"},
+		HTML:    "<html>Welcome to Acme</html>",
+		Probes: map[string]ProbeResponse{
+			"/login": {Status: 403, Headers: map[string]string{"Content-Type": "text/html", "Server": "Acme/2"}, Body: "<title>Acme Login</title>"},
+			"/gone":  {Status: 404},
+		},
+	}
+	probe := func(target string, op domain.Operator, pattern, path string) domain.Fingerprint {
+		f := rule(domain.ObsProbeResponse, target, op, pattern)
+		f.Probe = &domain.Probe{Method: "GET", Path: path, SafetyReview: "pending"}
+		return f
+	}
+	cases := []struct {
+		name  string
+		f     domain.Fingerprint
+		match bool
+	}{
+		{"header block, word", rule("response_headers", "", domain.OpContains, "X-Powered-By: PHP"), true},
+		{"header block, name: value lines", rule("response_headers", "", domain.OpRegex, `(?s)^Server: nginx.*\nX-Powered-By`), true},
+		{"header block, order is by name", rule("response_headers", "", domain.OpRegex, `(?-i)^Server: nginx/1.25\nX-Powered-By: PHP/8.2$`), true},
+		{"header block, case-sensitive word", rule("response_headers", "", domain.OpContains, "x-powered-by"), false},
+		{"whole response, headers then body", rule("http_response", "", domain.OpRegex, `(?s)nginx.*Welcome`), true},
+		{"http status equals", rule("http_status", "", domain.OpEquals, "200"), true},
+		{"http status other", rule("http_status", "", domain.OpEquals, "404"), false},
+		{"http status alternatives", rule("http_status", "", domain.OpRegex, `^(200|301)$`), true},
+		{"probe body, non-2xx still readable", probe("body", domain.OpContains, "Acme Login", "/login"), true},
+		{"probe status is 403", probe("status", domain.OpEquals, "403", "/login"), true},
+		{"probe exists means a 2xx answer", probe("status", domain.OpExists, "", "/login"), false},
+		{"probe exists on a 404", probe("status", domain.OpExists, "", "/gone"), false},
+		{"probe headers", probe("headers", domain.OpContains, "Content-Type: text/html", "/login"), true},
+		{"probe content type", probe("content_type", domain.OpRegex, `^text/`, "/login"), true},
+		{"probe server", probe("server", domain.OpRegex, `^Acme/`, "/login"), true},
+		{"probe whole response", probe("response", domain.OpRegex, `(?s)Acme/2.*Acme Login`, "/login"), true},
+		{"probe not recorded", probe("body", domain.OpContains, "x", "/other"), false},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got, err := Evaluate(tc.f, o)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if got.Matched != tc.match {
+				t.Errorf("matched=%v, want %v", got.Matched, tc.match)
+			}
+		})
+	}
+	// An unknown probe target is reported, not guessed.
+	if _, err := Evaluate(probe("cookie", domain.OpExists, "", "/login"), o); !errors.Is(err, ErrUnsupported) {
+		t.Errorf("unknown probe target: %v", err)
+	}
+	// No status recorded, no status rule match.
+	if got, _ := Evaluate(rule("http_status", "", domain.OpEquals, "200"), &Observation{}); got.Matched {
+		t.Error("an observation without a status cannot match a status rule")
+	}
+}
+
+func TestEvaluateGroup(t *testing.T) {
+	o := &Observation{Status: 200, Headers: map[string]string{"Server": "nginx/1.25.3"}, HTML: "<html>hello</html>"}
+	ver := func(f domain.Fingerprint, v string) domain.Fingerprint { f.VersionExtract = v; return f }
+	server := ver(rule(domain.ObsHTTPHeader, "Server", domain.OpRegex, `nginx/([\d.]+)`), `\1`)
+	status := rule("http_status", "", domain.OpEquals, "200")
+	word := rule(domain.ObsHTML, "", domain.OpContains, "hello")
+	miss := rule(domain.ObsHTML, "", domain.OpContains, "absent")
+
+	got, err := EvaluateGroup([]domain.Fingerprint{status, word, server}, o)
+	if err != nil || !got.Matched || got.Version != "1.25.3" {
+		t.Errorf("all rules hold: %+v err=%v", got, err)
+	}
+	got, err = EvaluateGroup([]domain.Fingerprint{status, miss, server}, o)
+	if err != nil || got.Matched || got.Version != "" {
+		t.Errorf("one rule fails, the group fails and has no version: %+v err=%v", got, err)
+	}
+	if _, err := EvaluateGroup([]domain.Fingerprint{status, rule(domain.ObsDOM, "a::prop(x)", domain.OpExists, "")}, o); !errors.Is(err, ErrUnsupported) {
+		t.Errorf("unsupported member: %v", err)
+	}
+	if _, err := EvaluateGroup(nil, o); err == nil {
+		t.Error("an empty group is an error")
+	}
+}

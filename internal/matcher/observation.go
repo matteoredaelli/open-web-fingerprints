@@ -17,6 +17,7 @@
 package matcher
 
 import (
+	"sort"
 	"strings"
 
 	"golang.org/x/net/html"
@@ -60,8 +61,33 @@ type Observation struct {
 
 // ProbeResponse is a recorded answer to a probe.
 type ProbeResponse struct {
-	Status int    `json:"status"`
-	Body   string `json:"body,omitempty"`
+	Status  int               `json:"status"`
+	Headers map[string]string `json:"headers,omitempty"`
+	Body    string            `json:"body,omitempty"`
+}
+
+// headerBlock renders headers as "Name: value" lines sorted by name, the form
+// that rules on the raw header block (word matchers, for example) read.
+func headerBlock(h map[string]string) string {
+	names := make([]string, 0, len(h))
+	for k := range h {
+		names = append(names, k)
+	}
+	sort.Slice(names, func(i, j int) bool { return strings.ToLower(names[i]) < strings.ToLower(names[j]) })
+	var b strings.Builder
+	for _, k := range names {
+		b.WriteString(k + ": " + h[k] + "\n")
+	}
+	return strings.TrimSuffix(b.String(), "\n")
+}
+
+func headerValue(h map[string]string, name string) (string, bool) {
+	for k, v := range h {
+		if strings.EqualFold(k, name) {
+			return v, true
+		}
+	}
+	return "", false
 }
 
 // derived holds values extracted from the HTML once.

@@ -135,7 +135,11 @@ func newFingerprintLintCmd(o *options) *cobra.Command {
 						break
 					}
 					ru := rules[f.RuleID]
-					fmt.Fprintf(out, "  %s: %s %s %q\n", name[ru.TechnologyID], ru.Observation, ru.Target, ru.Pattern)
+					where := ""
+					if ru.Probe != nil {
+						where = " (" + ru.Probe.Method + " " + ru.Probe.Path + ")"
+					}
+					fmt.Fprintf(out, "  %s: %s %s %q%s\n", name[ru.TechnologyID], ru.Observation, ru.Target, ru.Pattern, where)
 				}
 			}
 			return nil

@@ -43,6 +43,7 @@ func TestSemanticKeyFields(t *testing.T) {
 		"operator":   func(f *Fingerprint) { f.Operator = OpContains },
 		"flavor":     func(f *Fingerprint) { f.RegexFlavor = FlavorECMAScript },
 		"version":    func(f *Fingerprint) { f.VersionExtract = `\2` },
+		"group":      func(f *Fingerprint) { f.GroupID = "fpg_1" },
 	} {
 		other := base
 		mut(&other)

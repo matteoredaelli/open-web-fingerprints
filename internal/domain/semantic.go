@@ -25,12 +25,14 @@ func NormalizeTarget(o Observation, target string) string {
 // SemanticKey identifies what a rule means, independently of names, wording
 // or source. Two fingerprints of the same technology with equal keys are the
 // same rule. Patterns are compared as strings: no regex rewriting is done,
-// so different strings are never assumed equivalent.
+// so different strings are never assumed equivalent. A rule that is part of a
+// group (rules that must hold together) is a different rule from the same
+// condition on its own, so the group is part of the key.
 func (f Fingerprint) SemanticKey() string {
 	h := sha256.New()
 	h.Write([]byte(strings.Join([]string{
 		string(f.TechnologyID), string(f.Observation), NormalizeTarget(f.Observation, f.Target),
-		string(f.Operator), f.Pattern, string(f.RegexFlavor), f.VersionExtract,
+		string(f.Operator), f.Pattern, string(f.RegexFlavor), f.VersionExtract, string(f.GroupID),
 	}, "\x1f")))
 	return hex.EncodeToString(h.Sum(nil))[:32]
 }
