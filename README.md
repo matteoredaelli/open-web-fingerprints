@@ -3,8 +3,8 @@
 Open registry and toolkit for cataloguing web technologies and infrastructure
 and the fingerprints used to identify them.
 
-Status: **early development**. The local pipeline works end to end for one
-source (Enthec WebAppAnalyzer): import, diff, SQLite storage, JSON export. See [AGENTS.md](AGENTS.md) for goals,
+Status: **early development**. The local pipeline works end to end for two
+sources (Enthec WebAppAnalyzer, HTTP Archive Wappalyzer): import, diff, SQLite storage, JSON export. See [AGENTS.md](AGENTS.md) for goals,
 architecture and roadmap.
 
 ## Development
@@ -38,8 +38,13 @@ owf conflict list --state open               # candidates from other sources
 owf conflict resolve --all --websites same_domain --merge --dry-run
 owf fingerprint test validation/cases --apply   # store test evidence (see docs/validation.md)
 owf fingerprint lint                          # rules likely to match too much
-owf export -o registry.json                   # validated against schemas/
+owf source review <source> --redistributable yes --note "who, what was checked"
+owf export -o registry.json                   # validated against schemas/; refuses unreviewed sources
 ```
+
+Exports only contain data from sources reviewed for redistribution
+(see [docs/redistribution.md](docs/redistribution.md)); `--include-unreviewed`
+lets you export for internal use, and says so in the file.
 
 `--db` or `OWF_DB` selects the database file. `refresh` needs `git` and
 downloads one commit of one branch, only the directories the extractor uses

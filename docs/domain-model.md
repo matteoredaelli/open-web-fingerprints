@@ -324,3 +324,11 @@ concurrent import: run them one at a time.
 
 Not done: merging two vendors that are the same organization under different
 CPE identifiers, and a bulk way to curate (for example from a CSV).
+
+## Redistribution guard (implemented)
+
+`owf export` refuses data from sources whose redistribution is `unreviewed`,
+never exports `no`, and writes an `export` section (new optional object in the
+schema) when it was filtered or includes unreviewed data. `owf source review`
+records the decision with a required note; `Source` has new optional
+`review_note` and `reviewed_at`. See [redistribution.md](redistribution.md).

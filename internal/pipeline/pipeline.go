@@ -182,6 +182,11 @@ func (p *Pipeline) resolveSource(ctx context.Context, s domain.Source) (domain.S
 	}
 	if ok {
 		s.ID = cur.ID
+		// A reviewed redistribution decision belongs to the reviewer; the
+		// catalogue's default must not reset it.
+		if cur.ReviewedAt != nil {
+			s.Redistributable, s.ReviewNote, s.ReviewedAt = cur.Redistributable, cur.ReviewNote, cur.ReviewedAt
+		}
 		return s, nil
 	}
 	id, err := p.Repo.Allocate(domain.KindSource, "", s.Slug)

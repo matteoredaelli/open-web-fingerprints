@@ -405,10 +405,17 @@ func newFingerprintCmd(o *options) *cobra.Command {
 
 func newExportCmd(o *options) *cobra.Command {
 	var format, outPath string
+	var includeUnreviewed bool
 	c := &cobra.Command{
 		Use:   "export",
 		Short: "Export the registry as schema-validated JSON",
-		Args:  cobra.NoArgs,
+		Long: "export writes the registry as JSON validated against the published schema.\n" +
+			"Only data from sources whose redistribution has been reviewed as \"yes\" is\n" +
+			"exported. If some source is still unreviewed the command refuses; record the\n" +
+			"decision with `owf source review`, or pass --include-unreviewed for internal use\n" +
+			"(the file then says so in its `export` section). Sources marked \"no\" are never\n" +
+			"exported.",
+		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			if format != "json" {
 				return fmt.Errorf("unsupported format %q (only json)", format)
@@ -418,9 +425,17 @@ func newExportCmd(o *options) *cobra.Command {
 				return err
 			}
 			defer func() { _ = r.Close() }()
-			reg, err := export.Build(cmd.Context(), r, nowFunc())
+			reg, err := export.Build(cmd.Context(), r, nowFunc(), export.Options{IncludeUnreviewed: includeUnreviewed})
 			if err != nil {
 				return err
+			}
+			if reg.Export != nil && len(reg.Export.UnreviewedSources) > 0 {
+				fmt.Fprintf(cmd.ErrOrStderr(), "warning: includes unreviewed sources (%s): %s\n",
+					strings.Join(reg.Export.UnreviewedSources, ", "), "internal use only, do not redistribute")
+			}
+			if reg.Export != nil && (reg.Export.ExcludedRecords > 0 || len(reg.Export.ExcludedSources) > 0) {
+				fmt.Fprintf(cmd.ErrOrStderr(), "note: left out %d records; excluded sources: %s\n",
+					reg.Export.ExcludedRecords, strings.Join(reg.Export.ExcludedSources, ", "))
 			}
 			b, err := export.JSON(reg)
 			if err != nil {
@@ -439,6 +454,7 @@ func newExportCmd(o *options) *cobra.Command {
 	}
 	c.Flags().StringVar(&format, "format", "json", "export format")
 	c.Flags().StringVarP(&outPath, "output", "o", "", "output file (default stdout)")
+	c.Flags().BoolVar(&includeUnreviewed, "include-unreviewed", false, "include sources whose redistribution is unreviewed (internal use only)")
 	return c
 }
 

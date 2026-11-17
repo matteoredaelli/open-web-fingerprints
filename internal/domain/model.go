@@ -77,6 +77,16 @@ type Registry struct {
 	Technologies  []Technology   `json:"technologies"`
 	Fingerprints  []Fingerprint  `json:"fingerprints"`
 	Relationships []Relationship `json:"relationships,omitempty"`
+	Export        *ExportInfo    `json:"export,omitempty"`
+}
+
+// ExportInfo describes what an export contains and what was left out.
+type ExportInfo struct {
+	IncludeUnreviewed bool     `json:"include_unreviewed"`
+	UnreviewedSources []string `json:"unreviewed_sources,omitempty"`
+	ExcludedSources   []string `json:"excluded_sources,omitempty"`
+	ExcludedRecords   int      `json:"excluded_records,omitempty"`
+	Notice            string   `json:"notice,omitempty"`
 }
 
 // Source describes an upstream data source.
@@ -89,6 +99,10 @@ type Source struct {
 	ExtractorID     string   `json:"extractor_id,omitempty"`
 	Redistributable string   `json:"redistributable"` // yes | no | unreviewed
 	Notes           string   `json:"notes,omitempty"`
+	// ReviewNote and ReviewedAt record who decided the redistribution status
+	// and on what basis. A reviewed decision is never reset by an import.
+	ReviewNote string     `json:"review_note,omitempty"`
+	ReviewedAt *time.Time `json:"reviewed_at,omitempty"`
 }
 
 // Snapshot is one retrieved revision of a source.

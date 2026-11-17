@@ -64,6 +64,38 @@
       "items": {
         "$ref": "#/$defs/relationship"
       }
+    },
+    "export": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "include_unreviewed"
+      ],
+      "description": "What this export contains. Present when the export was filtered or includes sources whose redistribution is unreviewed.",
+      "properties": {
+        "include_unreviewed": {
+          "type": "boolean"
+        },
+        "unreviewed_sources": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "excluded_sources": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "excluded_records": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "notice": {
+          "type": "string"
+        }
+      }
     }
   },
   "$defs": {
@@ -153,6 +185,13 @@
         },
         "notes": {
           "type": "string"
+        },
+        "review_note": {
+          "type": "string"
+        },
+        "reviewed_at": {
+          "type": "string",
+          "format": "date-time"
         }
       }
     },

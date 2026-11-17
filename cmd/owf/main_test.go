@@ -6,6 +6,7 @@ package main
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"strings"
@@ -199,7 +200,7 @@ func TestEndToEnd(t *testing.T) {
 	}
 
 	exp := filepath.Join(t.TempDir(), "registry.json")
-	mustRun(t, db, "export", "--format", "json", "-o", exp)
+	mustRun(t, db, "export", "--include-unreviewed", "--format", "json", "-o", exp)
 	b, err := os.ReadFile(exp) //nolint:gosec // test temp file
 	if err != nil {
 		t.Fatal(err)
@@ -208,7 +209,7 @@ func TestEndToEnd(t *testing.T) {
 		t.Fatalf("export violates the schema: %v", err)
 	}
 	again := filepath.Join(t.TempDir(), "registry2.json")
-	mustRun(t, db, "export", "-o", again)
+	mustRun(t, db, "export", "--include-unreviewed", "-o", again)
 	b2, _ := os.ReadFile(again) //nolint:gosec // test temp file
 	if !bytes.Equal(b, b2) {
 		t.Error("exports of the same data must be identical")
@@ -288,13 +289,13 @@ func TestFingerprintTestAndLint(t *testing.T) {
 		!strings.Contains(out, `"expect": "no_match"`) {
 		t.Errorf("evidence missing:\n%s", out)
 	}
-	before := mustRun(t, db, "export")
+	before := mustRun(t, db, "export", "--include-unreviewed")
 	mustRun(t, db, "fingerprint", "test", cases, "--apply")
-	if after := mustRun(t, db, "export"); after != before {
+	if after := mustRun(t, db, "export", "--include-unreviewed"); after != before {
 		t.Error("repeating the same tests must not change the registry")
 	}
 	exp := filepath.Join(t.TempDir(), "r.json")
-	mustRun(t, db, "export", "-o", exp)
+	mustRun(t, db, "export", "--include-unreviewed", "-o", exp)
 	b, _ := os.ReadFile(exp) //nolint:gosec // test temp file
 	if err := schemas.ValidateRegistry(b); err != nil {
 		t.Fatalf("export with test evidence violates the schema: %v", err)
@@ -324,5 +325,98 @@ func TestFingerprintTestAndLint(t *testing.T) {
 	}
 	if out := mustRun(t, db, "fingerprint", "lint", "--json"); !strings.HasPrefix(strings.TrimSpace(out), "[") && !strings.HasPrefix(strings.TrimSpace(out), "null") {
 		t.Errorf("lint json:\n%s", out)
+	}
+}
+
+func TestExportGuardAndSourceReview(t *testing.T) {
+	nowFunc = func() time.Time { return time.Date(2026, 11, 17, 12, 0, 0, 0, time.UTC) }
+	db := filepath.Join(t.TempDir(), "owf.db")
+	mustRun(t, db, "init")
+	slug := "enthec-webappanalyzer"
+
+	// Reviewing a source that was never imported is refused.
+	if _, err := run(t, db, "source", "review", slug, "--redistributable", "yes", "--note", "x"); err == nil {
+		t.Error("review before import must fail")
+	}
+	mustRun(t, db, "import", slug, "--snapshot", fixture, "--revision", "x")
+
+	// Unreviewed data is not exported by default.
+	out, err := run(t, db, "export")
+	if err == nil || !strings.Contains(err.Error(), "enthec-webappanalyzer") || !strings.Contains(err.Error(), "--include-unreviewed") {
+		t.Fatalf("export must be refused, got err=%v\n%s", err, out)
+	}
+	if strings.Contains(out, "technologies") {
+		t.Error("a refused export must write nothing")
+	}
+	out = mustRun(t, db, "export", "--include-unreviewed")
+	for _, want := range []string{`"include_unreviewed": true`, `"unreviewed_sources"`, "do not publish or redistribute"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("export lacks %s", want)
+		}
+	}
+	if err := schemas.ValidateRegistry([]byte(out)); err != nil {
+		t.Fatalf("export with notice violates the schema: %v", err)
+	}
+
+	// A decision needs a basis, and has to be one of the known values.
+	for name, args := range map[string][]string{
+		"no note":      {"source", "review", slug, "--redistributable", "yes"},
+		"blank note":   {"source", "review", slug, "--redistributable", "no", "--note", "  "},
+		"bad value":    {"source", "review", slug, "--redistributable", "maybe", "--note", "x"},
+		"missing flag": {"source", "review", slug},
+		"unknown":      {"source", "review", "nope", "--redistributable", "yes", "--note", "x"},
+	} {
+		if _, err := run(t, db, args...); err == nil {
+			t.Errorf("%s: expected an error", name)
+		}
+	}
+
+	// "yes" opens the export; the file no longer needs the flag or the notice.
+	mustRun(t, db, "source", "review", slug, "--redistributable", "yes", "--note", "legal review LR-12 by counsel, 2026-11-17")
+	out = mustRun(t, db, "export")
+	if strings.Contains(out, "include_unreviewed") || strings.Contains(out, "do not publish") {
+		t.Errorf("a reviewed export needs no notice:\n%s", out[:200])
+	}
+	if !strings.Contains(out, "legal review LR-12") || !strings.Contains(out, `"reviewed_at"`) {
+		t.Error("the basis of the decision must travel with the export")
+	}
+	if info := mustRun(t, db, "source", "info", slug); !strings.Contains(info, "Decision:        yes (reviewed 2026-11-17: legal review LR-12") {
+		t.Errorf("source info:\n%s", info)
+	}
+	if list := mustRun(t, db, "source", "list"); !strings.Contains(list, "yes") {
+		t.Errorf("source list must show the stored decision:\n%s", list)
+	}
+
+	// An import must not reset the reviewed decision.
+	mustRun(t, db, "import", slug, "--snapshot", fixture, "--revision", "x")
+	if _, err := run(t, db, "export"); err != nil {
+		t.Errorf("decision lost after a refresh: %v", err)
+	}
+
+	// "no" excludes the source even with the flag.
+	mustRun(t, db, "source", "review", slug, "--redistributable", "no", "--note", "license forbids redistribution")
+	out, err = run(t, db, "export", "--include-unreviewed")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var doc struct {
+		Technologies []any
+		Sources      []any
+		Export       struct {
+			ExcludedSources []string `json:"excluded_sources"`
+			ExcludedRecords int      `json:"excluded_records"`
+		}
+	}
+	if err := json.Unmarshal([]byte(out), &doc); err != nil {
+		t.Fatal(err)
+	}
+	if len(doc.Technologies) != 0 || len(doc.Sources) != 0 || len(doc.Export.ExcludedSources) != 1 || doc.Export.ExcludedRecords == 0 {
+		t.Errorf("a source marked no must never be exported: %+v", doc)
+	}
+
+	// Withdrawing the decision makes it unreviewed again.
+	mustRun(t, db, "source", "review", slug, "--redistributable", "unreviewed")
+	if _, err := run(t, db, "export"); err == nil {
+		t.Error("an unreviewed source must block the export again")
 	}
 }

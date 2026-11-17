@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/matteoredaelli/open-web-fingerprints/internal/domain"
@@ -23,9 +24,34 @@ const SchemaVersion = "0.1.0"
 // SchemaURL identifies the schema in exported documents.
 const SchemaURL = "https://github.com/matteoredaelli/open-web-fingerprints/schemas/registry.schema.json"
 
+// Options control what an export may contain.
+type Options struct {
+	// IncludeUnreviewed lets the export contain data from sources whose
+	// redistribution status is "unreviewed". Sources marked "no" are never
+	// exported.
+	IncludeUnreviewed bool
+}
+
+// BlockedError means the export was refused because some sources have
+// records but their redistribution has not been reviewed.
+type BlockedError struct {
+	Sources []string // slugs
+}
+
+func (e *BlockedError) Error() string {
+	return fmt.Sprintf("export refused: redistribution of %s has not been reviewed "+
+		"(record the decision with `owf source review`, or pass --include-unreviewed for internal use)",
+		strings.Join(e.Sources, ", "))
+}
+
 // Build assembles the registry document. Output is sorted so that exports of
 // the same data are byte-identical apart from generated_at.
-func Build(ctx context.Context, repo repository.Repository, now time.Time) (domain.Registry, error) {
+//
+// Data is only exported if every source that contributed to a record allows
+// it: "yes", or "unreviewed" with IncludeUnreviewed. A record that any
+// disallowed source contributed to is left out, together with whatever depends
+// on it, and references to left-out records are removed from what remains.
+func Build(ctx context.Context, repo repository.Repository, now time.Time, opt Options) (domain.Registry, error) {
 	srcs, err := repo.Sources(ctx)
 	if err != nil {
 		return domain.Registry{}, fmt.Errorf("export: sources: %w", err)
@@ -34,11 +60,16 @@ func Build(ctx context.Context, repo repository.Repository, now time.Time) (doma
 	if err != nil {
 		return domain.Registry{}, fmt.Errorf("export: records: %w", err)
 	}
+	f, err := filter(srcs, recs, opt)
+	if err != nil {
+		return domain.Registry{}, err
+	}
 	now = now.UTC()
 	reg := domain.Registry{
 		Schema: SchemaURL, SchemaVersion: SchemaVersion, GeneratedAt: &now,
-		Sources: srcs, Vendors: recs.Vendors, Categories: recs.Categories, Technologies: recs.Technologies,
-		Fingerprints: recs.Fingerprints, Relationships: recs.Relationships,
+		Sources: f.sources, Vendors: f.recs.Vendors, Categories: f.recs.Categories,
+		Technologies: f.recs.Technologies, Fingerprints: f.recs.Fingerprints,
+		Relationships: f.recs.Relationships, Export: f.info,
 	}
 	if reg.Sources == nil {
 		reg.Sources = []domain.Source{}
@@ -49,7 +80,7 @@ func Build(ctx context.Context, repo repository.Repository, now time.Time) (doma
 	if reg.Fingerprints == nil {
 		reg.Fingerprints = []domain.Fingerprint{}
 	}
-	for _, s := range srcs {
+	for _, s := range reg.Sources {
 		snaps, err := repo.Snapshots(ctx, s.ID)
 		if err != nil {
 			return domain.Registry{}, fmt.Errorf("export: snapshots: %w", err)
