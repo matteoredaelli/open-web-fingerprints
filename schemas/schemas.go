@@ -1,3 +1,6 @@
+// Copyright 2026 Matteo Redaelli
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 // Package schemas embeds the public JSON Schema of the registry export and
 // offers a validation helper. It does not depend on any domain type.
 package schemas
