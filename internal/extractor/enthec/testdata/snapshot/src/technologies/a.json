@@ -1,17 +1,4 @@
 {
-  "a-blog cms": {
-    "cats": [
-      1
-    ],
-    "icon": "a-blog cms.svg",
-    "implies": [
-      "PHP"
-    ],
-    "meta": {
-      "generator": "a-blog cms"
-    },
-    "website": "https://www.a-blogcms.jp"
-  },
   "A-Frame": {
     "cats": [
       25,
@@ -34,32 +21,6 @@
       "/?([\\d.]+)?/aframe(?:\\.min)?\\.js\\;version:\\1"
     ],
     "website": "https://aframe.io"
-  },
-  "AngularJS": {
-    "cats": [
-      12
-    ],
-    "cpe": "cpe:2.3:a:angularjs:angular.js:*:*:*:*:*:*:*:*",
-    "description": "AngularJS is a JavaScript-based open-source web application framework led by the Angular Team at Google.",
-    "excludes": [
-      "Angular",
-      "AngularDart"
-    ],
-    "html": [
-      "<(?:div|html)[^>]+ng-app=",
-      "<ng-app"
-    ],
-    "icon": "AngularJS.svg",
-    "js": {
-      "angular": "",
-      "angular.version.full": "^(.+)$\\;version:\\1"
-    },
-    "scriptSrc": [
-      "angular[.-]([\\d.]*\\d)[^/]*\\.js\\;version:\\1",
-      "/([\\d.]+(?:-?rc[.\\d]*)*)/angular(?:\\.min)?\\.js\\;version:\\1",
-      "(?!angular\\.io)\\bangular.{0,32}\\.js"
-    ],
-    "website": "https://angularjs.org"
   },
   "AWS Certificate Manager": {
     "cats": [
@@ -100,5 +61,63 @@
     "xhr": [
       "lift\\.acquia\\.com"
     ]
+  },
+  "AdOcean": {
+    "cats": [
+      36
+    ],
+    "icon": "AdOcean.svg",
+    "implies": [
+      "Gemius"
+    ],
+    "js": {
+      "ado.master": "",
+      "ado.placement": "",
+      "ado.slave": ""
+    },
+    "scriptSrc": [
+      "adocean\\.pl/files/js/ado\\.js",
+      "adocean\\.pl\\;confidence:80"
+    ],
+    "website": "https://adocean-global.com"
+  },
+  "AngularJS": {
+    "cats": [
+      12
+    ],
+    "cpe": "cpe:2.3:a:angularjs:angular.js:*:*:*:*:*:*:*:*",
+    "description": "AngularJS is a JavaScript-based open-source web application framework led by the Angular Team at Google.",
+    "excludes": [
+      "Angular",
+      "AngularDart"
+    ],
+    "html": [
+      "<(?:div|html)[^>]+ng-app=",
+      "<ng-app"
+    ],
+    "icon": "AngularJS.svg",
+    "js": {
+      "angular": "",
+      "angular.version.full": "^(.+)$\\;version:\\1"
+    },
+    "scriptSrc": [
+      "angular[.-]([\\d.]*\\d)[^/]*\\.js\\;version:\\1",
+      "/([\\d.]+(?:-?rc[.\\d]*)*)/angular(?:\\.min)?\\.js\\;version:\\1",
+      "(?!angular\\.io)\\bangular.{0,32}\\.js"
+    ],
+    "website": "https://angularjs.org"
+  },
+  "a-blog cms": {
+    "cats": [
+      1
+    ],
+    "icon": "a-blog cms.svg",
+    "implies": [
+      "PHP"
+    ],
+    "meta": {
+      "generator": "a-blog cms"
+    },
+    "website": "https://www.a-blogcms.jp"
   }
 }

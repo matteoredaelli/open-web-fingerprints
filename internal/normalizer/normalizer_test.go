@@ -1,0 +1,230 @@
+// Copyright 2026 Matteo Redaelli
+// SPDX-License-Identifier: GPL-3.0-or-later
+
+package normalizer_test
+
+import (
+	"context"
+	"encoding/json"
+	"os"
+	"reflect"
+	"testing"
+	"time"
+
+	"github.com/matteoredaelli/open-web-fingerprints/internal/domain"
+	"github.com/matteoredaelli/open-web-fingerprints/internal/extractor"
+	"github.com/matteoredaelli/open-web-fingerprints/internal/extractor/enthec"
+	"github.com/matteoredaelli/open-web-fingerprints/internal/normalizer"
+	"github.com/matteoredaelli/open-web-fingerprints/schemas"
+)
+
+var importedAt = time.Date(2026, 11, 17, 12, 0, 0, 0, time.UTC)
+
+func testSource() domain.Source {
+	return domain.Source{
+		ID: "src_0192f0a0-0000-7000-8000-000000000001", Slug: "enthec-webappanalyzer",
+		Name: "Enthec WebAppAnalyzer", License: "GPL-3.0-only", Redistributable: "unreviewed",
+	}
+}
+
+func extractFixture(t *testing.T, dir string) *extractor.ExtractionResult {
+	t.Helper()
+	res, err := enthec.New().Extract(context.Background(), extractor.Source{
+		ID: "enthec-webappanalyzer", Revision: "9e52f10", FS: os.DirFS(dir),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return res
+}
+
+func normalize(t *testing.T, n normalizer.Normalizer, ex *extractor.ExtractionResult) *normalizer.Result {
+	t.Helper()
+	res, err := n.Normalize(normalizer.Input{
+		Source: testSource(), Revision: "9e52f10", ImportedAt: importedAt, Extraction: ex,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return res
+}
+
+func registry(res *normalizer.Result) domain.Registry {
+	gen := importedAt
+	return domain.Registry{
+		SchemaVersion: "0.1.0", GeneratedAt: &gen,
+		Sources: []domain.Source{testSource()},
+		Snapshots: []domain.Snapshot{{
+			SourceID: testSource().ID, Revision: "9e52f10", RetrievedAt: importedAt,
+			Checksum: "sha256:" + string(make([]byte, 0)) + "0000000000000000000000000000000000000000000000000000000000000000",
+		}},
+		Categories: res.Categories, Technologies: res.Technologies,
+		Fingerprints: res.Fingerprints, Relationships: res.Relationships,
+	}
+}
+
+func validate(t *testing.T, res *normalizer.Result) {
+	t.Helper()
+	b, err := json.Marshal(registry(res))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := schemas.ValidateRegistry(b); err != nil {
+		t.Fatalf("normalized output violates schema: %v", err)
+	}
+}
+
+func TestFixtureOutputIsSchemaValid(t *testing.T) {
+	res := normalize(t, normalizer.New(normalizer.NewMemoryAllocator()),
+		extractFixture(t, "../extractor/enthec/testdata/snapshot"))
+	validate(t, res)
+	if len(res.Technologies) != 22 {
+		t.Errorf("technologies = %d", len(res.Technologies))
+	}
+}
+
+func TestIdempotentIDs(t *testing.T) {
+	alloc := normalizer.NewMemoryAllocator()
+	n := normalizer.New(alloc)
+	ex := extractFixture(t, "../extractor/enthec/testdata/snapshot")
+	a := normalize(t, n, ex)
+	b := normalize(t, n, ex)
+	if !reflect.DeepEqual(a, b) {
+		t.Fatal("normalizing the same extraction twice with the same allocator must give identical records")
+	}
+}
+
+func byName(res *normalizer.Result, name string) domain.Technology {
+	for _, x := range res.Technologies {
+		if x.Name == name {
+			return x
+		}
+	}
+	return domain.Technology{}
+}
+
+func TestMapping(t *testing.T) {
+	res := normalize(t, normalizer.New(normalizer.NewMemoryAllocator()),
+		extractFixture(t, "../extractor/enthec/testdata/snapshot"))
+
+	af := byName(res, "A-Frame")
+	if af.Slug != "a-frame" || af.Status != domain.StatusActive || len(af.CategoryIDs) != 2 {
+		t.Errorf("A-Frame: %+v", af)
+	}
+	p := af.Provenance[0]
+	if p.OriginalID != "A-Frame" || p.SnapshotRevision != "9e52f10" || p.License != "GPL-3.0-only" ||
+		p.State != "present" || p.OriginalFile != "src/technologies/a.json" {
+		t.Errorf("provenance: %+v", p)
+	}
+
+	var typo, angular, withConf *domain.Fingerprint
+	typoID := byName(res, "TYPO3 CMS").ID
+	angID := byName(res, "AngularJS").ID
+	for i := range res.Fingerprints {
+		f := &res.Fingerprints[i]
+		switch {
+		case f.TechnologyID == typoID && f.Probe != nil:
+			typo = f
+		case f.TechnologyID == angID && f.RegexFlavor == domain.FlavorECMAScript:
+			angular = f
+		case f.Provenance[0].OriginalConfidence != nil:
+			withConf = f
+		}
+	}
+	if typo == nil || typo.Status != domain.StatusDraft || typo.Probe.SafetyReview != "pending" {
+		t.Errorf("probe must be draft and pending: %+v", typo)
+	}
+	if angular == nil || angular.Status != domain.StatusActive {
+		t.Errorf("ecmascript rule: %+v", angular)
+	}
+	if withConf == nil || withConf.Confidence != *withConf.Provenance[0].OriginalConfidence {
+		t.Errorf("explicit confidence must be preserved: %+v", withConf)
+	}
+	for _, f := range res.Fingerprints {
+		if f.Validation == nil || f.Validation.Health != "unknown" {
+			t.Fatalf("imported rules must start with unknown health: %+v", f)
+		}
+		if f.Provenance[0].OriginalConfidence == nil && f.Confidence != normalizer.DefaultConfidence {
+			t.Fatalf("default confidence not applied: %v", f.Confidence)
+		}
+	}
+}
+
+func TestProbeApprovalIsNeverInherited(t *testing.T) {
+	ex := &extractor.ExtractionResult{
+		Technologies: []extractor.ExtractedTechnology{{Key: "A", Name: "A"}},
+		Fingerprints: []extractor.ExtractedFingerprint{{
+			TechnologyKey: "A", Observation: domain.ObsProbeResponse, Operator: domain.OpExists,
+			Probe: &domain.Probe{Method: "GET", Path: "/x", SafetyReview: "approved"},
+		}},
+	}
+	res := normalize(t, normalizer.New(normalizer.NewMemoryAllocator()), ex)
+	f := res.Fingerprints[0]
+	if f.Probe.SafetyReview != "pending" || f.Status != domain.StatusDraft {
+		t.Errorf("%+v", f)
+	}
+}
+
+func TestWarningsAndSkips(t *testing.T) {
+	ex := &extractor.ExtractionResult{
+		Warnings:     []extractor.Warning{{Code: "from_extractor"}},
+		Categories:   []extractor.ExtractedCategory{{Key: "1", Name: "CMS", ParentKey: "9"}},
+		Technologies: []extractor.ExtractedTechnology{{Key: "A", Name: "A", CategoryKeys: []string{"1", "2"}}, {Key: "B", Name: "a"}},
+		Fingerprints: []extractor.ExtractedFingerprint{
+			{TechnologyKey: "A", Observation: "x", Operator: domain.OpExists, Raw: json.RawMessage(`{"a":1}`)},
+			{TechnologyKey: "A", Observation: "x", Operator: domain.OpExists, Raw: json.RawMessage(`{"a":1}`)},
+			{TechnologyKey: "Z", Observation: "x", Operator: domain.OpExists},
+		},
+		Relationships: []extractor.ExtractedRelationship{
+			{FromKey: "A", ToTechnologyKey: "B", Type: "implies"},
+			{FromKey: "A", ToTechnologyKey: "B", Type: "implies"},
+			{FromKey: "A", ToTechnologyKey: "Nope", Type: "implies"},
+			{FromKey: "A", ToCategoryKey: "77", Type: "requires"},
+			{FromKey: "Q", ToTechnologyKey: "B", Type: "implies"},
+			{FromKey: "A", Type: "implies"},
+		},
+	}
+	res := normalize(t, normalizer.New(normalizer.NewMemoryAllocator()), ex)
+	got := map[string]int{}
+	for _, w := range res.Warnings {
+		got[w.Code]++
+	}
+	for _, want := range []string{"from_extractor", "unknown_parent_category", "unknown_category",
+		"duplicate_rule", "unknown_technology", "duplicate_relationship", "unresolved_relationship", "invalid_relationship"} {
+		if got[want] == 0 {
+			t.Errorf("missing warning %s: %v", want, got)
+		}
+	}
+	if len(res.Fingerprints) != 1 || len(res.Relationships) != 1 {
+		t.Errorf("fingerprints=%d relationships=%d", len(res.Fingerprints), len(res.Relationships))
+	}
+	if res.Technologies[0].Slug != "a" || res.Technologies[1].Slug != "a-2" {
+		t.Errorf("slugs: %q %q", res.Technologies[0].Slug, res.Technologies[1].Slug)
+	}
+}
+
+func TestErrors(t *testing.T) {
+	n := normalizer.New(normalizer.NewMemoryAllocator())
+	if _, err := n.Normalize(normalizer.Input{Source: testSource()}); err == nil {
+		t.Error("nil extraction must fail")
+	}
+	if _, err := n.Normalize(normalizer.Input{Extraction: &extractor.ExtractionResult{}}); err == nil {
+		t.Error("missing source ID must fail")
+	}
+}
+
+// Opt-in: normalize a full local Enthec clone and validate against the schema.
+func TestFullSnapshot(t *testing.T) {
+	dir := os.Getenv("OWF_ENTHEC_SNAPSHOT")
+	if dir == "" {
+		t.Skip("OWF_ENTHEC_SNAPSHOT not set")
+	}
+	res := normalize(t, normalizer.New(normalizer.NewMemoryAllocator()), extractFixture(t, dir))
+	codes := map[string]int{}
+	for _, w := range res.Warnings {
+		codes[w.Code]++
+	}
+	t.Logf("technologies=%d categories=%d fingerprints=%d relationships=%d warnings=%v",
+		len(res.Technologies), len(res.Categories), len(res.Fingerprints), len(res.Relationships), codes)
+	validate(t, res)
+}

@@ -164,3 +164,26 @@ measurement above, and 16 `multiple_category_groups` warnings. Wappalyzer
 entries are OR-combined, so no `group_id` is produced. Probes are always
 `pending`. The full-snapshot test is opt-in: set `OWF_ENTHEC_SNAPSHOT` to a
 local clone.
+
+## Normalizer (implemented)
+
+`internal/normalizer` maps any `ExtractionResult` to canonical records.
+
+- IDs come from an `IDAllocator` keyed by `(kind, source, upstream key)`, so
+  re-importing a revision yields the same IDs. The in-memory allocator is
+  for tests and one-shot runs; the repository will provide a persistent one.
+- Slugs are derived from names (`C++` becomes `c-plus-plus`) with `-2`, `-3`
+  on collision. Collision order depends on extraction order, so the
+  repository must persist slugs once assigned. This is still open.
+- A rule's upstream ID is `<technology>#<hash of the source fragment>`.
+- Technologies start `active`, rules `active`, probes `draft`. Probe
+  `safety_review` is always reset to `pending`. Validation health starts
+  `unknown`.
+- A rule with no source confidence gets 0.5. This is an unvalidated
+  estimate; `provenance.original_confidence` stays unset in that case.
+- Unknown references (categories, technologies) produce warnings and the
+  record is skipped, never an invented placeholder.
+- Full Enthec snapshot (`9e52f10`): 7704 technologies, 15839 fingerprints
+  (4 skipped as `duplicate_rule`), 2290 relationships (none unresolved). The
+  result validates against the JSON Schema.
+- Vendors are not created yet (open question 4 earlier: manual only).

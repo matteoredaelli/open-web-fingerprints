@@ -58,8 +58,8 @@ func find(t *testing.T, fs []extractor.ExtractedFingerprint, obs domain.Observat
 
 func TestCounts(t *testing.T) {
 	res := extract(t)
-	if got := len(res.Technologies); got != 21 {
-		t.Errorf("technologies = %d, want 21", got)
+	if got := len(res.Technologies); got != 22 {
+		t.Errorf("technologies = %d, want 22", got)
 	}
 	if len(res.Categories) == 0 || len(res.Fingerprints) == 0 || len(res.Relationships) == 0 {
 		t.Error("expected categories, fingerprints and relationships")
@@ -95,6 +95,21 @@ func TestVersionModifier(t *testing.T) {
 	}
 	if f.RegexFlavor != domain.FlavorRE2 {
 		t.Errorf("flavor = %q", f.RegexFlavor)
+	}
+}
+
+func TestConfidenceModifier(t *testing.T) {
+	var n int
+	for _, f := range fingerprints(extract(t), "AdOcean") {
+		if f.Confidence != nil {
+			n++
+			if *f.Confidence <= 0 || *f.Confidence > 1 {
+				t.Errorf("confidence out of range: %v", *f.Confidence)
+			}
+		}
+	}
+	if n == 0 {
+		t.Error("AdOcean should carry an explicit confidence")
 	}
 }
 
