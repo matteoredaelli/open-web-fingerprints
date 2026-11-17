@@ -298,3 +298,25 @@ func TestFullSnapshot(t *testing.T) {
 	t.Logf("by observation: %v", counts)
 	extractortest.RunContract(t, New(), src)
 }
+
+func TestDOMSelectorModifiers(t *testing.T) {
+	src := extractor.Source{ID: "s", FS: fstest.MapFS{
+		"src/categories.json": {Data: []byte(`{"1":{"name":"CMS","groups":[1]}}`)},
+		"src/technologies/a.json": {Data: []byte(`{"X":{"cats":[1],"dom":[
+			"form[name='f'][action='a.aspx' i]\\;confidence:40", "div.plain"]}}`)},
+	}}
+	res, err := New().Extract(context.Background(), src)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := fingerprints(res, "X")
+	if len(got) != 2 {
+		t.Fatalf("fingerprints: %+v", got)
+	}
+	if got[0].Target != "form[name='f'][action='a.aspx' i]" || got[0].Confidence == nil || *got[0].Confidence != 0.4 {
+		t.Errorf("modifier must not stay in the selector: %+v", got[0])
+	}
+	if got[1].Target != "div.plain" || got[1].Confidence != nil {
+		t.Errorf("plain selector: %+v", got[1])
+	}
+}

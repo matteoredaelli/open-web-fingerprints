@@ -89,6 +89,8 @@ func candidates(f domain.Fingerprint, o *Observation, d *derived) (vals []string
 	case domain.ObsMetaTag:
 		v, ok := d.meta[strings.ToLower(f.Target)]
 		return one(v, ok)
+	case domain.ObsDOM:
+		return domValues(f.Target, o.HTML)
 	case domain.ObsHTML:
 		return text(o.HTML)
 	case domain.ObsScriptURL:

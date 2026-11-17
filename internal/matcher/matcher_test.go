@@ -103,7 +103,7 @@ func TestEvaluate(t *testing.T) {
 func TestUnsupportedAndErrors(t *testing.T) {
 	o := &Observation{}
 	for name, f := range map[string]domain.Fingerprint{
-		"dom selectors":    rule(domain.ObsDOM, "div.x", domain.OpExists, ""),
+		"dom property":     rule(domain.ObsDOM, "div.x::prop(foo)", domain.OpExists, ""),
 		"unknown":          rule("future_thing", "", domain.OpExists, ""),
 		"ecmascript regex": {Observation: domain.ObsHTML, Operator: domain.OpRegex, Pattern: "(?!x)", RegexFlavor: domain.FlavorECMAScript},
 		"unknown operator": {Observation: domain.ObsHTML, Operator: "fuzzy", Pattern: "x"},
@@ -145,5 +145,58 @@ func TestDerivedFromGivenFieldsOverridesHTML(t *testing.T) {
 	f := rule(domain.ObsScriptURL, "", domain.OpRegex, `jquery`)
 	if got, _ := Evaluate(f, o); got.Matched {
 		t.Error("explicit scripts must replace the ones found in the HTML")
+	}
+}
+
+const domPage = `<html><body>
+<div class="wp-block-group"><div class="wp-block-columns">hello</div></div>
+<a href="https://shop.example.com/cart" title="Powered by Pixelfed 0.11.4" id="x">Cart <b>now</b></a>
+<form name="login" action="/Login.ASPX"><input type="text" disabled></form>
+<p class="empty"></p>
+</body></html>`
+
+func TestDOM(t *testing.T) {
+	o := &Observation{HTML: domPage}
+	ver := func(f domain.Fingerprint, v string) domain.Fingerprint { f.VersionExtract = v; return f }
+	cases := []struct {
+		name    string
+		f       domain.Fingerprint
+		match   bool
+		version string
+	}{
+		{"element exists", rule(domain.ObsDOM, "div.wp-block-group", domain.OpExists, ""), true, ""},
+		{"child combinator", rule(domain.ObsDOM, "div[class*='wp-block-group'] > div[class*='wp-block-']", domain.OpExists, ""), true, ""},
+		{"comma group, second matches", rule(domain.ObsDOM, "img.logo, form[name=login]", domain.OpExists, ""), true, ""},
+		{"element absent", rule(domain.ObsDOM, "div.nope", domain.OpExists, ""), false, ""},
+		{"attribute exists", rule(domain.ObsDOM, "input::attr(disabled)", domain.OpExists, ""), true, ""},
+		{"attribute missing", rule(domain.ObsDOM, "input::attr(readonly)", domain.OpExists, ""), false, ""},
+		{"attribute name is case-insensitive", rule(domain.ObsDOM, "a::attr(HREF)", domain.OpExists, ""), true, ""},
+		{"attribute regex with version", ver(rule(domain.ObsDOM, "a[href*='shop.example.com']::attr(title)", domain.OpRegex, `^Powered by Pixelfed ([\d.]+)$`), `\1`), true, "0.11.4"},
+		{"attribute regex miss", rule(domain.ObsDOM, "a::attr(title)", domain.OpRegex, `^Wordpress`), false, ""},
+		{"text regex", rule(domain.ObsDOM, "a::text", domain.OpRegex, `^Cart now$`), true, ""},
+		{"text exists", rule(domain.ObsDOM, "a::text", domain.OpExists, ""), true, ""},
+		{"empty element has no text", rule(domain.ObsDOM, "p.empty::text", domain.OpExists, ""), false, ""},
+		{"case-insensitive attribute selector", rule(domain.ObsDOM, "form[action$='login.aspx' i]", domain.OpExists, ""), true, ""},
+		{"no html, no match", rule(domain.ObsDOM, "div", domain.OpExists, ""), false, ""},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			obs := o
+			if tc.name == "no html, no match" {
+				obs = &Observation{}
+			}
+			got, err := Evaluate(tc.f, obs)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if got.Matched != tc.match || got.Version != tc.version {
+				t.Errorf("got %+v, want match=%v version=%q", got, tc.match, tc.version)
+			}
+		})
+	}
+	// A selector that does not parse is an error about the rule, not "unsupported".
+	_, err := Evaluate(rule(domain.ObsDOM, "div[", domain.OpExists, ""), o)
+	if err == nil || errors.Is(err, ErrUnsupported) {
+		t.Errorf("bad selector: %v", err)
 	}
 }

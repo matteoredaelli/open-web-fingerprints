@@ -224,7 +224,7 @@ func TestFingerprintTestAndLint(t *testing.T) {
 	cases := "../../internal/validation/testdata/cases"
 
 	out := mustRun(t, db, "fingerprint", "test", cases)
-	if !strings.Contains(out, "18 cases: 16 pass, 0 fail, 0 error, 2 unsupported") ||
+	if !strings.Contains(out, "19 cases: 18 pass, 0 fail, 0 error, 1 unsupported") ||
 		!strings.Contains(out, "unsupported misc.json#angular-lookahead-not-evaluated") ||
 		strings.Contains(out, "pass        php.json") {
 		t.Errorf("test output:\n%s", out)

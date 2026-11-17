@@ -70,11 +70,16 @@
       "expect": {"match": true}
     },
     {
-      "id": "typo3-dom-not-evaluated",
-      "description": "CSS selectors are not supported offline yet.",
+      "id": "typo3-dom-positive",
       "rule": {"technology": "typo3-cms", "observation": "dom"},
       "input": {"html": "<img src=\"/typo3conf/x.png\">"},
       "expect": {"match": true}
+    },
+    {
+      "id": "typo3-dom-negative",
+      "rule": {"technology": "typo3-cms", "observation": "dom"},
+      "input": {"html": "<img src=\"/images/logo.png\"><link href=\"/style.css\">"},
+      "expect": {"match": false}
     }
   ]
 }

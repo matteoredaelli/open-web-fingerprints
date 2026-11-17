@@ -64,27 +64,35 @@ These were an open question; the matcher fixes them so they are explicit:
 - versions come from `version_extract`: `\1` is group 1, `\1?a:b` is `a` when
   group 1 is not empty and `b` otherwise;
 - rules flagged `ecmascript` are **not** evaluated (RE2 would give different
-  results). They are reported as `unsupported`.
-- `dom` rules (CSS selectors) are `unsupported` for now.
+  results). They are reported as `unsupported`;
+- `dom` rules are evaluated on the page's HTML with a CSS selector engine
+  (`cascadia`). The target is `selector`, `selector::text`,
+  `selector::attr(name)` or `selector::prop(name)`. `exists` means an element
+  matches (`::attr`: the attribute is set, `::text`: the element has text).
+  Text is the element's text content with whitespace collapsed. The HTML is
+  parsed statically: nothing is executed. `::prop(...)` needs a browser and is
+  `unsupported`. A selector that does not parse is an error in the rule.
 
 ## What the harness does not cover
 
 - The inputs are small hand-written observations, not captures of real sites.
   They show that a rule does what its author asserts, not how it behaves on
   the web. Real captures would need rights to redistribute them.
-- About 12% of the imported Enthec rules are `dom` rules (1854 of 15839) and 19
-  are `ecmascript` rules; they cannot be tested
-  offline yet.
+- Rules that cannot be tested offline: 19 `ecmascript` rules and 2 `dom`
+  `::prop` rules of 15836 in Enthec `9e52f10`. Rules that depend on JavaScript
+  having run (globals, DOM changes made by scripts) can only be tested with the
+  values you record in `input`; whether a real page produces them is not
+  checked.
 - There is no false-positive measurement over a corpus of sites.
 
 ## Corpus
 
 `validation/cases/` holds cases for real, widely used rules (nginx,
-Cloudflare, WordPress, jQuery, Google Analytics). They need the full Enthec
+Cloudflare, WordPress, jQuery, Google Analytics, Pixelfed, Bootstrap). They need the full Enthec
 registry, so they run as `make validate-corpus` (git and network), against a
 pinned Enthec revision. In CI this is a separate job. Running with another
 `CORPUS_REVISION` shows whether upstream changes made a case stale.
-First result: 24 cases, 24 pass, 11 rules `ok`.
+Current result: 34 cases, 34 pass, 16 rules `ok`.
 
 `internal/validation/testdata/cases/` holds cases against the small Enthec
 fixture snapshot; they run in every `go test`.

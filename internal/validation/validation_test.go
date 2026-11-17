@@ -61,14 +61,14 @@ func byID(rs []validation.Result, id string) validation.Result {
 
 func TestRunSeedCases(t *testing.T) {
 	cases := load(t)
-	if len(cases) != 18 {
+	if len(cases) != 19 {
 		t.Fatalf("cases = %d", len(cases))
 	}
 	rs := validation.Run(cases, registry(t))
 	for _, r := range rs {
 		want := validation.Pass
 		switch r.Case.ID {
-		case "angular-lookahead-not-evaluated", "typo3-dom-not-evaluated":
+		case "angular-lookahead-not-evaluated":
 			want = validation.Unsupported
 		}
 		if r.Status != want {
@@ -76,7 +76,7 @@ func TestRunSeedCases(t *testing.T) {
 		}
 	}
 	s := validation.Summarize(rs)
-	if s[validation.Pass] != 16 || s[validation.Unsupported] != 2 || s[validation.Fail] != 0 {
+	if s[validation.Pass] != 18 || s[validation.Unsupported] != 1 || s[validation.Fail] != 0 {
 		t.Errorf("summary: %v", s)
 	}
 	if got := byID(rs, "php-cookie-positive").Ref(); got != "php.json#php-cookie-positive" {

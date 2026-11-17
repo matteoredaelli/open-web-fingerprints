@@ -347,11 +347,16 @@ func (b *builder) dns(field string, raw json.RawMessage) {
 func (b *builder) dom(field string, raw json.RawMessage) {
 	var list []string
 	if err := json.Unmarshal(raw, &list); err == nil {
-		for _, sel := range list {
+		for _, entry := range list {
+			// A selector can carry modifiers too, for example \;confidence:40.
+			p := parsePattern(entry)
+			for _, u := range p.Unknown {
+				warn(b.res, "unknown_modifier", b.tech, fmt.Sprintf("%s: modifier %q ignored (kept in Raw)", field, u))
+			}
 			b.res.Fingerprints = append(b.res.Fingerprints, extractor.ExtractedFingerprint{
-				TechnologyKey: b.tech, Observation: domain.ObsDOM, Target: sel,
-				Operator: domain.OpExists, File: b.file,
-				Raw: mustJSON(map[string]any{"field": field, "selector": sel}),
+				TechnologyKey: b.tech, Observation: domain.ObsDOM, Target: p.Regex,
+				Operator: domain.OpExists, Confidence: p.Confidence, File: b.file,
+				Raw: mustJSON(map[string]any{"field": field, "selector": entry}),
 			})
 		}
 		return

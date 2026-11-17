@@ -3,6 +3,7 @@ module github.com/matteoredaelli/open-web-fingerprints
 go 1.26.0
 
 require (
+	github.com/andybalholm/cascadia v1.3.5 // indirect
 	github.com/dustin/go-humanize v1.1.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
