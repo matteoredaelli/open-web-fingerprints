@@ -119,16 +119,27 @@ a result of applying a rule to a real target.
 | `\;version:\1`, `\;confidence:N` | `version_extract`, `confidence` (N/100) |
 | `pricing` | `raw` only for now |
 
+## Decisions
+
+1. **IDs:** UUIDv7 with a kind prefix (`tech_<uuidv7>`).
+2. **AND/OR:** `group_id` is enough for v0. An expression tree can be added
+   later without breaking the existing fields.
+3. **OS, CDN, hosting, WAF:** modelled as categories. `Technology.kind` stays
+   as it is.
+4. **Regex flavor:** the rule keeps `pattern` as the upstream string and
+   gets a `regex_flavor` field (`re2` or `ecmascript`). Measured on Enthec
+   (2026-11-15, `9e52f10`): of 8258 non-empty patterns, 8239 (99.8%) compile
+   with Go RE2 after adding `(?i)`. 19 do not, in 11 technologies:
+   17 use lookahead `(?!...)` and 2 use lookbehind `(?<!...)`. Those 19 are
+   stored as `ecmascript`, so that engines without a backtracking regex can
+   skip them with a warning rather than silently misfiring. This checks
+   compilation only. Matching behavior differences are not tested yet.
+
 ## Open questions
 
-1. ID scheme: ULID or UUIDv7?
-2. AND/OR: is `group_id` enough, or do we need a boolean expression tree?
-3. Does `Technology.kind` need more values (OS, CDN, hosting, WAF)? Or should
-   that be a category?
-4. Should vendors be created from CPE automatically, or only by hand?
-5. Where do `pricing`, `saas` and `oss` belong? They are properties of
+1. Where do `pricing`, `saas` and `oss` belong? They are properties of
    technologies.
-6. How do we treat unsupported regex flavors? Wappalyzer uses JavaScript
-   regular expressions, and Go uses RE2. Do we keep the flavor in the rule,
-   or convert it?
-7. Confidence: how do we merge author-estimated and validated values?
+2. How do we merge author-estimated and validated confidence values?
+3. Matching semantics: Wappalyzer is case-insensitive and unanchored by
+   default. Must those defaults be explicit per rule? A fixture-based
+   comparison with wappalyzergo could check this.
