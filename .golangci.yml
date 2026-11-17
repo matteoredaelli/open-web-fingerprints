@@ -9,6 +9,12 @@ linters:
     - misspell
     - errorlint
     - gosec
+  exclusions:
+    rules:
+      # Tests build fixtures with git and temp files; gosec adds noise there.
+      - path: _test\.go
+        linters:
+          - gosec
   settings:
     errcheck:
       # Writing to stdout/stderr or a tabwriter: failures are not actionable.

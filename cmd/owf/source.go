@@ -38,7 +38,7 @@ func newSourceCmd(o *options) *cobra.Command {
 			}
 			w := tabwriter.NewWriter(cmd.OutOrStdout(), 0, 4, 2, ' ', 0)
 			fmt.Fprintln(w, "SOURCE\tLICENSE\tREDISTRIBUTABLE\tSNAPSHOTS")
-			for _, e := range builtin.Sources() {
+			for _, e := range o.entries {
 				fmt.Fprintf(w, "%s\t%s\t%s\t%d\n", e.Source.Slug, e.Source.License, e.Source.Redistributable, imported[e.Source.Slug])
 			}
 			return w.Flush()
@@ -49,7 +49,7 @@ func newSourceCmd(o *options) *cobra.Command {
 		Short: "Show details of a source",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			e, ok := builtin.Find(args[0])
+			e, ok := o.find(args[0])
 			if !ok {
 				return fmt.Errorf("unknown source %q (see `owf source list`)", args[0])
 			}
@@ -82,6 +82,7 @@ func newSourceCmd(o *options) *cobra.Command {
 			return nil
 		},
 	})
+	c.AddCommand(newRefreshCmd(o))
 	return c
 }
 

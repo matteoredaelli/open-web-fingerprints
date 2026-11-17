@@ -19,6 +19,11 @@ type Entry struct {
 	Source domain.Source
 	// IncludeFile selects the snapshot files covered by the checksum.
 	IncludeFile func(path string) bool
+	// Branch is the upstream branch that refresh follows.
+	Branch string
+	// SparsePaths are the directories fetched from the repository. They keep
+	// downloads small (no icons, images or tests).
+	SparsePaths []string
 }
 
 // Sources returns the known sources sorted by slug. IDs are assigned by the
@@ -32,6 +37,9 @@ func Sources() []Entry {
 			ExtractorID: enthec.ID, Redistributable: "unreviewed",
 			Notes: "Community continuation of Wappalyzer. Data lineage and the exact GPL-3.0 variant need legal review (docs/sources.md).",
 		},
+		Branch: "main",
+		// Cone mode also checks out the files directly in src/.
+		SparsePaths: []string{"src/technologies"},
 		IncludeFile: func(p string) bool {
 			return p == "src/categories.json" || p == "src/groups.json" ||
 				(strings.HasPrefix(p, "src/technologies/") && strings.HasSuffix(p, ".json"))

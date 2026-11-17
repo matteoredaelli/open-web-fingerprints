@@ -21,11 +21,11 @@ func newImportCmd(o *options) *cobra.Command {
 		Use:   "import <source>",
 		Short: "Import a local snapshot of a source",
 		Long: "Import runs the pipeline on a local checkout of the source: checksum, extract,\n" +
-			"normalize, validate, diff and store. Fetching snapshots is not implemented yet;\n" +
-			"clone the upstream repository and pin the revision you pass with --revision.",
+			"normalize, validate, diff and store. Use `owf source refresh` to fetch the snapshot\n" +
+			"for you; use import for a checkout you made yourself, and pin it with --revision.",
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			e, ok := builtin.Find(args[0])
+			e, ok := o.find(args[0])
 			if !ok {
 				return fmt.Errorf("unknown source %q (see `owf source list`)", args[0])
 			}
@@ -35,27 +35,32 @@ func newImportCmd(o *options) *cobra.Command {
 			if st, err := os.Stat(snapshot); err != nil || !st.IsDir() {
 				return fmt.Errorf("snapshot %q is not a directory", snapshot)
 			}
-			r, err := o.open(cmd.Context())
-			if err != nil {
-				return err
-			}
-			defer func() { _ = r.Close() }()
-
-			p := pipeline.New(builtin.Extractors(), r)
-			rep, err := p.Run(cmd.Context(), pipeline.Request{
-				Source: e.Source, Revision: revision, FS: os.DirFS(snapshot),
-				IncludeFile: e.IncludeFile, DryRun: dryRun,
-			})
-			if rep != nil {
-				printReport(cmd, rep, dryRun)
-			}
-			return err
+			return runImport(cmd, o, e, snapshot, revision, dryRun)
 		},
 	}
 	c.Flags().StringVar(&snapshot, "snapshot", "", "directory with the local snapshot")
 	c.Flags().StringVar(&revision, "revision", "", "pinned revision of the snapshot (commit SHA or version)")
 	c.Flags().BoolVar(&dryRun, "dry-run", false, "compute the diff without storing anything")
 	return c
+}
+
+// runImport runs the pipeline on a local snapshot directory and prints the report.
+func runImport(cmd *cobra.Command, o *options, e builtin.Entry, dir, revision string, dryRun bool) error {
+	r, err := o.open(cmd.Context())
+	if err != nil {
+		return err
+	}
+	defer func() { _ = r.Close() }()
+
+	p := pipeline.New(builtin.Extractors(), r)
+	rep, err := p.Run(cmd.Context(), pipeline.Request{
+		Source: e.Source, Revision: revision, FS: os.DirFS(dir),
+		IncludeFile: e.IncludeFile, DryRun: dryRun,
+	})
+	if rep != nil {
+		printReport(cmd, rep, dryRun)
+	}
+	return err
 }
 
 func printReport(cmd *cobra.Command, rep *pipeline.Report, dry bool) {

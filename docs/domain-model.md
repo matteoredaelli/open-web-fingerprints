@@ -250,3 +250,29 @@ schema 0.1.0.
 records and real-data numbers. `repository.ChangeSet` gained `Delete` (only
 used by merges) and `Aliases`; SQLite has the `aliases` table (migration
 `00003`).
+
+## Fetching snapshots (implemented)
+
+`owf source refresh <source>` uses the `git` command line (`internal/fetch`):
+
+1. `git ls-remote` resolves the branch tip to a commit ID. Nothing is
+   downloaded. With `--revision <40-char sha>` this step is skipped.
+2. `git fetch --depth 1 --filter=blob:none` of that one commit, plus a cone
+   sparse checkout of the directories the source needs. Enthec: 5 MB and 37
+   files instead of 115 MB and 7000 files. If the server rejects filters the
+   fetch is retried in full.
+3. The snapshot goes to `<cache>/<source>/<sha>`. A clean copy at the right
+   commit is reused offline; a modified one is downloaded again.
+4. The pipeline runs on it with the full commit ID as revision. The result of
+   a live run is identical to a manual clone: same checksum
+   `sha256:86c1d7b0...` for Enthec `9e52f10`.
+
+Safety: only `https` URLs without credentials are accepted (`file://` only in
+tests); branch names, commit IDs and sparse paths are validated so they cannot
+be read as git options; hooks and auto-gc are disabled; prompts for
+credentials are disabled; downloads go to a temporary directory and are moved
+into place only after the commit is verified. The command never publishes
+anything: it creates records and conflicts for review.
+
+Each catalogue entry has `Branch` and `SparsePaths`. HTTP Archive and other
+sources are not in the catalogue yet.

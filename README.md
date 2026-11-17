@@ -21,12 +21,13 @@ make build   # builds bin/owf
 ## Usage
 
 ```sh
-git clone https://github.com/enthec/webappanalyzer /tmp/enthec
-git -C /tmp/enthec rev-parse --short HEAD     # the revision to pin
-
 owf init                                      # creates owf.db
-owf import enthec-webappanalyzer --snapshot /tmp/enthec --revision <sha> --dry-run
-owf import enthec-webappanalyzer --snapshot /tmp/enthec --revision <sha>
+owf source refresh enthec-webappanalyzer --dry-run   # fetch the branch tip, show the diff
+owf source refresh enthec-webappanalyzer             # fetch and import
+owf source refresh enthec-webappanalyzer --revision <40-char sha>   # pin a commit
+
+# or import a checkout you made yourself
+owf import enthec-webappanalyzer --snapshot /path/to/clone --revision <sha>
 owf stats
 owf technology show wordpress
 owf fingerprint list --technology nginx
@@ -36,8 +37,11 @@ owf conflict resolve --all --websites same_domain --merge --dry-run
 owf export -o registry.json                   # validated against schemas/
 ```
 
-`--db` or `OWF_DB` selects the database file. Fetching snapshots is not
-implemented yet. Imported data is unreviewed: check `owf source info` for
+`--db` or `OWF_DB` selects the database file. `refresh` needs `git` and
+downloads one commit of one branch, only the directories the extractor uses
+(about 5 MB for Enthec), into `~/.cache/owf/snapshots` (`--cache` or
+`OWF_CACHE`). A cached copy that is unmodified is reused without network
+access. Imported data is unreviewed: check `owf source info` for
 the license status before redistributing an export.
 
 See [docs/domain-model.md](docs/domain-model.md) and

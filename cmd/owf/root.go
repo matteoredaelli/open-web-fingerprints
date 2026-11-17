@@ -10,16 +10,35 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/matteoredaelli/open-web-fingerprints/internal/builtin"
+	"github.com/matteoredaelli/open-web-fingerprints/internal/fetch"
 	"github.com/matteoredaelli/open-web-fingerprints/internal/repository/sqlite"
 )
 
 // options are shared by all commands.
 type options struct {
-	db string
+	db      string
+	entries []builtin.Entry
+	git     *fetch.Git
+}
+
+// find returns the known source with the given slug.
+func (o *options) find(slug string) (builtin.Entry, bool) {
+	for _, e := range o.entries {
+		if e.Source.Slug == slug {
+			return e, true
+		}
+	}
+	return builtin.Entry{}, false
 }
 
 func newRootCmd() *cobra.Command {
-	o := &options{}
+	return newRootCmdWith(&options{entries: builtin.Sources(), git: fetch.New()})
+}
+
+// newRootCmdWith builds the command tree on the given dependencies; tests
+// replace the source catalogue and the fetcher.
+func newRootCmdWith(o *options) *cobra.Command {
 	root := &cobra.Command{
 		Use:           "owf",
 		Short:         "Open Web Fingerprints registry toolkit",
