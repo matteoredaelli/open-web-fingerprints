@@ -1,0 +1,44 @@
+{
+  "schema_version": "0.1.0",
+  "cases": [
+    {
+      "id": "php-x-powered-by-positive",
+      "description": "PHP announces itself and its version in X-Powered-By.",
+      "rule": {"technology": "php", "observation": "http_header", "target": "x-powered-by"},
+      "input": {"headers": {"X-Powered-By": "PHP/8.2.1"}},
+      "expect": {"match": true, "version": "8.2.1"}
+    },
+    {
+      "id": "php-x-powered-by-negative",
+      "description": "Another stack in X-Powered-By must not look like PHP.",
+      "rule": {"technology": "php", "observation": "http_header", "target": "X-Powered-By"},
+      "input": {"headers": {"X-Powered-By": "Express"}},
+      "expect": {"match": false}
+    },
+    {
+      "id": "php-x-powered-by-absent",
+      "rule": {"technology": "php", "observation": "http_header", "target": "X-Powered-By"},
+      "input": {"headers": {"Server": "nginx"}},
+      "expect": {"match": false}
+    },
+    {
+      "id": "php-cookie-positive",
+      "rule": {"technology": "php", "observation": "cookie", "target": "PHPSESSID"},
+      "input": {"cookies": {"PHPSESSID": "8f2a"}},
+      "expect": {"match": true}
+    },
+    {
+      "id": "php-cookie-negative",
+      "description": "Cookie names are case-sensitive.",
+      "rule": {"technology": "php", "observation": "cookie", "target": "PHPSESSID"},
+      "input": {"cookies": {"phpsessid": "8f2a", "JSESSIONID": "1"}},
+      "expect": {"match": false}
+    },
+    {
+      "id": "php-server-header-positive",
+      "rule": {"technology": "php", "observation": "http_header", "target": "Server", "pattern": "php/?([\\d.]+)?"},
+      "input": {"headers": {"Server": "Apache/2.4 PHP/7.4.33"}},
+      "expect": {"match": true, "version": "7.4.33"}
+    }
+  ]
+}

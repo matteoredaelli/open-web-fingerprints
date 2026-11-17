@@ -1,0 +1,80 @@
+{
+  "schema_version": "0.1.0",
+  "cases": [
+    {
+      "id": "aframe-script-url-positive",
+      "rule": {"technology": "a-frame", "observation": "script_url"},
+      "input": {"html": "<script src=\"https://aframe.io/releases/1.4.2/aframe.min.js\"></script>"},
+      "expect": {"match": true, "version": "1.4.2"}
+    },
+    {
+      "id": "aframe-html-positive",
+      "rule": {"technology": "a-frame", "observation": "html"},
+      "input": {"html": "<a-scene embedded><a-box></a-box></a-scene>"},
+      "expect": {"match": true}
+    },
+    {
+      "id": "aframe-html-negative",
+      "rule": {"technology": "a-frame", "observation": "html"},
+      "input": {"html": "<div class=\"scene\">a scene about frames</div>"},
+      "expect": {"match": false}
+    },
+    {
+      "id": "aframe-js-version",
+      "rule": {"technology": "a-frame", "observation": "js_global", "target": "AFRAME.version"},
+      "input": {"js": {"AFRAME.version": "1.5.0"}},
+      "expect": {"match": true, "version": "1.5.0"}
+    },
+    {
+      "id": "tangled-ns-positive",
+      "rule": {"technology": "tangled-network", "observation": "dns_record", "target": "NS"},
+      "input": {"dns": {"NS": ["ns1.tanglednetwork.com"]}},
+      "expect": {"match": true}
+    },
+    {
+      "id": "tangled-ns-negative",
+      "rule": {"technology": "tangled-network", "observation": "dns_record", "target": "ns"},
+      "input": {"dns": {"NS": ["ns1.example.org"], "SOA": ["ns1.tanglednetwork.com"]}},
+      "expect": {"match": false}
+    },
+    {
+      "id": "thawte-issuer-positive",
+      "rule": {"technology": "thawte", "observation": "tls_cert", "target": "issuer"},
+      "input": {"tls": {"issuer": "Thawte RSA CA 2018"}},
+      "expect": {"match": true}
+    },
+    {
+      "id": "typo3-meta-positive",
+      "rule": {"technology": "typo3-cms", "observation": "meta_tag", "target": "generator"},
+      "input": {"html": "<meta name=\"generator\" content=\"TYPO3 CMS\">"},
+      "expect": {"match": true}
+    },
+    {
+      "id": "typo3-probe-positive",
+      "description": "Recorded answer of an active probe; nothing is requested.",
+      "rule": {"technology": "typo3-cms", "observation": "probe_response"},
+      "input": {"probes": {"/typo3/sysext/core/Resources/Public/Images/typo3_orange.svg": {"status": 200}}},
+      "expect": {"match": true}
+    },
+    {
+      "id": "typo3-probe-negative",
+      "rule": {"technology": "typo3-cms", "observation": "probe_response"},
+      "input": {"probes": {"/typo3/sysext/core/Resources/Public/Images/typo3_orange.svg": {"status": 404}}},
+      "expect": {"match": false}
+    },
+    {
+      "id": "angular-lookahead-not-evaluated",
+      "description": "Needs a backtracking regex: reported as unsupported, never as a failure.",
+      "rule": {"technology": "angularjs", "observation": "script_url", "pattern": "(?!angular\\.io)\\bangular.{0,32}\\.js"},
+      "input": {"scripts": ["/js/angular.min.js"]},
+      "expect": {"match": true}
+    },
+    {
+      "id": "typo3-dom-not-evaluated",
+      "description": "CSS selectors are not supported offline yet.",
+      "rule": {"technology": "typo3-cms", "observation": "dom"},
+      "input": {"html": "<img src=\"/typo3conf/x.png\">"},
+      "expect": {"match": true}
+    }
+  ]
+}

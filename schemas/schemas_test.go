@@ -194,3 +194,24 @@ func TestExampleReferentialIntegrity(t *testing.T) {
 		}
 	}
 }
+
+func TestValidationCasesSchema(t *testing.T) {
+	ok := `{"schema_version":"0.1.0","cases":[{"id":"a","rule":{"technology":"php","observation":"http_header"},"input":{"headers":{"X":"y"}},"expect":{"match":true,"version":"1"}}]}`
+	if err := ValidateCases([]byte(ok)); err != nil {
+		t.Fatalf("valid cases rejected: %v", err)
+	}
+	if len(CasesSchema()) == 0 {
+		t.Fatal("schema is empty")
+	}
+	for name, doc := range map[string]string{
+		"missing expect":  `{"schema_version":"0.1.0","cases":[{"id":"a","rule":{"technology":"php","observation":"x"},"input":{}}]}`,
+		"empty cases":     `{"schema_version":"0.1.0","cases":[]}`,
+		"bad header map":  `{"schema_version":"0.1.0","cases":[{"id":"a","rule":{"technology":"php","observation":"x"},"input":{"headers":{"X":1}},"expect":{"match":true}}]}`,
+		"probe no status": `{"schema_version":"0.1.0","cases":[{"id":"a","rule":{"technology":"php","observation":"x"},"input":{"probes":{"/a":{}}},"expect":{"match":true}}]}`,
+		"extra field":     `{"schema_version":"0.1.0","cases":[],"x":1}`,
+	} {
+		if err := ValidateCases([]byte(doc)); err == nil {
+			t.Errorf("%s: expected an error", name)
+		}
+	}
+}

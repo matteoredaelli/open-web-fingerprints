@@ -1,0 +1,98 @@
+{
+  "schema_version": "0.1.0",
+  "cases": [
+    {
+      "id": "wordpress-generator-positive",
+      "rule": {"technology": "wordpress", "observation": "meta_tag", "target": "generator", "operator": "regex"},
+      "input": {"html": "<html><head><meta name=\"generator\" content=\"WordPress 6.4.2\"></head></html>"},
+      "expect": {"match": true, "version": "6.4.2"}
+    },
+    {
+      "id": "wordpress-generator-negative",
+      "rule": {"technology": "wordpress", "observation": "meta_tag", "target": "generator", "operator": "regex"},
+      "input": {"html": "<html><head><meta name=\"generator\" content=\"Drupal 10 (https://www.drupal.org)\"></head></html>"},
+      "expect": {"match": false}
+    },
+    {
+      "id": "wordpress-generator-anchored",
+      "description": "A page that only talks about WordPress in its generator tag text is not matched mid-string.",
+      "rule": {"technology": "wordpress", "observation": "meta_tag", "target": "generator", "operator": "regex"},
+      "input": {"html": "<meta name=\"generator\" content=\"Static site migrated from WordPress\">"},
+      "expect": {"match": false}
+    },
+    {
+      "id": "wordpress-script-positive",
+      "rule": {"technology": "wordpress", "observation": "script_url", "pattern": "/wp-(?:content|includes)/"},
+      "input": {"html": "<script src=\"/wp-includes/js/wp-embed.min.js?ver=6.4.2\"></script>"},
+      "expect": {"match": true}
+    },
+    {
+      "id": "wordpress-script-negative",
+      "rule": {"technology": "wordpress", "observation": "script_url", "pattern": "/wp-(?:content|includes)/"},
+      "input": {"html": "<script src=\"/static/app.js\"></script><script src=\"https://cdn.example.com/lib.js\"></script>"},
+      "expect": {"match": false}
+    },
+    {
+      "id": "wordpress-pingback-positive",
+      "rule": {"technology": "wordpress", "observation": "http_header", "target": "X-Pingback"},
+      "input": {"headers": {"X-Pingback": "https://example.com/xmlrpc.php"}},
+      "expect": {"match": true}
+    },
+    {
+      "id": "wordpress-pingback-negative",
+      "rule": {"technology": "wordpress", "observation": "http_header", "target": "X-Pingback"},
+      "input": {"headers": {"X-Pingback": "https://example.com/pingback/endpoint"}},
+      "expect": {"match": false}
+    },
+    {
+      "id": "jquery-global-version",
+      "rule": {"technology": "jquery", "observation": "js_global", "target": "jQuery.fn.jquery"},
+      "input": {"js": {"jQuery.fn.jquery": "3.7.1"}},
+      "expect": {"match": true, "version": "3.7.1"}
+    },
+    {
+      "id": "jquery-global-absent",
+      "rule": {"technology": "jquery", "observation": "js_global", "target": "jQuery.fn.jquery"},
+      "input": {"js": {"Vue.version": "3.4.0"}},
+      "expect": {"match": false}
+    },
+    {
+      "id": "jquery-script-version",
+      "rule": {"technology": "jquery", "observation": "script_url", "pattern": "/jquery(?:-(\\d+\\.\\d+\\.\\d+))[/.-]"},
+      "input": {"scripts": ["https://code.jquery.com/jquery-3.7.1.min.js"]},
+      "expect": {"match": true, "version": "3.7.1"}
+    },
+    {
+      "id": "jquery-script-plugin-negative",
+      "description": "A plugin whose file name continues the library name is not jQuery.",
+      "rule": {"technology": "jquery", "observation": "script_url", "pattern": "/jquery(?:-(\\d+\\.\\d+\\.\\d+))[/.-]"},
+      "input": {"scripts": ["/assets/jquery-ui.min.js"]},
+      "expect": {"match": false}
+    },
+    {
+      "id": "ga-cookie-positive",
+      "rule": {"technology": "google-analytics", "observation": "cookie", "target": "_ga"},
+      "input": {"cookies": {"_ga": "GA1.2.123456789.1700000000"}},
+      "expect": {"match": true}
+    },
+    {
+      "id": "ga-cookie-negative",
+      "description": "_ga_* is a different cookie; the exact name is required.",
+      "rule": {"technology": "google-analytics", "observation": "cookie", "target": "_ga"},
+      "input": {"cookies": {"_gat": "1", "ga": "x"}},
+      "expect": {"match": false}
+    },
+    {
+      "id": "ga-script-positive",
+      "rule": {"technology": "google-analytics", "observation": "script_url", "pattern": "google-analytics\\.com/(?:ga|urchin|analytics)\\.js"},
+      "input": {"scripts": ["https://www.google-analytics.com/analytics.js"]},
+      "expect": {"match": true}
+    },
+    {
+      "id": "ga-script-negative",
+      "rule": {"technology": "google-analytics", "observation": "script_url", "pattern": "google-analytics\\.com/(?:ga|urchin|analytics)\\.js"},
+      "input": {"scripts": ["https://www.googletagmanager.com/gtm.js?id=GTM-XXXX"]},
+      "expect": {"match": false}
+    }
+  ]
+}

@@ -1,0 +1,193 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/matteoredaelli/open-web-fingerprints/schemas/validation-cases.schema.json",
+  "title": "Open Web Fingerprints validation cases",
+  "description": "Recorded observations and the outcome a fingerprint must produce. Draft v0.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "cases"
+  ],
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "schema_version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "cases": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/case"
+      }
+    }
+  },
+  "$defs": {
+    "str_map": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "case": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "rule",
+        "input",
+        "expect"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9._-]*$"
+        },
+        "description": {
+          "type": "string"
+        },
+        "rule": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "technology",
+            "observation"
+          ],
+          "properties": {
+            "technology": {
+              "type": "string",
+              "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+            },
+            "observation": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9_]*$"
+            },
+            "target": {
+              "type": "string"
+            },
+            "operator": {
+              "enum": [
+                "exists",
+                "equals",
+                "contains",
+                "regex",
+                "hash_equals"
+              ]
+            },
+            "pattern": {
+              "type": "string"
+            }
+          }
+        },
+        "input": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "url": {
+              "type": "string"
+            },
+            "status": {
+              "type": "integer"
+            },
+            "headers": {
+              "$ref": "#/$defs/str_map"
+            },
+            "cookies": {
+              "$ref": "#/$defs/str_map"
+            },
+            "html": {
+              "type": "string"
+            },
+            "scripts": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "stylesheets": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "inline_scripts": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "css": {
+              "type": "string"
+            },
+            "text": {
+              "type": "string"
+            },
+            "js": {
+              "$ref": "#/$defs/str_map"
+            },
+            "dns": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            },
+            "tls": {
+              "$ref": "#/$defs/str_map"
+            },
+            "xhr": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "robots": {
+              "type": "string"
+            },
+            "favicon_hash": {
+              "type": "string"
+            },
+            "probes": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "status"
+                ],
+                "properties": {
+                  "status": {
+                    "type": "integer"
+                  },
+                  "body": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "expect": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "match"
+          ],
+          "properties": {
+            "match": {
+              "type": "boolean"
+            },
+            "version": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  }
+}

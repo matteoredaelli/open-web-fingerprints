@@ -34,6 +34,8 @@ owf fingerprint list --technology nginx
 owf fingerprint validate
 owf conflict list --state open               # candidates from other sources
 owf conflict resolve --all --websites same_domain --merge --dry-run
+owf fingerprint test validation/cases --apply   # store test evidence (see docs/validation.md)
+owf fingerprint lint                          # rules likely to match too much
 owf export -o registry.json                   # validated against schemas/
 ```
 

@@ -180,7 +180,9 @@ type Validation struct {
 
 // TestRun is one fixture-based test outcome.
 type TestRun struct {
-	Result     string    `json:"result"` // pass | fail
+	Result string `json:"result"` // pass | fail
+	// Expect is what the test asserted: match | no_match.
+	Expect     string    `json:"expect,omitempty"`
 	FixtureRef string    `json:"fixture_ref,omitempty"`
 	At         time.Time `json:"at"`
 }

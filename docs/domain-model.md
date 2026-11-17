@@ -142,9 +142,9 @@ a result of applying a rule to a real target.
 1. Where do `pricing`, `saas` and `oss` belong? They are properties of
    technologies.
 2. How do we merge author-estimated and validated confidence values?
-3. Matching semantics: Wappalyzer is case-insensitive and unanchored by
-   default. Must those defaults be explicit per rule? A fixture-based
-   comparison with wappalyzergo could check this.
+3. Matching semantics: now fixed in `internal/matcher` and documented in
+   [validation.md](validation.md). A comparison with another engine on real
+   captures is still open.
 
 ## Public schema (v0.1.0, draft)
 
@@ -276,3 +276,10 @@ anything: it creates records and conflicts for review.
 
 Each catalogue entry has `Branch` and `SparsePaths`. HTTP Archive and other
 sources are not in the catalogue yet.
+
+## Validation (implemented)
+
+`owf fingerprint test` runs recorded observations against rules and stores
+test evidence in `validation` (new optional `expect` field on `test_runs`);
+`owf fingerprint lint` reports rules likely to match too much. See
+[validation.md](validation.md).

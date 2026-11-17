@@ -584,6 +584,13 @@
               "at": {
                 "type": "string",
                 "format": "date-time"
+              },
+              "expect": {
+                "enum": [
+                  "match",
+                  "no_match"
+                ],
+                "description": "What the test asserted."
               }
             }
           }

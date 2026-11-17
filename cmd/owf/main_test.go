@@ -215,3 +215,73 @@ func seedConflicts(t *testing.T, db string) {
 		t.Fatal(err)
 	}
 }
+
+func TestFingerprintTestAndLint(t *testing.T) {
+	nowFunc = func() time.Time { return time.Date(2026, 11, 17, 12, 0, 0, 0, time.UTC) }
+	db := filepath.Join(t.TempDir(), "owf.db")
+	mustRun(t, db, "init")
+	mustRun(t, db, "import", "enthec-webappanalyzer", "--snapshot", fixture, "--revision", "x")
+	cases := "../../internal/validation/testdata/cases"
+
+	out := mustRun(t, db, "fingerprint", "test", cases)
+	if !strings.Contains(out, "18 cases: 16 pass, 0 fail, 0 error, 2 unsupported") ||
+		!strings.Contains(out, "unsupported misc.json#angular-lookahead-not-evaluated") ||
+		strings.Contains(out, "pass        php.json") {
+		t.Errorf("test output:\n%s", out)
+	}
+	if out := mustRun(t, db, "stats"); strings.Contains(out, "  ok ") {
+		t.Errorf("a plain test run must not store evidence:\n%s", out)
+	}
+
+	out = mustRun(t, db, "fingerprint", "test", cases, "--apply", "-v")
+	if !strings.Contains(out, "pass        php.json#php-cookie-positive") || !strings.Contains(out, "evidence stored on") {
+		t.Errorf("apply output:\n%s", out)
+	}
+	out = mustRun(t, db, "stats")
+	if !strings.Contains(out, "by health") || !strings.Contains(out, "ok ") {
+		t.Errorf("stats must show health:\n%s", out)
+	}
+	// The stored evidence is visible in the JSON of a rule and is repeatable.
+	out = mustRun(t, db, "fingerprint", "list", "--technology", "php", "--json")
+	if !strings.Contains(out, `"health": "ok"`) || !strings.Contains(out, `"fixture_ref": "php.json#php-cookie-positive"`) ||
+		!strings.Contains(out, `"expect": "no_match"`) {
+		t.Errorf("evidence missing:\n%s", out)
+	}
+	before := mustRun(t, db, "export")
+	mustRun(t, db, "fingerprint", "test", cases, "--apply")
+	if after := mustRun(t, db, "export"); after != before {
+		t.Error("repeating the same tests must not change the registry")
+	}
+	exp := filepath.Join(t.TempDir(), "r.json")
+	mustRun(t, db, "export", "-o", exp)
+	b, _ := os.ReadFile(exp) //nolint:gosec // test temp file
+	if err := schemas.ValidateRegistry(b); err != nil {
+		t.Fatalf("export with test evidence violates the schema: %v", err)
+	}
+
+	// A failing case makes the command fail, and a stale one too.
+	bad := t.TempDir()
+	if err := os.WriteFile(filepath.Join(bad, "bad.json"), []byte(`{"schema_version":"0.1.0","cases":[
+	  {"id":"wrong","rule":{"technology":"php","observation":"cookie","target":"PHPSESSID"},"input":{"cookies":{"PHPSESSID":"1"}},"expect":{"match":false}},
+	  {"id":"stale","rule":{"technology":"php","observation":"cookie","target":"GONE"},"input":{},"expect":{"match":false}}]}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	out, err := run(t, db, "fingerprint", "test", bad, "--apply")
+	if err == nil || !strings.Contains(out, "fail        bad.json#wrong") || !strings.Contains(out, "error       bad.json#stale") {
+		t.Errorf("bad cases: err=%v\n%s", err, out)
+	}
+	if out := mustRun(t, db, "fingerprint", "list", "--technology", "php", "--json"); !strings.Contains(out, `"health": "broken"`) {
+		t.Errorf("a failing case must mark the rule broken:\n%s", out)
+	}
+	if _, err := run(t, db, "fingerprint", "test", filepath.Join(bad, "missing.json")); err == nil {
+		t.Error("missing path must fail")
+	}
+
+	out = mustRun(t, db, "fingerprint", "lint")
+	if !strings.Contains(out, "findings on") {
+		t.Errorf("lint:\n%s", out)
+	}
+	if out := mustRun(t, db, "fingerprint", "lint", "--json"); !strings.HasPrefix(strings.TrimSpace(out), "[") && !strings.HasPrefix(strings.TrimSpace(out), "null") {
+		t.Errorf("lint json:\n%s", out)
+	}
+}

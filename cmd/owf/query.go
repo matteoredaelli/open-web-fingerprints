@@ -253,7 +253,7 @@ func newFingerprintCmd(o *options) *cobra.Command {
 			return nil
 		},
 	}
-	c.AddCommand(list, validate)
+	c.AddCommand(list, validate, newFingerprintTestCmd(o), newFingerprintLintCmd(o))
 	return c
 }
 
@@ -349,6 +349,20 @@ func newStatsCmd(o *options) *cobra.Command {
 			sort.Strings(keys)
 			for _, k := range keys {
 				fmt.Fprintf(out, "  %-16s %d\n", k, byObs[domain.Observation(k)])
+			}
+			health := map[string]int{}
+			for _, f := range all.Fingerprints {
+				h := "unknown"
+				if f.Validation != nil && f.Validation.Health != "" {
+					h = f.Validation.Health
+				}
+				health[h]++
+			}
+			fmt.Fprintln(out, "fingerprints by health (ok needs positive and negative test evidence):")
+			for _, h := range []string{"ok", "degraded", "broken", "unknown"} {
+				if health[h] > 0 {
+					fmt.Fprintf(out, "  %-16s %d\n", h, health[h])
+				}
 			}
 			fmt.Fprintln(out, "fingerprints by status:")
 			for _, s := range []domain.Status{domain.StatusActive, domain.StatusExperimental, domain.StatusDraft, domain.StatusDeprecated} {

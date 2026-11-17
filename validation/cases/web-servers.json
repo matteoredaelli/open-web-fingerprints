@@ -1,0 +1,61 @@
+{
+  "schema_version": "0.1.0",
+  "cases": [
+    {
+      "id": "nginx-server-header-positive",
+      "description": "nginx announces itself and its version in Server.",
+      "rule": {"technology": "nginx", "observation": "http_header", "target": "Server", "operator": "regex"},
+      "input": {"headers": {"Server": "nginx/1.25.3"}},
+      "expect": {"match": true, "version": "1.25.3"}
+    },
+    {
+      "id": "nginx-server-header-no-version",
+      "rule": {"technology": "nginx", "observation": "http_header", "target": "Server", "operator": "regex"},
+      "input": {"headers": {"Server": "nginx"}},
+      "expect": {"match": true}
+    },
+    {
+      "id": "nginx-server-header-negative",
+      "rule": {"technology": "nginx", "observation": "http_header", "target": "Server", "operator": "regex"},
+      "input": {"headers": {"Server": "Apache/2.4.58 (Ubuntu)"}},
+      "expect": {"match": false}
+    },
+    {
+      "id": "cloudflare-cf-ray-positive",
+      "rule": {"technology": "cloudflare", "observation": "http_header", "target": "cf-ray"},
+      "input": {"headers": {"CF-RAY": "8a1b2c3d4e5f-FRA"}},
+      "expect": {"match": true}
+    },
+    {
+      "id": "cloudflare-cf-ray-negative",
+      "rule": {"technology": "cloudflare", "observation": "http_header", "target": "cf-ray"},
+      "input": {"headers": {"Server": "cloudflare"}},
+      "expect": {"match": false}
+    },
+    {
+      "id": "cloudflare-server-header-positive",
+      "rule": {"technology": "cloudflare", "observation": "http_header", "target": "Server", "operator": "regex"},
+      "input": {"headers": {"Server": "cloudflare"}},
+      "expect": {"match": true}
+    },
+    {
+      "id": "cloudflare-server-header-negative",
+      "description": "The rule is anchored: another product whose name starts with cloudflare is not Cloudflare.",
+      "rule": {"technology": "cloudflare", "observation": "http_header", "target": "Server", "operator": "regex"},
+      "input": {"headers": {"Server": "cloudflare-nginx"}},
+      "expect": {"match": false}
+    },
+    {
+      "id": "cloudflare-ns-positive",
+      "rule": {"technology": "cloudflare", "observation": "dns_record", "target": "NS"},
+      "input": {"dns": {"NS": ["ada.ns.cloudflare.com", "bob.ns.cloudflare.com"]}},
+      "expect": {"match": true}
+    },
+    {
+      "id": "cloudflare-ns-negative",
+      "rule": {"technology": "cloudflare", "observation": "dns_record", "target": "NS"},
+      "input": {"dns": {"NS": ["ns1.example.net"], "MX": ["mx.cloudflare.com"]}},
+      "expect": {"match": false}
+    }
+  ]
+}

@@ -1,7 +1,7 @@
 .DEFAULT_GOAL := help
 BIN := bin/owf
 
-.PHONY: help build test lint fmt vet check hooks clean addlicense license-check
+.PHONY: help build test lint fmt vet check hooks clean addlicense license-check validate-corpus
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN{FS=":.*?## "}{printf "  %-10s %s\n",$$1,$$2}'
@@ -37,6 +37,17 @@ license-check: ## Verify license headers
 
 hooks: ## Install git hooks (lefthook)
 	lefthook install
+
+# The corpus targets the pinned Enthec revision, so it is deterministic. Set
+# CORPUS_REVISION=<sha> to see whether newer upstream rules made a case stale.
+CORPUS_REVISION ?= 9e52f10a9533c8f7f8d0703c843f7295d56c95a3
+CORPUS_DB := .corpus.db
+validate-corpus: build ## Fetch Enthec and run validation/cases (needs git and network)
+	rm -f $(CORPUS_DB)
+	$(BIN) --db $(CORPUS_DB) init
+	$(BIN) --db $(CORPUS_DB) source refresh enthec-webappanalyzer --revision $(CORPUS_REVISION)
+	$(BIN) --db $(CORPUS_DB) fingerprint test validation/cases
+	rm -f $(CORPUS_DB) $(CORPUS_DB)-shm $(CORPUS_DB)-wal
 
 clean: ## Remove build artifacts
 	rm -rf bin dist coverage.out
