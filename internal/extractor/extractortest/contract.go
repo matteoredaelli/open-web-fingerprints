@@ -1,3 +1,6 @@
+// Copyright 2026 Matteo Redaelli
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 // Package extractortest provides the contract tests every extractor must pass.
 package extractortest
 

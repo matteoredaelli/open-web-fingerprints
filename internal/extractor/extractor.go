@@ -1,3 +1,6 @@
+// Copyright 2026 Matteo Redaelli
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 // Package extractor defines the contract between upstream sources and the
 // import pipeline. An extractor adapts one source-specific format to the
 // intermediate types below. It never touches the database or the network:

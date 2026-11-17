@@ -1,3 +1,6 @@
+// Copyright 2026 Matteo Redaelli
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 // Package domain holds the canonical, source-independent registry model.
 // Its JSON form is the public contract described by schemas/registry.schema.json.
 package domain
