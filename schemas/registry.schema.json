@@ -1,0 +1,699 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/matteoredaelli/open-web-fingerprints/schemas/registry.schema.json",
+  "title": "Open Web Fingerprints registry export",
+  "description": "Draft v0 of the public export format. See docs/domain-model.md.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "sources",
+    "technologies",
+    "fingerprints"
+  ],
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "schema_version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "sources": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/source"
+      }
+    },
+    "snapshots": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/snapshot"
+      }
+    },
+    "vendors": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/vendor"
+      }
+    },
+    "categories": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/category"
+      }
+    },
+    "technologies": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/technology"
+      }
+    },
+    "fingerprints": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/fingerprint"
+      }
+    },
+    "relationships": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/relationship"
+      }
+    }
+  },
+  "$defs": {
+    "id_source": {
+      "type": "string",
+      "pattern": "^src_[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "id_vendor": {
+      "type": "string",
+      "pattern": "^vnd_[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "id_category": {
+      "type": "string",
+      "pattern": "^cat_[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "id_technology": {
+      "type": "string",
+      "pattern": "^tech_[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "id_fingerprint": {
+      "type": "string",
+      "pattern": "^fp_[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "id_group": {
+      "type": "string",
+      "pattern": "^fpg_[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "id_relationship": {
+      "type": "string",
+      "pattern": "^rel_[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "slug": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+    },
+    "status": {
+      "enum": [
+        "draft",
+        "active",
+        "experimental",
+        "deprecated"
+      ]
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "slug",
+        "name",
+        "license",
+        "redistributable"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id_source"
+        },
+        "slug": {
+          "$ref": "#/$defs/slug"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "url": {
+          "type": "string",
+          "format": "uri"
+        },
+        "license": {
+          "type": "string",
+          "description": "SPDX expression, or NOASSERTION when unknown."
+        },
+        "extractor_id": {
+          "type": "string"
+        },
+        "redistributable": {
+          "enum": [
+            "yes",
+            "no",
+            "unreviewed"
+          ]
+        },
+        "notes": {
+          "type": "string"
+        }
+      }
+    },
+    "snapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_id",
+        "revision",
+        "retrieved_at",
+        "checksum"
+      ],
+      "properties": {
+        "source_id": {
+          "$ref": "#/$defs/id_source"
+        },
+        "revision": {
+          "type": "string",
+          "minLength": 1
+        },
+        "retrieved_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "checksum": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "files": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "path",
+              "checksum"
+            ],
+            "properties": {
+              "path": {
+                "type": "string"
+              },
+              "checksum": {
+                "type": "string",
+                "pattern": "^sha256:[0-9a-f]{64}$"
+              }
+            }
+          }
+        }
+      }
+    },
+    "vendor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "slug",
+        "name"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id_vendor"
+        },
+        "slug": {
+          "$ref": "#/$defs/slug"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "aliases": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "website": {
+          "type": "string",
+          "format": "uri"
+        }
+      }
+    },
+    "category": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "slug",
+        "name"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id_category"
+        },
+        "slug": {
+          "$ref": "#/$defs/slug"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "parent_id": {
+          "$ref": "#/$defs/id_category"
+        },
+        "group": {
+          "type": "string"
+        },
+        "provenance": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/provenance"
+          }
+        }
+      }
+    },
+    "technology": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "slug",
+        "name",
+        "status",
+        "provenance"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id_technology"
+        },
+        "slug": {
+          "$ref": "#/$defs/slug"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "aliases": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "description": {
+          "type": "string"
+        },
+        "website": {
+          "type": "string",
+          "format": "uri"
+        },
+        "kind": {
+          "enum": [
+            "software",
+            "service",
+            "platform",
+            "infrastructure"
+          ]
+        },
+        "category_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/id_category"
+          },
+          "uniqueItems": true
+        },
+        "vendor_id": {
+          "$ref": "#/$defs/id_vendor"
+        },
+        "cpe": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^cpe:2\\.3:"
+          }
+        },
+        "open_source": {
+          "type": "boolean"
+        },
+        "saas": {
+          "type": "boolean"
+        },
+        "status": {
+          "$ref": "#/$defs/status"
+        },
+        "provenance": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/provenance"
+          }
+        }
+      }
+    },
+    "fingerprint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "technology_id",
+        "observation",
+        "operator",
+        "confidence",
+        "status",
+        "provenance"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id_fingerprint"
+        },
+        "technology_id": {
+          "$ref": "#/$defs/id_technology"
+        },
+        "group_id": {
+          "$ref": "#/$defs/id_group"
+        },
+        "observation": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*$",
+          "description": "Open set. Known: http_header, cookie, html, meta_tag, script_url, stylesheet_url, js_global, dom, url_path, redirect, dns_record, ip_asn, tls_cert, tls_handshake, favicon_hash, xhr, robots, probe_response. Unknown values must be preserved by consumers."
+        },
+        "target": {
+          "type": "string"
+        },
+        "operator": {
+          "enum": [
+            "exists",
+            "equals",
+            "contains",
+            "regex",
+            "hash_equals"
+          ]
+        },
+        "pattern": {
+          "type": "string"
+        },
+        "regex_flavor": {
+          "enum": [
+            "re2",
+            "ecmascript"
+          ]
+        },
+        "version_extract": {
+          "type": "string",
+          "description": "Template referencing capture groups, for example \\1."
+        },
+        "confidence": {
+          "$ref": "#/$defs/confidence"
+        },
+        "probe": {
+          "$ref": "#/$defs/probe"
+        },
+        "status": {
+          "$ref": "#/$defs/status"
+        },
+        "validation": {
+          "$ref": "#/$defs/validation"
+        },
+        "provenance": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/provenance"
+          }
+        },
+        "raw": {
+          "description": "Upstream fragment kept for re-normalization."
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "operator": {
+                "const": "exists"
+              }
+            }
+          },
+          "else": {
+            "required": [
+              "pattern"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operator": {
+                "const": "regex"
+              }
+            },
+            "required": [
+              "operator"
+            ]
+          },
+          "then": {
+            "required": [
+              "regex_flavor"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "observation": {
+                "const": "probe_response"
+              }
+            },
+            "required": [
+              "observation"
+            ]
+          },
+          "then": {
+            "required": [
+              "probe"
+            ]
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "probe"
+            ],
+            "properties": {
+              "probe": {
+                "required": [
+                  "safety_review"
+                ],
+                "properties": {
+                  "safety_review": {
+                    "const": "approved"
+                  }
+                }
+              }
+            }
+          },
+          "else": {
+            "if": {
+              "required": [
+                "probe"
+              ]
+            },
+            "then": {
+              "properties": {
+                "status": {
+                  "not": {
+                    "const": "active"
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "probe": {
+      "type": "object",
+      "description": "Active, non-destructive request. Active probes cannot be status=active until safety_review is approved.",
+      "additionalProperties": false,
+      "required": [
+        "method",
+        "path",
+        "safety_review"
+      ],
+      "properties": {
+        "method": {
+          "enum": [
+            "GET",
+            "HEAD",
+            "OPTIONS"
+          ]
+        },
+        "path": {
+          "type": "string",
+          "pattern": "^/"
+        },
+        "rate_limit_class": {
+          "enum": [
+            "low",
+            "normal"
+          ]
+        },
+        "safety_review": {
+          "enum": [
+            "pending",
+            "approved",
+            "rejected"
+          ]
+        }
+      }
+    },
+    "validation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "health"
+      ],
+      "properties": {
+        "health": {
+          "enum": [
+            "unknown",
+            "ok",
+            "degraded",
+            "broken"
+          ]
+        },
+        "last_validated_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "test_runs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "result",
+              "at"
+            ],
+            "properties": {
+              "result": {
+                "enum": [
+                  "pass",
+                  "fail"
+                ]
+              },
+              "fixture_ref": {
+                "type": "string"
+              },
+              "at": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          }
+        },
+        "known_false_positives": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "relationship": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "from_technology_id",
+        "type",
+        "provenance"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id_relationship"
+        },
+        "from_technology_id": {
+          "$ref": "#/$defs/id_technology"
+        },
+        "to_technology_id": {
+          "$ref": "#/$defs/id_technology"
+        },
+        "to_category_id": {
+          "$ref": "#/$defs/id_category"
+        },
+        "type": {
+          "enum": [
+            "implies",
+            "requires",
+            "excludes",
+            "integrates_with",
+            "variant_of"
+          ]
+        },
+        "confidence": {
+          "$ref": "#/$defs/confidence"
+        },
+        "provenance": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/provenance"
+          }
+        }
+      },
+      "oneOf": [
+        {
+          "required": [
+            "to_technology_id"
+          ]
+        },
+        {
+          "required": [
+            "to_category_id"
+          ]
+        }
+      ]
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_id",
+        "snapshot_revision",
+        "original_id",
+        "license",
+        "imported_at",
+        "state"
+      ],
+      "properties": {
+        "source_id": {
+          "$ref": "#/$defs/id_source"
+        },
+        "snapshot_revision": {
+          "type": "string",
+          "minLength": 1
+        },
+        "original_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "original_file": {
+          "type": "string"
+        },
+        "original_confidence": {
+          "type": "number"
+        },
+        "license": {
+          "type": "string"
+        },
+        "imported_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "state": {
+          "enum": [
+            "present",
+            "removed_upstream"
+          ]
+        }
+      }
+    }
+  }
+}

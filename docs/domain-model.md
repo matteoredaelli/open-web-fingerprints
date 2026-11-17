@@ -143,3 +143,12 @@ a result of applying a rule to a real target.
 3. Matching semantics: Wappalyzer is case-insensitive and unanchored by
    default. Must those defaults be explicit per rule? A fixture-based
    comparison with wappalyzergo could check this.
+
+## Public schema (v0.1.0, draft)
+
+`schemas/registry.schema.json` (JSON Schema 2020-12) describes the export.
+`examples/registry.json` is a hand-written example covering header, cookie,
+meta tag, script URL, HTML, JS global, favicon hash, DNS, TLS and an active
+probe. `schemas/schemas_test.go` checks the example, 20 invalid mutations
+and 3 valid edge cases. Active probes cannot be `status: active` until
+their `safety_review` is `approved`.

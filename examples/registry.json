@@ -1,0 +1,529 @@
+{
+  "$schema": "../schemas/registry.schema.json",
+  "schema_version": "0.1.0",
+  "generated_at": "2026-11-17T12:00:00Z",
+  "sources": [
+    {
+      "id": "src_0192f0a0-0000-7000-8000-000000000001",
+      "slug": "enthec-webappanalyzer",
+      "name": "Enthec WebAppAnalyzer",
+      "url": "https://github.com/enthec/webappanalyzer",
+      "license": "GPL-3.0-only",
+      "extractor_id": "enthec",
+      "redistributable": "unreviewed",
+      "notes": "Example data only; hand-written, not an actual import."
+    }
+  ],
+  "snapshots": [
+    {
+      "source_id": "src_0192f0a0-0000-7000-8000-000000000001",
+      "revision": "9e52f10",
+      "retrieved_at": "2026-11-17T11:00:00Z",
+      "checksum": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+      "files": [
+        {
+          "path": "src/technologies/w.json",
+          "checksum": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+        }
+      ]
+    }
+  ],
+  "vendors": [
+    {
+      "id": "vnd_0192f0a0-0000-7000-8000-000000000001",
+      "slug": "automattic",
+      "name": "Automattic",
+      "website": "https://automattic.com"
+    },
+    {
+      "id": "vnd_0192f0a0-0000-7000-8000-000000000002",
+      "slug": "f5",
+      "name": "F5",
+      "aliases": [
+        "F5 Networks"
+      ],
+      "website": "https://www.f5.com"
+    },
+    {
+      "id": "vnd_0192f0a0-0000-7000-8000-000000000003",
+      "slug": "cloudflare",
+      "name": "Cloudflare, Inc.",
+      "website": "https://www.cloudflare.com"
+    }
+  ],
+  "categories": [
+    {
+      "id": "cat_0192f0a0-0000-7000-8000-000000000001",
+      "slug": "cms",
+      "name": "CMS"
+    },
+    {
+      "id": "cat_0192f0a0-0000-7000-8000-000000000002",
+      "slug": "web-servers",
+      "name": "Web servers"
+    },
+    {
+      "id": "cat_0192f0a0-0000-7000-8000-000000000003",
+      "slug": "cdn",
+      "name": "CDN"
+    },
+    {
+      "id": "cat_0192f0a0-0000-7000-8000-000000000004",
+      "slug": "programming-languages",
+      "name": "Programming languages"
+    }
+  ],
+  "technologies": [
+    {
+      "id": "tech_0192f0a0-0000-7000-8000-000000000001",
+      "slug": "wordpress",
+      "name": "WordPress",
+      "status": "active",
+      "provenance": [
+        {
+          "source_id": "src_0192f0a0-0000-7000-8000-000000000001",
+          "snapshot_revision": "9e52f10",
+          "original_id": "WordPress",
+          "original_file": "src/technologies/w.json",
+          "license": "GPL-3.0-only",
+          "imported_at": "2026-11-17T12:00:00Z",
+          "state": "present"
+        }
+      ],
+      "description": "Open-source blogging system and CMS.",
+      "website": "https://wordpress.org",
+      "kind": "software",
+      "category_ids": [
+        "cat_0192f0a0-0000-7000-8000-000000000001"
+      ],
+      "vendor_id": "vnd_0192f0a0-0000-7000-8000-000000000001",
+      "cpe": [
+        "cpe:2.3:a:wordpress:wordpress:*:*:*:*:*:*:*:*"
+      ],
+      "open_source": true
+    },
+    {
+      "id": "tech_0192f0a0-0000-7000-8000-000000000002",
+      "slug": "php",
+      "name": "PHP",
+      "status": "active",
+      "provenance": [
+        {
+          "source_id": "src_0192f0a0-0000-7000-8000-000000000001",
+          "snapshot_revision": "9e52f10",
+          "original_id": "PHP",
+          "original_file": "src/technologies/w.json",
+          "license": "GPL-3.0-only",
+          "imported_at": "2026-11-17T12:00:00Z",
+          "state": "present"
+        }
+      ],
+      "website": "https://www.php.net",
+      "kind": "software",
+      "category_ids": [
+        "cat_0192f0a0-0000-7000-8000-000000000004"
+      ],
+      "open_source": true
+    },
+    {
+      "id": "tech_0192f0a0-0000-7000-8000-000000000003",
+      "slug": "nginx",
+      "name": "nginx",
+      "status": "active",
+      "provenance": [
+        {
+          "source_id": "src_0192f0a0-0000-7000-8000-000000000001",
+          "snapshot_revision": "9e52f10",
+          "original_id": "nginx",
+          "original_file": "src/technologies/w.json",
+          "license": "GPL-3.0-only",
+          "imported_at": "2026-11-17T12:00:00Z",
+          "state": "present"
+        }
+      ],
+      "website": "https://nginx.org",
+      "kind": "software",
+      "category_ids": [
+        "cat_0192f0a0-0000-7000-8000-000000000002"
+      ],
+      "vendor_id": "vnd_0192f0a0-0000-7000-8000-000000000002",
+      "open_source": true
+    },
+    {
+      "id": "tech_0192f0a0-0000-7000-8000-000000000004",
+      "slug": "cloudflare",
+      "name": "Cloudflare",
+      "status": "active",
+      "provenance": [
+        {
+          "source_id": "src_0192f0a0-0000-7000-8000-000000000001",
+          "snapshot_revision": "9e52f10",
+          "original_id": "Cloudflare",
+          "original_file": "src/technologies/w.json",
+          "license": "GPL-3.0-only",
+          "imported_at": "2026-11-17T12:00:00Z",
+          "state": "present"
+        }
+      ],
+      "website": "https://www.cloudflare.com",
+      "kind": "service",
+      "category_ids": [
+        "cat_0192f0a0-0000-7000-8000-000000000003"
+      ],
+      "vendor_id": "vnd_0192f0a0-0000-7000-8000-000000000003",
+      "saas": true
+    }
+  ],
+  "fingerprints": [
+    {
+      "id": "fp_0192f0a0-0000-7000-8000-000000000001",
+      "technology_id": "tech_0192f0a0-0000-7000-8000-000000000003",
+      "observation": "http_header",
+      "operator": "regex",
+      "confidence": 0.9,
+      "status": "active",
+      "target": "Server",
+      "pattern": "^nginx(?:/([\\d.]+))?",
+      "regex_flavor": "re2",
+      "version_extract": "\\1",
+      "validation": {
+        "health": "unknown"
+      },
+      "provenance": [
+        {
+          "source_id": "src_0192f0a0-0000-7000-8000-000000000001",
+          "snapshot_revision": "9e52f10",
+          "original_id": "nginx",
+          "original_file": "src/technologies/w.json",
+          "license": "GPL-3.0-only",
+          "imported_at": "2026-11-17T12:00:00Z",
+          "state": "present"
+        }
+      ]
+    },
+    {
+      "id": "fp_0192f0a0-0000-7000-8000-000000000002",
+      "technology_id": "tech_0192f0a0-0000-7000-8000-000000000004",
+      "observation": "http_header",
+      "operator": "exists",
+      "confidence": 0.8,
+      "status": "active",
+      "target": "CF-Ray",
+      "validation": {
+        "health": "unknown"
+      },
+      "provenance": [
+        {
+          "source_id": "src_0192f0a0-0000-7000-8000-000000000001",
+          "snapshot_revision": "9e52f10",
+          "original_id": "cloudflare",
+          "original_file": "src/technologies/w.json",
+          "license": "GPL-3.0-only",
+          "imported_at": "2026-11-17T12:00:00Z",
+          "state": "present"
+        }
+      ]
+    },
+    {
+      "id": "fp_0192f0a0-0000-7000-8000-000000000003",
+      "technology_id": "tech_0192f0a0-0000-7000-8000-000000000004",
+      "observation": "cookie",
+      "operator": "exists",
+      "confidence": 0.5,
+      "status": "deprecated",
+      "target": "__cfduid",
+      "validation": {
+        "health": "unknown"
+      },
+      "provenance": [
+        {
+          "source_id": "src_0192f0a0-0000-7000-8000-000000000001",
+          "snapshot_revision": "9e52f10",
+          "original_id": "cloudflare",
+          "original_file": "src/technologies/w.json",
+          "license": "GPL-3.0-only",
+          "imported_at": "2026-11-17T12:00:00Z",
+          "state": "present"
+        }
+      ]
+    },
+    {
+      "id": "fp_0192f0a0-0000-7000-8000-000000000004",
+      "technology_id": "tech_0192f0a0-0000-7000-8000-000000000001",
+      "observation": "meta_tag",
+      "operator": "regex",
+      "confidence": 0.95,
+      "status": "active",
+      "target": "generator",
+      "pattern": "^WordPress(?: ([\\d.]+))?",
+      "regex_flavor": "re2",
+      "version_extract": "\\1",
+      "validation": {
+        "health": "unknown"
+      },
+      "provenance": [
+        {
+          "source_id": "src_0192f0a0-0000-7000-8000-000000000001",
+          "snapshot_revision": "9e52f10",
+          "original_id": "wordpress",
+          "original_file": "src/technologies/w.json",
+          "license": "GPL-3.0-only",
+          "imported_at": "2026-11-17T12:00:00Z",
+          "state": "present"
+        }
+      ]
+    },
+    {
+      "id": "fp_0192f0a0-0000-7000-8000-000000000005",
+      "technology_id": "tech_0192f0a0-0000-7000-8000-000000000001",
+      "observation": "script_url",
+      "operator": "contains",
+      "confidence": 0.7,
+      "status": "active",
+      "group_id": "fpg_0192f0a0-0000-7000-8000-000000000001",
+      "pattern": "/wp-includes/",
+      "validation": {
+        "health": "unknown"
+      },
+      "provenance": [
+        {
+          "source_id": "src_0192f0a0-0000-7000-8000-000000000001",
+          "snapshot_revision": "9e52f10",
+          "original_id": "wordpress",
+          "original_file": "src/technologies/w.json",
+          "license": "GPL-3.0-only",
+          "imported_at": "2026-11-17T12:00:00Z",
+          "state": "present"
+        }
+      ]
+    },
+    {
+      "id": "fp_0192f0a0-0000-7000-8000-000000000006",
+      "technology_id": "tech_0192f0a0-0000-7000-8000-000000000001",
+      "observation": "html",
+      "operator": "contains",
+      "confidence": 0.7,
+      "status": "active",
+      "group_id": "fpg_0192f0a0-0000-7000-8000-000000000001",
+      "pattern": "/wp-content/",
+      "validation": {
+        "health": "unknown"
+      },
+      "provenance": [
+        {
+          "source_id": "src_0192f0a0-0000-7000-8000-000000000001",
+          "snapshot_revision": "9e52f10",
+          "original_id": "wordpress",
+          "original_file": "src/technologies/w.json",
+          "license": "GPL-3.0-only",
+          "imported_at": "2026-11-17T12:00:00Z",
+          "state": "present"
+        }
+      ]
+    },
+    {
+      "id": "fp_0192f0a0-0000-7000-8000-000000000007",
+      "technology_id": "tech_0192f0a0-0000-7000-8000-000000000001",
+      "observation": "js_global",
+      "operator": "regex",
+      "confidence": 0.4,
+      "status": "experimental",
+      "target": "wp.apiFetch",
+      "pattern": "^(?!undefined)",
+      "regex_flavor": "ecmascript",
+      "validation": {
+        "health": "unknown"
+      },
+      "provenance": [
+        {
+          "source_id": "src_0192f0a0-0000-7000-8000-000000000001",
+          "snapshot_revision": "9e52f10",
+          "original_id": "wordpress",
+          "original_file": "src/technologies/w.json",
+          "license": "GPL-3.0-only",
+          "imported_at": "2026-11-17T12:00:00Z",
+          "state": "present"
+        }
+      ]
+    },
+    {
+      "id": "fp_0192f0a0-0000-7000-8000-000000000008",
+      "technology_id": "tech_0192f0a0-0000-7000-8000-000000000001",
+      "observation": "favicon_hash",
+      "operator": "hash_equals",
+      "confidence": 0.6,
+      "status": "draft",
+      "pattern": "f420dc2c7d90d7873a90d82cd7fde315",
+      "validation": {
+        "health": "unknown"
+      },
+      "provenance": [
+        {
+          "source_id": "src_0192f0a0-0000-7000-8000-000000000001",
+          "snapshot_revision": "9e52f10",
+          "original_id": "wordpress",
+          "original_file": "src/technologies/w.json",
+          "license": "GPL-3.0-only",
+          "imported_at": "2026-11-17T12:00:00Z",
+          "state": "present"
+        }
+      ]
+    },
+    {
+      "id": "fp_0192f0a0-0000-7000-8000-000000000009",
+      "technology_id": "tech_0192f0a0-0000-7000-8000-000000000001",
+      "observation": "probe_response",
+      "operator": "contains",
+      "confidence": 0.8,
+      "status": "draft",
+      "target": "body",
+      "pattern": "Powered by WordPress",
+      "probe": {
+        "method": "GET",
+        "path": "/wp-login.php",
+        "rate_limit_class": "low",
+        "safety_review": "pending"
+      },
+      "validation": {
+        "health": "unknown"
+      },
+      "provenance": [
+        {
+          "source_id": "src_0192f0a0-0000-7000-8000-000000000001",
+          "snapshot_revision": "9e52f10",
+          "original_id": "wordpress",
+          "original_file": "src/technologies/w.json",
+          "license": "GPL-3.0-only",
+          "imported_at": "2026-11-17T12:00:00Z",
+          "state": "present"
+        }
+      ]
+    },
+    {
+      "id": "fp_0192f0a0-0000-7000-8000-000000000010",
+      "technology_id": "tech_0192f0a0-0000-7000-8000-000000000002",
+      "observation": "http_header",
+      "operator": "regex",
+      "confidence": 0.8,
+      "status": "active",
+      "target": "X-Powered-By",
+      "pattern": "^PHP(?:/([\\d.]+))?",
+      "regex_flavor": "re2",
+      "version_extract": "\\1",
+      "validation": {
+        "health": "unknown"
+      },
+      "provenance": [
+        {
+          "source_id": "src_0192f0a0-0000-7000-8000-000000000001",
+          "snapshot_revision": "9e52f10",
+          "original_id": "php",
+          "original_file": "src/technologies/w.json",
+          "license": "GPL-3.0-only",
+          "imported_at": "2026-11-17T12:00:00Z",
+          "state": "present"
+        }
+      ]
+    },
+    {
+      "id": "fp_0192f0a0-0000-7000-8000-000000000011",
+      "technology_id": "tech_0192f0a0-0000-7000-8000-000000000004",
+      "observation": "dns_record",
+      "operator": "regex",
+      "confidence": 0.6,
+      "status": "experimental",
+      "target": "NS",
+      "pattern": "\\.ns\\.cloudflare\\.com\\.?$",
+      "regex_flavor": "re2",
+      "validation": {
+        "health": "unknown"
+      },
+      "provenance": [
+        {
+          "source_id": "src_0192f0a0-0000-7000-8000-000000000001",
+          "snapshot_revision": "9e52f10",
+          "original_id": "cloudflare",
+          "original_file": "src/technologies/w.json",
+          "license": "GPL-3.0-only",
+          "imported_at": "2026-11-17T12:00:00Z",
+          "state": "present"
+        }
+      ]
+    },
+    {
+      "id": "fp_0192f0a0-0000-7000-8000-000000000012",
+      "technology_id": "tech_0192f0a0-0000-7000-8000-000000000004",
+      "observation": "tls_cert",
+      "operator": "contains",
+      "confidence": 0.4,
+      "status": "experimental",
+      "target": "issuer",
+      "pattern": "Cloudflare Inc",
+      "validation": {
+        "health": "ok",
+        "last_validated_at": "2026-11-17T12:00:00Z",
+        "test_runs": [
+          {
+            "result": "pass",
+            "fixture_ref": "testdata/fixtures/cloudflare-tls.json",
+            "at": "2026-11-17T12:00:00Z"
+          }
+        ],
+        "known_false_positives": [
+          "Sites behind other proxies that reuse Cloudflare certificates"
+        ]
+      },
+      "raw": {
+        "certIssuer": "Cloudflare Inc"
+      },
+      "provenance": [
+        {
+          "source_id": "src_0192f0a0-0000-7000-8000-000000000001",
+          "snapshot_revision": "9e52f10",
+          "original_id": "cloudflare",
+          "original_file": "src/technologies/w.json",
+          "license": "GPL-3.0-only",
+          "imported_at": "2026-11-17T12:00:00Z",
+          "state": "present"
+        }
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "id": "rel_0192f0a0-0000-7000-8000-000000000001",
+      "from_technology_id": "tech_0192f0a0-0000-7000-8000-000000000001",
+      "to_technology_id": "tech_0192f0a0-0000-7000-8000-000000000002",
+      "type": "implies",
+      "confidence": 1,
+      "provenance": [
+        {
+          "source_id": "src_0192f0a0-0000-7000-8000-000000000001",
+          "snapshot_revision": "9e52f10",
+          "original_id": "WordPress",
+          "original_file": "src/technologies/w.json",
+          "license": "GPL-3.0-only",
+          "imported_at": "2026-11-17T12:00:00Z",
+          "state": "present"
+        }
+      ]
+    },
+    {
+      "id": "rel_0192f0a0-0000-7000-8000-000000000002",
+      "from_technology_id": "tech_0192f0a0-0000-7000-8000-000000000001",
+      "to_category_id": "cat_0192f0a0-0000-7000-8000-000000000002",
+      "type": "requires",
+      "provenance": [
+        {
+          "source_id": "src_0192f0a0-0000-7000-8000-000000000001",
+          "snapshot_revision": "9e52f10",
+          "original_id": "WordPress",
+          "original_file": "src/technologies/w.json",
+          "license": "GPL-3.0-only",
+          "imported_at": "2026-11-17T12:00:00Z",
+          "state": "present"
+        }
+      ]
+    }
+  ]
+}
