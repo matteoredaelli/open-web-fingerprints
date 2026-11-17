@@ -50,9 +50,13 @@ func newConflictCmd(o *options) *cobra.Command {
 				return printJSON(cmd, out)
 			}
 			w := tabwriter.NewWriter(cmd.OutOrStdout(), 0, 4, 2, ' ', 0)
-			fmt.Fprintln(w, "ID\tKIND\tSTATE\tIDENTITY\tWEBSITES")
+			fmt.Fprintln(w, "ID\tKIND\tSTATE\tIDENTITY/FIELD\tWEBSITES")
 			for _, x := range out {
-				fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n", x.ID, x.Kind, x.State, x.Detail["identity"], x.Detail["websites"])
+				what := x.Detail["identity"]
+				if what == "" {
+					what = x.Detail["field"] // metadata conflicts name the field
+				}
+				fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n", x.ID, x.Kind, x.State, what, x.Detail["websites"])
 			}
 			if err := w.Flush(); err != nil {
 				return err

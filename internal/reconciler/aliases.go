@@ -48,6 +48,18 @@ func Translate(fresh, stored domain.Records, aliases map[string]string) Translat
 		return domain.TechnologyID(Resolve(aliases, string(id)))
 	}
 
+	// Vendors: the ID is global per CPE vendor, so equal IDs only need their
+	// provenance combined.
+	vendIdx := map[domain.VendorID]int{}
+	for _, v := range fresh.Vendors {
+		if i, dup := vendIdx[v.ID]; dup {
+			out.Records.Vendors[i].Provenance = domain.UnionProvenance(out.Records.Vendors[i].Provenance, v.Provenance)
+			continue
+		}
+		vendIdx[v.ID] = len(out.Records.Vendors)
+		out.Records.Vendors = append(out.Records.Vendors, v)
+	}
+
 	// Categories.
 	catIdx := map[domain.CategoryID]int{}
 	for _, c := range fresh.Categories {

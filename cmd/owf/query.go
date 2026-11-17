@@ -129,6 +129,11 @@ func newTechnologyCmd(o *options) *cobra.Command {
 			if t.Description != "" {
 				fmt.Fprintf(out, "  about:    %s\n", t.Description)
 			}
+			for _, v := range all.Vendors {
+				if v.ID == t.VendorID {
+					fmt.Fprintf(out, "  vendor:   %s (cpe: %s)\n", v.Name, v.CPEVendor)
+				}
+			}
 			for _, cid := range t.CategoryIDs {
 				for _, c := range all.Categories {
 					if c.ID == cid {
@@ -177,6 +182,47 @@ func printFingerprints(cmd *cobra.Command, fps []domain.Fingerprint) {
 		fmt.Fprintf(w, "  %s\t%s\t%s\t%s\t%.2f\t%s\n", f.Observation, f.Target, f.Operator, pat, f.Confidence, f.Status)
 	}
 	_ = w.Flush()
+}
+
+func newVendorCmd(o *options) *cobra.Command {
+	c := &cobra.Command{Use: "vendor", Short: "Browse vendors"}
+	var asJSON bool
+	list := &cobra.Command{
+		Use:   "list",
+		Short: "List vendors with the number of technologies they have",
+		Args:  cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			r, err := o.open(cmd.Context())
+			if err != nil {
+				return err
+			}
+			defer func() { _ = r.Close() }()
+			all, err := r.AllRecords(cmd.Context())
+			if err != nil {
+				return err
+			}
+			n := map[domain.VendorID]int{}
+			for _, t := range all.Technologies {
+				if t.VendorID != "" {
+					n[t.VendorID]++
+				}
+			}
+			out := all.Vendors
+			sort.Slice(out, func(i, j int) bool { return out[i].Slug < out[j].Slug })
+			if asJSON {
+				return printJSON(cmd, out)
+			}
+			w := tabwriter.NewWriter(cmd.OutOrStdout(), 0, 4, 2, ' ', 0)
+			fmt.Fprintln(w, "SLUG\tNAME\tCPE VENDOR\tTECHNOLOGIES")
+			for _, v := range out {
+				fmt.Fprintf(w, "%s\t%s\t%s\t%d\n", v.Slug, v.Name, v.CPEVendor, n[v.ID])
+			}
+			return w.Flush()
+		},
+	}
+	list.Flags().BoolVar(&asJSON, "json", false, "output JSON")
+	c.AddCommand(list)
+	return c
 }
 
 func newFingerprintCmd(o *options) *cobra.Command {
@@ -327,6 +373,7 @@ func newStatsCmd(o *options) *cobra.Command {
 			}
 			out := cmd.OutOrStdout()
 			fmt.Fprintf(out, "open conflicts  %d\n", open)
+			fmt.Fprintf(out, "vendors         %d\n", len(all.Vendors))
 			fmt.Fprintf(out, "sources         %d\ncategories      %d\ntechnologies    %d\nfingerprints    %d\nrelationships   %d\n",
 				len(srcs), len(all.Categories), len(all.Technologies), len(all.Fingerprints), len(all.Relationships))
 			byObs := map[domain.Observation]int{}

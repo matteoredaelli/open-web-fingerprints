@@ -287,6 +287,44 @@ func Run(t *testing.T, newRepo Factory) {
 		}
 	})
 
+	t.Run("vendors", func(t *testing.T) {
+		r := newRepo(t)
+		v := func(id, slug, cpe string, p ...domain.Provenance) domain.Vendor {
+			return domain.Vendor{ID: domain.VendorID(id), Slug: slug, Name: slug, CPEVendor: cpe, Provenance: p}
+		}
+		recs := domain.Records{Vendors: []domain.Vendor{
+			v("vnd_1", "adobe", "adobe", prov("src_1", "present")),
+			v("vnd_2", "acme", "acme", prov("src_2", "present")),
+			v("vnd_3", "manual", ""), // curated by hand: no CPE, no provenance
+			v("vnd_4", "manual-2", ""),
+		}}
+		if err := r.Apply(ctx, repository.ChangeSet{Upsert: recs}); err != nil {
+			t.Fatal(err)
+		}
+		all, _ := r.AllRecords(ctx)
+		if len(all.Vendors) != 4 {
+			t.Fatalf("vendors = %d", len(all.Vendors))
+		}
+		if got, _ := r.SourceRecords(ctx, "src_1"); len(got.Vendors) != 1 || got.Vendors[0].ID != "vnd_1" {
+			t.Fatalf("source vendors: %+v", got.Vendors)
+		}
+		if err := r.Apply(ctx, repository.ChangeSet{
+			SourceID: "src_1", RemovedUpstream: repository.RecordIDs{Vendors: []string{"vnd_1"}},
+		}); err != nil {
+			t.Fatal(err)
+		}
+		got, _ := r.SourceRecords(ctx, "src_1")
+		if got.Vendors[0].Provenance[0].State != "removed_upstream" {
+			t.Errorf("vendor provenance: %+v", got.Vendors[0].Provenance)
+		}
+		if err := r.Apply(ctx, repository.ChangeSet{Delete: repository.RecordIDs{Vendors: []string{"vnd_2"}}}); err != nil {
+			t.Fatal(err)
+		}
+		if all, _ := r.AllRecords(ctx); len(all.Vendors) != 3 {
+			t.Errorf("after delete: %d vendors", len(all.Vendors))
+		}
+	})
+
 	t.Run("public example round trips without loss", func(t *testing.T) {
 		b, err := os.ReadFile(ExamplePath)
 		if err != nil {
@@ -308,7 +346,7 @@ func Run(t *testing.T, newRepo Factory) {
 			}
 		}
 		want := domain.Records{
-			Categories: reg.Categories, Technologies: reg.Technologies,
+			Vendors: reg.Vendors, Categories: reg.Categories, Technologies: reg.Technologies,
 			Fingerprints: reg.Fingerprints, Relationships: reg.Relationships,
 		}
 		if err := r.Apply(ctx, repository.ChangeSet{Upsert: want}); err != nil {
@@ -327,6 +365,7 @@ func Run(t *testing.T, newRepo Factory) {
 // canonical marshals records sorted by ID so that order does not matter.
 func canonical(t *testing.T, r domain.Records) string {
 	t.Helper()
+	sort.Slice(r.Vendors, func(i, j int) bool { return r.Vendors[i].ID < r.Vendors[j].ID })
 	sort.Slice(r.Categories, func(i, j int) bool { return r.Categories[i].ID < r.Categories[j].ID })
 	sort.Slice(r.Technologies, func(i, j int) bool { return r.Technologies[i].ID < r.Technologies[j].ID })
 	sort.Slice(r.Fingerprints, func(i, j int) bool { return r.Fingerprints[i].ID < r.Fingerprints[j].ID })

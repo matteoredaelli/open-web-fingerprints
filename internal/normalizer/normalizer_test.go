@@ -316,3 +316,64 @@ func TestSlugsStayStableAndUniqueAcrossSources(t *testing.T) {
 		t.Errorf("slugs: %v", slugs)
 	}
 }
+
+func TestVendorsFromCPE(t *testing.T) {
+	ex := &extractor.ExtractionResult{Technologies: []extractor.ExtractedTechnology{
+		{Key: "A", Name: "A", File: "a.json", CPE: []string{"cpe:2.3:a:experience_manager_inc:aem:*:*:*:*:*:*:*:*"}},
+		{Key: "B", Name: "B", File: "b.json", CPE: []string{"cpe:2.3:a:experience_manager_inc:other:*:*:*:*:*:*:*:*"}},
+		{Key: "C", Name: "C", File: "c.json", CPE: []string{"not a cpe", "cpe:2.3:a:F5:nginx:*:*:*:*:*:*:*:*"}},
+		{Key: "D", Name: "D", File: "d.json"},
+		{Key: "E", Name: "E", File: "e.json", CPE: []string{"cpe:2.3:a:*:x:*:*:*:*:*:*:*:*"}},
+	}}
+	n := normalizer.New(normalizer.NewMemoryAllocator())
+	res := normalize(t, n, ex)
+	if len(res.Vendors) != 2 {
+		t.Fatalf("vendors = %+v", res.Vendors)
+	}
+	byTok := map[string]domain.Vendor{}
+	for _, v := range res.Vendors {
+		byTok[v.CPEVendor] = v
+	}
+	v := byTok["experience_manager_inc"]
+	if v.Name != "Experience Manager Inc" || v.Slug != "experience-manager-inc" ||
+		len(v.Provenance) != 1 || v.Provenance[0].OriginalID != "experience_manager_inc" || v.Provenance[0].OriginalFile != "a.json" {
+		t.Errorf("vendor: %+v", v)
+	}
+	if byTok["f5"].Name != "F5" {
+		t.Errorf("name: %q", byTok["f5"].Name)
+	}
+	vendorOf := map[string]domain.VendorID{}
+	for _, x := range res.Technologies {
+		vendorOf[x.Name] = x.VendorID
+	}
+	if vendorOf["A"] != v.ID || vendorOf["B"] != v.ID || vendorOf["C"] != byTok["f5"].ID || vendorOf["D"] != "" || vendorOf["E"] != "" {
+		t.Errorf("technology vendors: %v", vendorOf)
+	}
+
+	// The vendor ID does not depend on the source: two sources share it.
+	other := testSource()
+	other.ID = "src_0192f0a0-0000-7000-8000-000000000002"
+	res2, err := n.Normalize(normalizer.Input{Source: other, Revision: "r", ImportedAt: importedAt, Extraction: ex, Existing: domain.Records{Vendors: res.Vendors}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, v2 := range res2.Vendors {
+		if v2.ID != byTok[v2.CPEVendor].ID || v2.Slug != byTok[v2.CPEVendor].Slug {
+			t.Errorf("vendor must be the same record in every source: %+v vs %+v", v2, byTok[v2.CPEVendor])
+		}
+		if v2.Provenance[0].SourceID != other.ID {
+			t.Errorf("provenance must name this source: %+v", v2.Provenance)
+		}
+	}
+}
+
+func TestVendorSlugsAreUniqueAndStable(t *testing.T) {
+	ex := &extractor.ExtractionResult{Technologies: []extractor.ExtractedTechnology{
+		{Key: "A", Name: "A", CPE: []string{"cpe:2.3:a:foo_bar:x:*:*:*:*:*:*:*:*"}},
+		{Key: "B", Name: "B", CPE: []string{"cpe:2.3:a:foo-bar:x:*:*:*:*:*:*:*:*"}}, // same slug, different identifier
+	}}
+	res := normalize(t, normalizer.New(normalizer.NewMemoryAllocator()), ex)
+	if len(res.Vendors) != 2 || res.Vendors[0].Slug != "foo-bar" || res.Vendors[1].Slug != "foo-bar-2" {
+		t.Fatalf("vendors: %+v", res.Vendors)
+	}
+}

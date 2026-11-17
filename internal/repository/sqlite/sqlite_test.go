@@ -95,3 +95,21 @@ func TestCancelledContext(t *testing.T) {
 		t.Fatal("cancelled context must fail")
 	}
 }
+
+func TestDuplicateCPEVendorIsRejected(t *testing.T) {
+	r := open(t, ":memory:")
+	mk := func(id, slug, cpe string) domain.Vendor {
+		return domain.Vendor{ID: domain.VendorID(id), Slug: slug, Name: slug, CPEVendor: cpe}
+	}
+	ctx := context.Background()
+	if err := r.Apply(ctx, repository.ChangeSet{Upsert: domain.Records{Vendors: []domain.Vendor{mk("vnd_1", "a", "adobe")}}}); err != nil {
+		t.Fatal(err)
+	}
+	if err := r.Apply(ctx, repository.ChangeSet{Upsert: domain.Records{Vendors: []domain.Vendor{mk("vnd_2", "b", "adobe")}}}); err == nil {
+		t.Fatal("a second vendor with the same CPE vendor must be rejected")
+	}
+	// Hand-made vendors have no CPE vendor and may be many.
+	if err := r.Apply(ctx, repository.ChangeSet{Upsert: domain.Records{Vendors: []domain.Vendor{mk("vnd_3", "c", ""), mk("vnd_4", "d", "")}}}); err != nil {
+		t.Fatalf("vendors without CPE must be allowed: %v", err)
+	}
+}

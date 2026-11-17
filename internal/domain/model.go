@@ -113,6 +113,10 @@ type Vendor struct {
 	Name    string   `json:"name"`
 	Aliases []string `json:"aliases,omitempty"`
 	Website string   `json:"website,omitempty"`
+	// CPEVendor is the vendor identifier of the CPE dictionary. It is the key
+	// that identifies the same vendor across sources.
+	CPEVendor  string       `json:"cpe_vendor,omitempty"`
+	Provenance []Provenance `json:"provenance,omitempty"`
 }
 
 // Category is a taxonomy entry.

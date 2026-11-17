@@ -249,6 +249,9 @@ func loadKind[T any](ctx context.Context, q queryer, table string, source domain
 func (r *Repo) load(ctx context.Context, source domain.SourceID, all bool) (domain.Records, error) {
 	var out domain.Records
 	var err error
+	if out.Vendors, err = loadKind[domain.Vendor](ctx, r.db, "vendors", source, all); err != nil {
+		return out, err
+	}
 	if out.Categories, err = loadKind[domain.Category](ctx, r.db, "categories", source, all); err != nil {
 		return out, err
 	}
@@ -343,6 +346,17 @@ func (r *Repo) apply(ctx context.Context, tx *sql.Tx, cs repository.ChangeSet) e
 			return wrap("conflict", string(c.ID), err)
 		}
 	}
+	for _, v := range cs.Upsert.Vendors {
+		if _, err := tx.ExecContext(ctx,
+			`INSERT INTO vendors(id, slug, cpe_vendor, data) VALUES (?,?,?,?)
+			 ON CONFLICT(id) DO UPDATE SET slug=excluded.slug, cpe_vendor=excluded.cpe_vendor, data=excluded.data`,
+			string(v.ID), v.Slug, v.CPEVendor, mustJSON(v)); err != nil {
+			return wrap("vendor", string(v.ID), err)
+		}
+		if err := r.setProvenance(ctx, tx, domain.KindVendor, string(v.ID), v.Provenance); err != nil {
+			return wrap("vendor provenance", string(v.ID), err)
+		}
+	}
 	for _, c := range cs.Upsert.Categories {
 		if _, err := tx.ExecContext(ctx,
 			`INSERT INTO categories(id, slug, data) VALUES (?,?,?)
@@ -411,7 +425,7 @@ func (r *Repo) deleteRecords(ctx context.Context, tx *sql.Tx, d repository.Recor
 		ids   []string
 	}{
 		{"relationships", d.Relationships}, {"fingerprints", d.Fingerprints},
-		{"technologies", d.Technologies}, {"categories", d.Categories},
+		{"technologies", d.Technologies}, {"categories", d.Categories}, {"vendors", d.Vendors},
 	} {
 		for _, id := range g.ids {
 			// table comes from the fixed list above, never from input.
@@ -432,6 +446,10 @@ func (r *Repo) deleteRecords(ctx context.Context, tx *sql.Tx, d repository.Recor
 
 // markRemoved flags the source's provenance entry on each listed record.
 func (r *Repo) markRemoved(ctx context.Context, tx *sql.Tx, cs repository.ChangeSet) error {
+	if err := markKind[domain.Vendor](ctx, tx, "vendors", cs.SourceID, cs.RemovedUpstream.Vendors,
+		func(c *domain.Vendor) *[]domain.Provenance { return &c.Provenance }); err != nil {
+		return err
+	}
 	if err := markKind[domain.Category](ctx, tx, "categories", cs.SourceID, cs.RemovedUpstream.Categories,
 		func(c *domain.Category) *[]domain.Provenance { return &c.Provenance }); err != nil {
 		return err

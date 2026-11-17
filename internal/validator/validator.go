@@ -60,7 +60,23 @@ func Validate(r domain.Records) []Issue {
 		ids[id] = true
 		return false
 	}
+	vendors := map[domain.VendorID]bool{}
 	slugs := map[string]bool{}
+	cpeVendors := map[string]bool{}
+	for _, x := range r.Vendors {
+		dup(string(x.ID))
+		vendors[x.ID] = true
+		if slugs["v:"+x.Slug] {
+			c.err("duplicate_slug", string(x.ID), "vendor slug %q used twice", x.Slug)
+		}
+		slugs["v:"+x.Slug] = true
+		if x.CPEVendor != "" {
+			if cpeVendors[x.CPEVendor] {
+				c.err("duplicate_cpe_vendor", string(x.ID), "CPE vendor %q used by two vendors", x.CPEVendor)
+			}
+			cpeVendors[x.CPEVendor] = true
+		}
+	}
 	for _, x := range r.Categories {
 		dup(string(x.ID))
 		cats[x.ID] = true
@@ -83,6 +99,9 @@ func Validate(r domain.Records) []Issue {
 		slugs["t:"+x.Slug] = true
 		if len(x.Provenance) == 0 {
 			c.err("missing_provenance", string(x.ID), "technology has no provenance")
+		}
+		if x.VendorID != "" && !vendors[x.VendorID] {
+			c.err("dangling_reference", string(x.ID), "vendor %s not found", x.VendorID)
 		}
 		for _, cid := range x.CategoryIDs {
 			if !cats[cid] {

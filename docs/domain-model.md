@@ -283,3 +283,28 @@ sources are not in the catalogue yet.
 test evidence in `validation` (new optional `expect` field on `test_runs`);
 `owf fingerprint lint` reports rules likely to match too much. See
 [validation.md](validation.md).
+
+## Vendors from CPE (implemented)
+
+A technology's first usable CPE 2.3 string gives its vendor
+(`cpe:2.3:a:<vendor>:<product>:...`). `Vendor` has two new optional fields:
+`cpe_vendor` and `provenance`.
+
+- The CPE vendor field is an identifier of an external dictionary, not a free
+  name, so it identifies the same vendor in every source. Vendors are
+  therefore **created and shared automatically** (the ID is allocated per CPE
+  vendor, not per source). This is unlike technologies, whose names are
+  matched only as candidates for review.
+- The display name is derived from the identifier (`experience_manager`
+  becomes `Experience Manager`) and is a guess: `Angularjs`, `Php`. Curate it;
+  a stored vendor is never overwritten by a refresh, only its provenance grows.
+- A vendor whose technologies all disappear from one source gets that
+  source's provenance marked `removed_upstream`; it is not deleted.
+- Merging two technologies whose vendors differ keeps the survivor's vendor and
+  opens a `metadata_conflict` for `vendor`.
+- `owf vendor list`; `technology show` names the vendor; `stats` counts vendors.
+- Real data (Enthec + HTTP Archive, merged): 407 vendors, 468 of 7743
+  technologies have one (only 6% of technologies carry a CPE), export valid.
+
+Not done: vendor websites and aliases (they need curation), and merging two
+vendors that are the same organization under different CPE identifiers.

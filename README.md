@@ -30,6 +30,7 @@ owf source refresh enthec-webappanalyzer --revision <40-char sha>   # pin a comm
 owf import enthec-webappanalyzer --snapshot /path/to/clone --revision <sha>
 owf stats
 owf technology show wordpress
+owf vendor list
 owf fingerprint list --technology nginx
 owf fingerprint validate
 owf conflict list --state open               # candidates from other sources

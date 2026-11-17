@@ -64,6 +64,7 @@ type ChangeSet struct {
 
 // RecordIDs lists record IDs by kind.
 type RecordIDs struct {
+	Vendors       []string
 	Categories    []string
 	Technologies  []string
 	Fingerprints  []string
@@ -72,5 +73,5 @@ type RecordIDs struct {
 
 // Len returns the total number of IDs.
 func (r RecordIDs) Len() int {
-	return len(r.Categories) + len(r.Technologies) + len(r.Fingerprints) + len(r.Relationships)
+	return len(r.Vendors) + len(r.Categories) + len(r.Technologies) + len(r.Fingerprints) + len(r.Relationships)
 }

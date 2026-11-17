@@ -256,3 +256,8 @@ all `same_domain` candidates and category candidates approved:
 8617 of the 8925 HTTP Archive rules (96.5%) mean the same as an Enthec rule.
 Technology and category counts are unchanged by the correction.
 Re-importing either source afterwards changes nothing.
+
+Vendors do not follow the technology rule: they are created automatically from
+the CPE vendor identifier, which is a key of an external dictionary (see
+domain-model.md). With vendors included, the merged real-data registry has 34
+open conflicts (30 candidates plus 4 vendor `metadata_conflict`s).

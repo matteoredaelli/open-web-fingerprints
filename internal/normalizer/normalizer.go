@@ -34,6 +34,7 @@ type Input struct {
 // Result holds canonical records and the warnings raised while mapping.
 // Source and snapshot records are produced by the pipeline, not here.
 type Result struct {
+	Vendors       []domain.Vendor
 	Categories    []domain.Category
 	Technologies  []domain.Technology
 	Fingerprints  []domain.Fingerprint
@@ -63,6 +64,7 @@ type run struct {
 	res     *Result
 	srcID   string
 	cats    map[string]domain.CategoryID
+	vendors map[string]domain.VendorID
 	techs   map[string]domain.TechnologyID
 	usedFP  map[string]bool
 	usedRel map[string]bool
@@ -80,12 +82,16 @@ func (n *Default) Normalize(in Input) (*Result, error) {
 	r := &run{
 		n: n, in: in, res: &Result{}, srcID: string(in.Source.ID),
 		cats:    map[string]domain.CategoryID{},
+		vendors: map[string]domain.VendorID{},
 		techs:   map[string]domain.TechnologyID{},
 		usedFP:  map[string]bool{},
 		usedRel: map[string]bool{},
 	}
 	r.res.Warnings = append(r.res.Warnings, in.Extraction.Warnings...)
 	if err := r.categories(); err != nil {
+		return nil, err
+	}
+	if err := r.vendorRecords(); err != nil {
 		return nil, err
 	}
 	if err := r.technologies(); err != nil {
@@ -177,6 +183,7 @@ func (r *run) technologies() error {
 			ID: domain.TechnologyID(id), Slug: slug, Name: t.Name,
 			Description: t.Description, Website: t.Website, Kind: t.Kind, CPE: t.CPE,
 			OpenSource: t.OpenSource, SaaS: t.SaaS, Status: domain.StatusActive,
+			VendorID:   r.vendorOf(t),
 			Provenance: r.prov(t.Key, t.File, nil),
 		}
 		for _, ck := range t.CategoryKeys {
@@ -352,7 +359,72 @@ func (r *run) relationships() error {
 // Records returns the canonical records of the result.
 func (r *Result) Records() domain.Records {
 	return domain.Records{
+		Vendors:    r.Vendors,
 		Categories: r.Categories, Technologies: r.Technologies,
 		Fingerprints: r.Fingerprints, Relationships: r.Relationships,
 	}
+}
+
+// vendorToken returns the CPE vendor of a technology, if it has one.
+func vendorToken(t extractor.ExtractedTechnology) (string, bool) {
+	for _, c := range t.CPE {
+		if v, ok := domain.CPEVendor(c); ok {
+			return v, true
+		}
+	}
+	return "", false
+}
+
+func (r *run) vendorOf(t extractor.ExtractedTechnology) domain.VendorID {
+	if v, ok := vendorToken(t); ok {
+		return r.vendors[v]
+	}
+	return ""
+}
+
+// vendorRecords creates one vendor per CPE vendor identifier. The identifier
+// comes from an external dictionary, so unlike names it identifies the same
+// vendor in every source: the ID is allocated globally, not per source.
+// The display name is derived from the identifier and can be curated; a
+// stored vendor is never overwritten by a refresh.
+func (r *run) vendorRecords() error {
+	slugs := newSlugSet("vendor")
+	known := map[domain.VendorID]string{}
+	for _, v := range r.in.Existing.Vendors {
+		known[v.ID] = v.Slug
+		slugs.reserve(v.Slug)
+	}
+	done := map[string]bool{}
+	for _, t := range r.in.Extraction.Technologies {
+		tok, ok := vendorToken(t)
+		if !ok || done[tok] {
+			continue
+		}
+		done[tok] = true
+		id, err := r.n.Alloc.Allocate(domain.KindVendor, "", "vendor:"+tok)
+		if err != nil {
+			return fmt.Errorf("normalizer: allocate vendor %q: %w", tok, err)
+		}
+		r.vendors[tok] = domain.VendorID(id)
+		slug, ok := known[domain.VendorID(id)]
+		if !ok {
+			slug = slugs.unique(tok)
+		}
+		r.res.Vendors = append(r.res.Vendors, domain.Vendor{
+			ID: domain.VendorID(id), Slug: slug, Name: prettyVendor(tok), CPEVendor: tok,
+			Provenance: r.prov(tok, t.File, nil),
+		})
+	}
+	return nil
+}
+
+// prettyVendor turns a CPE vendor identifier into a readable name:
+// "experience_manager" becomes "Experience Manager". It is a guess and is
+// meant to be curated.
+func prettyVendor(tok string) string {
+	words := strings.FieldsFunc(tok, func(c rune) bool { return c == '_' || c == '-' })
+	for i, w := range words {
+		words[i] = strings.ToUpper(w[:1]) + w[1:]
+	}
+	return strings.Join(words, " ")
 }

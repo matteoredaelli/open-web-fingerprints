@@ -37,7 +37,7 @@ func Build(ctx context.Context, repo repository.Repository, now time.Time) (doma
 	now = now.UTC()
 	reg := domain.Registry{
 		Schema: SchemaURL, SchemaVersion: SchemaVersion, GeneratedAt: &now,
-		Sources: srcs, Categories: recs.Categories, Technologies: recs.Technologies,
+		Sources: srcs, Vendors: recs.Vendors, Categories: recs.Categories, Technologies: recs.Technologies,
 		Fingerprints: recs.Fingerprints, Relationships: recs.Relationships,
 	}
 	if reg.Sources == nil {

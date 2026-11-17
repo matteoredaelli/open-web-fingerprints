@@ -287,3 +287,37 @@ func TestMergeCategories(t *testing.T) {
 		t.Error("the caller's records must not be mutated")
 	}
 }
+
+func TestMetadataConflictOnDifferentVendors(t *testing.T) {
+	recs, cs := fixture()
+	recs.Technologies[0].VendorID = "vnd_a"
+	recs.Technologies[1].VendorID = "vnd_b"
+	w := NewWorkspace(recs, nil, cs, alloc, now)
+	if _, err := w.MergeTechnologies("tech_1", "tech_2"); err != nil {
+		t.Fatal(err)
+	}
+	var n int
+	for _, c := range w.ChangeSet().Conflicts {
+		if c.Kind == domain.ConflictMetadata && c.Detail["field"] == "vendor" && c.Detail["kept"] == "vnd_a" && c.Detail["other"] == "vnd_b" {
+			n++
+		}
+	}
+	if n != 1 {
+		t.Errorf("vendor conflicts = %d", n)
+	}
+	// Same vendor, or one missing: no conflict.
+	recs, cs = fixture()
+	recs.Technologies[1].VendorID = "vnd_b"
+	w = NewWorkspace(recs, nil, cs, alloc, now)
+	if _, err := w.MergeTechnologies("tech_1", "tech_2"); err != nil {
+		t.Fatal(err)
+	}
+	for _, c := range w.ChangeSet().Conflicts {
+		if c.Kind == domain.ConflictMetadata && c.Detail["field"] == "vendor" {
+			t.Errorf("unexpected vendor conflict: %+v", c)
+		}
+	}
+	if got := w.ChangeSet().Upsert.Technologies[0].VendorID; got != "vnd_b" {
+		t.Errorf("survivor must take the vendor it lacks, got %q", got)
+	}
+}

@@ -74,11 +74,12 @@ func printReport(cmd *cobra.Command, rep *pipeline.Report, dry bool) {
 	}
 	fmt.Fprintf(out, "%s @ %s: %s\n", rep.Source.Slug, rep.Snapshot.Revision, state)
 	fmt.Fprintf(out, "  snapshot  %s (%d files)\n", rep.Snapshot.Checksum, len(rep.Snapshot.Files))
-	fmt.Fprintf(out, "  extracted %d categories, %d technologies, %d fingerprints, %d relationships\n",
-		rep.Counts.Categories, rep.Counts.Technologies, rep.Counts.Fingerprints, rep.Counts.Relationships)
+	fmt.Fprintf(out, "  extracted %d vendors, %d categories, %d technologies, %d fingerprints, %d relationships\n",
+		rep.Counts.Vendors, rep.Counts.Categories, rep.Counts.Technologies, rep.Counts.Fingerprints, rep.Counts.Relationships)
 	row := func(name string, c pipeline.Change) {
 		fmt.Fprintf(out, "  %-14s +%d ~%d -%d\n", name, len(c.Added), len(c.Modified), len(c.Removed))
 	}
+	row("vendors", rep.Diff.Vendors)
 	row("categories", rep.Diff.Categories)
 	row("technologies", rep.Diff.Technologies)
 	row("fingerprints", rep.Diff.Fingerprints)

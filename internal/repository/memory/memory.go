@@ -21,6 +21,7 @@ type Repo struct {
 	ids       map[string]string
 	sources   map[domain.SourceID]domain.Source
 	snapshots map[domain.SourceID][]domain.Snapshot
+	vendors   map[domain.VendorID]domain.Vendor
 	cats      map[domain.CategoryID]domain.Category
 	techs     map[domain.TechnologyID]domain.Technology
 	fps       map[domain.FingerprintID]domain.Fingerprint
@@ -37,6 +38,7 @@ func New() *Repo {
 		ids:       map[string]string{},
 		sources:   map[domain.SourceID]domain.Source{},
 		snapshots: map[domain.SourceID][]domain.Snapshot{},
+		vendors:   map[domain.VendorID]domain.Vendor{},
 		cats:      map[domain.CategoryID]domain.Category{},
 		techs:     map[domain.TechnologyID]domain.Technology{},
 		fps:       map[domain.FingerprintID]domain.Fingerprint{},
@@ -196,6 +198,12 @@ func (r *Repo) AllRecords(ctx context.Context) (domain.Records, error) {
 // collect returns deep-enough copies sorted by ID. Caller holds the lock.
 func (r *Repo) collect(keep func([]domain.Provenance) bool) domain.Records {
 	var out domain.Records
+	for _, v := range r.vendors {
+		if keep(v.Provenance) {
+			v.Provenance = append([]domain.Provenance(nil), v.Provenance...)
+			out.Vendors = append(out.Vendors, v)
+		}
+	}
 	for _, c := range r.cats {
 		if keep(c.Provenance) {
 			c.Provenance = append([]domain.Provenance(nil), c.Provenance...)
@@ -220,6 +228,7 @@ func (r *Repo) collect(keep func([]domain.Provenance) bool) domain.Records {
 			out.Relationships = append(out.Relationships, x)
 		}
 	}
+	sort.Slice(out.Vendors, func(i, j int) bool { return out.Vendors[i].ID < out.Vendors[j].ID })
 	sort.Slice(out.Categories, func(i, j int) bool { return out.Categories[i].ID < out.Categories[j].ID })
 	sort.Slice(out.Technologies, func(i, j int) bool { return out.Technologies[i].ID < out.Technologies[j].ID })
 	sort.Slice(out.Fingerprints, func(i, j int) bool { return out.Fingerprints[i].ID < out.Fingerprints[j].ID })
@@ -245,6 +254,11 @@ func (r *Repo) Apply(ctx context.Context, cs repository.ChangeSet) error {
 	}
 	r.mu.Lock()
 	defer r.mu.Unlock()
+	for _, id := range cs.RemovedUpstream.Vendors {
+		if _, ok := r.vendors[domain.VendorID(id)]; !ok {
+			return fmt.Errorf("removed vendor %s does not exist", id)
+		}
+	}
 	for _, id := range cs.RemovedUpstream.Categories {
 		if _, ok := r.cats[domain.CategoryID(id)]; !ok {
 			return fmt.Errorf("removed category %s does not exist", id)
@@ -263,6 +277,11 @@ func (r *Repo) Apply(ctx context.Context, cs repository.ChangeSet) error {
 	for _, id := range cs.RemovedUpstream.Relationships {
 		if _, ok := r.rels[domain.RelationshipID(id)]; !ok {
 			return fmt.Errorf("removed relationship %s does not exist", id)
+		}
+	}
+	for _, id := range cs.Delete.Vendors {
+		if _, ok := r.vendors[domain.VendorID(id)]; !ok {
+			return fmt.Errorf("deleted vendor %s does not exist", id)
 		}
 	}
 	for _, id := range cs.Delete.Categories {
@@ -291,6 +310,9 @@ func (r *Repo) Apply(ctx context.Context, cs repository.ChangeSet) error {
 	for _, a := range cs.Aliases {
 		r.aliases[a.OldID] = a.NewID
 	}
+	for _, v := range cs.Upsert.Vendors {
+		r.vendors[v.ID] = v
+	}
 	for _, c := range cs.Upsert.Categories {
 		r.cats[c.ID] = c
 	}
@@ -314,6 +336,14 @@ func (r *Repo) Apply(ctx context.Context, cs repository.ChangeSet) error {
 	}
 	for _, id := range cs.Delete.Categories {
 		delete(r.cats, domain.CategoryID(id))
+	}
+	for _, id := range cs.Delete.Vendors {
+		delete(r.vendors, domain.VendorID(id))
+	}
+	for _, id := range cs.RemovedUpstream.Vendors {
+		v := r.vendors[domain.VendorID(id)]
+		v.Provenance = markRemoved(v.Provenance, cs.SourceID)
+		r.vendors[v.ID] = v
 	}
 	for _, id := range cs.RemovedUpstream.Categories {
 		c := r.cats[domain.CategoryID(id)]

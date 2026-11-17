@@ -24,6 +24,7 @@ type Change struct {
 // Diff is the reviewable result of comparing a normalized import with the
 // stored records of the same source.
 type Diff struct {
+	Vendors       Change
 	Categories    Change
 	Technologies  Change
 	Fingerprints  Change
@@ -34,7 +35,7 @@ type Diff struct {
 
 // IsEmpty reports whether nothing changes.
 func (d Diff) IsEmpty() bool {
-	for _, c := range []Change{d.Categories, d.Technologies, d.Fingerprints, d.Relationships, d.Conflicts} {
+	for _, c := range []Change{d.Vendors, d.Categories, d.Technologies, d.Fingerprints, d.Relationships, d.Conflicts} {
 		if len(c.Added)+len(c.Modified)+len(c.Removed) > 0 {
 			return false
 		}
@@ -193,6 +194,17 @@ func union[T comparable](a, b []T) []T {
 }
 
 var (
+	// Vendor content is derived from an identifier and meant to be curated,
+	// so a stored vendor keeps its content; refreshes only add provenance.
+	vendorSpec = spec[domain.Vendor]{
+		id:   func(v domain.Vendor) string { return string(v.ID) },
+		prov: func(v *domain.Vendor) *[]domain.Provenance { return &v.Provenance },
+		curated: func(dst *domain.Vendor, old domain.Vendor, _ domain.SourceID) {
+			prov := dst.Provenance
+			*dst = old
+			dst.Provenance = prov
+		},
+	}
 	catSpec = spec[domain.Category]{
 		id:   func(c domain.Category) string { return string(c.ID) },
 		prov: func(c *domain.Category) *[]domain.Provenance { return &c.Provenance },
@@ -282,12 +294,13 @@ func diffRecords(sid domain.SourceID, stored, fresh domain.Records) (repository.
 	var cs repository.ChangeSet
 	var d Diff
 	cs.SourceID = sid
+	cs.Upsert.Vendors, d.Vendors = compute(vendorSpec, sid, stored.Vendors, fresh.Vendors)
 	cs.Upsert.Categories, d.Categories = compute(catSpec, sid, stored.Categories, fresh.Categories)
 	cs.Upsert.Technologies, d.Technologies = compute(techSpec, sid, stored.Technologies, fresh.Technologies)
 	cs.Upsert.Fingerprints, d.Fingerprints = compute(fpSpec, sid, stored.Fingerprints, fresh.Fingerprints)
 	cs.Upsert.Relationships, d.Relationships = compute(relSpec, sid, stored.Relationships, fresh.Relationships)
 	cs.RemovedUpstream = repository.RecordIDs{
-		Categories: d.Categories.Removed, Technologies: d.Technologies.Removed,
+		Vendors: d.Vendors.Removed, Categories: d.Categories.Removed, Technologies: d.Technologies.Removed,
 		Fingerprints: d.Fingerprints.Removed, Relationships: d.Relationships.Removed,
 	}
 	return cs, d

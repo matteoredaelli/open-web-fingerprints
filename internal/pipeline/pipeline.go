@@ -72,7 +72,7 @@ type Report struct {
 
 // Counts are the sizes of the normalized output.
 type Counts struct {
-	Categories, Technologies, Fingerprints, Relationships int
+	Vendors, Categories, Technologies, Fingerprints, Relationships int
 }
 
 // Run executes the pipeline.
@@ -131,7 +131,7 @@ func (p *Pipeline) Run(ctx context.Context, req Request) (*Report, error) {
 	tr := reconciler.Translate(norm.Records(), all, aliases)
 	rep.Warnings = append(rep.Warnings, tr.Warnings...)
 	fresh := tr.Records
-	rep.Counts = Counts{len(fresh.Categories), len(fresh.Technologies), len(fresh.Fingerprints), len(fresh.Relationships)}
+	rep.Counts = Counts{len(fresh.Vendors), len(fresh.Categories), len(fresh.Technologies), len(fresh.Fingerprints), len(fresh.Relationships)}
 
 	rep.Issues = validator.Validate(fresh)
 	if validator.HasErrors(rep.Issues) {

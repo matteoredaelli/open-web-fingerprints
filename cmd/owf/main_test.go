@@ -89,6 +89,12 @@ func TestEndToEnd(t *testing.T) {
 		}
 	}
 
+	if out := mustRun(t, db, "vendor", "list"); !strings.Contains(out, "CPE VENDOR") || !strings.Contains(out, "typo3") {
+		t.Errorf("vendor list:\n%s", out)
+	}
+	if out := mustRun(t, db, "technology", "show", "php"); !strings.Contains(out, "vendor:   Php (cpe: php)") {
+		t.Errorf("technology show must name the vendor:\n%s", out)
+	}
 	out = mustRun(t, db, "technology", "list")
 	if !strings.Contains(out, "a-frame") || !strings.Contains(out, "typo3-cms") {
 		t.Errorf("technology list: %s", out)

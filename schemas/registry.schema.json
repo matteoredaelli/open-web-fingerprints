@@ -232,6 +232,17 @@
         "website": {
           "type": "string",
           "format": "uri"
+        },
+        "cpe_vendor": {
+          "type": "string",
+          "pattern": "^[a-z0-9._~%!$&'()+,;=@-]+$",
+          "description": "Vendor identifier of the CPE dictionary; identifies the same vendor across sources."
+        },
+        "provenance": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/provenance"
+          }
         }
       }
     },

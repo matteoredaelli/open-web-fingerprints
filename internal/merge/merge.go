@@ -152,6 +152,15 @@ func (w *Workspace) MergeTechnologies(a, b string) (string, error) {
 		}
 	}
 
+	if surv.VendorID != "" && abs.VendorID != "" && surv.VendorID != abs.VendorID {
+		if err := w.addConflict(domain.ConflictMetadata, "metadata|"+sid+"|vendor", []string{sid},
+			sourcesOf(surv.Provenance, abs.Provenance), map[string]string{
+				"field": "vendor", "kept": string(surv.VendorID), "other": string(abs.VendorID), "absorbed": aid,
+			}); err != nil {
+			return "", err
+		}
+	}
+
 	surv.Provenance = domain.UnionProvenance(surv.Provenance, abs.Provenance)
 	if abs.Name != surv.Name {
 		surv.Aliases = unionStrings(surv.Aliases, []string{abs.Name})
