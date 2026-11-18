@@ -40,14 +40,25 @@ func Run(cases []Loaded, recs domain.Records) []Result {
 		slug[t.ID] = t.Slug
 	}
 	byTech := map[string][]domain.Fingerprint{}
+	byID := make(map[domain.FingerprintID]domain.Fingerprint, len(recs.Fingerprints))
 	for _, f := range recs.Fingerprints {
 		byTech[slug[f.TechnologyID]] = append(byTech[slug[f.TechnologyID]], f)
+		byID[f.ID] = f
 	}
 
 	out := make([]Result, 0, len(cases))
 	for _, l := range cases {
 		r := Result{Loaded: l}
-		rule, err := resolve(l.Case.Rule, byTech[l.Case.Rule.Technology])
+		var rule domain.Fingerprint
+		var err error
+		if l.RuleID != "" {
+			var ok bool
+			if rule, ok = byID[l.RuleID]; !ok {
+				err = fmt.Errorf("rule %s is not in the registry", l.RuleID)
+			}
+		} else {
+			rule, err = resolve(l.Case.Rule, byTech[l.Case.Rule.Technology])
+		}
 		if err != nil {
 			r.Status, r.Message = Error, err.Error()
 			out = append(out, r)
@@ -131,6 +142,7 @@ func Apply(results []Result, recs domain.Records, now time.Time) []domain.Finger
 		byID[f.ID] = f
 	}
 	touched := map[domain.FingerprintID]bool{}
+	cleared := map[domain.FingerprintID]bool{}
 	for _, r := range results {
 		if r.RuleID == "" || (r.Status != Pass && r.Status != Fail) {
 			continue
@@ -141,7 +153,19 @@ func Apply(results []Result, recs domain.Records, now time.Time) []domain.Finger
 			v = *f.Validation
 			v.TestRuns = append([]domain.TestRun(nil), v.TestRuns...)
 		}
-		run := domain.TestRun{Result: string(r.Status), FixtureRef: r.Ref(), At: now}
+		// Generated cases are recomputed as a set, so the previous set goes: a
+		// source that changes an example must not leave stale evidence behind.
+		if r.Origin == OriginUpstream && !cleared[f.ID] {
+			cleared[f.ID] = true
+			kept := v.TestRuns[:0]
+			for _, tr := range v.TestRuns {
+				if tr.Origin != OriginUpstream {
+					kept = append(kept, tr)
+				}
+			}
+			v.TestRuns = kept
+		}
+		run := domain.TestRun{Result: string(r.Status), FixtureRef: r.Ref(), At: now, Origin: r.Origin}
 		run.Expect = "no_match"
 		if r.Case.Expect.Match {
 			run.Expect = "match"

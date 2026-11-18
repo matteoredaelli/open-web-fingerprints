@@ -18,6 +18,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/matteoredaelli/open-web-fingerprints/internal/domain"
 	"github.com/matteoredaelli/open-web-fingerprints/internal/matcher"
 	"github.com/matteoredaelli/open-web-fingerprints/schemas"
 )
@@ -58,7 +59,16 @@ type Expect struct {
 type Loaded struct {
 	File string // slash-separated path relative to the loaded root
 	Case Case
+	// RuleID names the rule directly. It is set for cases generated from a
+	// source's own examples, which do not need a selector.
+	RuleID domain.FingerprintID
+	// Origin is "" for case files and OriginUpstream for generated cases.
+	Origin string
 }
+
+// OriginUpstream marks evidence that comes from examples shipped by the source
+// of a rule, not from a case written for this registry.
+const OriginUpstream = "upstream_example"
 
 // Ref is the stable reference stored in a rule's test runs.
 func (l Loaded) Ref() string { return l.File + "#" + l.Case.ID }

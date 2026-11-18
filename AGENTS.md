@@ -27,7 +27,8 @@ exists only to test rules offline. Do not grow it into a scanner.
   several provenance entries; canonical confidence is the *lowest explicit*
   value. Sources that share an ancestor are not independent evidence.
 - **`health: ok` needs evidence**: a passing positive and a passing negative
-  test. Imports start `unknown`. Never call a rule reliable without tests.
+  test, each run labelled with its origin (`upstream_example` when the source's
+  own examples). Imports start `unknown`. Never call a rule reliable without tests.
 - **Active probes are safe by construction**: `GET`/`HEAD` only, explicit path,
   imported as `draft` with `safety_review: pending`, never approved by an
   extractor. The project never runs probes, never exploits, never authenticates.
@@ -124,18 +125,18 @@ with `git` (sparse, pinned by SHA) and imports it; `--dry-run` first.
 ## State and next steps
 
 Done: model and schema, four importers, pinned fetch, reconciliation and merges,
-vendors from CPE, offline matcher and validation harness, redistribution guard.
+vendors from CPE, offline matcher and validation harness (case files and
+upstream examples, with the origin of each piece of evidence), redistribution
+guard.
 
 Open, roughly in order:
-1. Validation cases from Recog's own examples (positive; negatives from other
-   products' examples). Decide whether they count toward `ok`.
-2. Validation cases that select groups (grouped rules cannot be tested yet).
-3. nuclei version extractors (209 templates lose versions).
-4. Review the 281 candidate conflicts; legal review of every source.
-5. Export 0.2: conflicts, aliases, test evidence, manifest with revisions and
+1. Validation cases that select groups (grouped rules cannot be tested yet).
+2. nuclei version extractors (209 templates lose versions).
+3. Review the 281 candidate conflicts; legal review of every source.
+4. Export 0.2: conflicts, aliases, test evidence, manifest with revisions and
    checksums; semantic versioning and releases (always explicit, never
    automatic).
-6. Separate repositories for the detection engine and the public site.
+5. Separate repositories for the detection engine and the public site.
 
 Docs: `docs/domain-model.md`, `sources.md`, `dedup-design.md`, `validation.md`,
 `redistribution.md`.

@@ -514,17 +514,33 @@ func newStatsCmd(o *options) *cobra.Command {
 				fmt.Fprintf(out, "  %-16s %d\n", k, byObs[domain.Observation(k)])
 			}
 			health := map[string]int{}
+			var okUpstreamOnly int
 			for _, f := range all.Fingerprints {
 				h := "unknown"
 				if f.Validation != nil && f.Validation.Health != "" {
 					h = f.Validation.Health
 				}
 				health[h]++
+				if h == "ok" {
+					own := false
+					for _, tr := range f.Validation.TestRuns {
+						if tr.Origin == "" {
+							own = true
+						}
+					}
+					if !own {
+						okUpstreamOnly++
+					}
+				}
 			}
 			fmt.Fprintln(out, "fingerprints by health (ok needs positive and negative test evidence):")
 			for _, h := range []string{"ok", "degraded", "broken", "unknown"} {
 				if health[h] > 0 {
-					fmt.Fprintf(out, "  %-16s %d\n", h, health[h])
+					fmt.Fprintf(out, "  %-16s %d", h, health[h])
+					if h == "ok" && okUpstreamOnly > 0 {
+						fmt.Fprintf(out, " (%d only from upstream examples)", okUpstreamOnly)
+					}
+					fmt.Fprintln(out)
 				}
 			}
 			fmt.Fprintln(out, "fingerprints by status:")

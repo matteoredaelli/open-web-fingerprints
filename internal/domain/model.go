@@ -206,7 +206,10 @@ type Validation struct {
 type TestRun struct {
 	Result string `json:"result"` // pass | fail
 	// Expect is what the test asserted: match | no_match.
-	Expect     string    `json:"expect,omitempty"`
+	Expect string `json:"expect,omitempty"`
+	// Origin says where the case came from: empty for a case file written for
+	// this registry, "upstream_example" for an example shipped by the source.
+	Origin     string    `json:"origin,omitempty"`
 	FixtureRef string    `json:"fixture_ref,omitempty"`
 	At         time.Time `json:"at"`
 }

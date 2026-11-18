@@ -227,8 +227,10 @@ What is different from the Wappalyzer-format sources:
   (1662 on the imported rules), often with the expected version. They are kept
   in each rule's raw fragment. As a conformance check, all 1662 pass with the
   registry's matcher, including version extraction and case sensitivity.
-  That confirms the mapping; it does not show that the rules are free of
-  false positives. The examples are positive only.
+  That confirms the mapping. `owf fingerprint test --upstream-examples
+  --apply` also uses them as test evidence, with negatives from other products'
+  banners (see validation.md): 685 of the 1176 rules reach `ok`, marked as resting
+  on upstream examples only.
 
 Licensing: `debian/copyright` says BSD-2-Clause, Copyright 2014 Rapid7, Inc.
 The GitHub API reports no license for the repository. The data has many

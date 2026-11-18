@@ -124,11 +124,45 @@ It is advisory and stores nothing. Enthec `9e52f10`: 23 findings on 22 of
 check, `h2` is a real protocol token), so a finding is a prompt for review and
 not a verdict.
 
-## Upstream examples as a conformance check
+## Upstream examples as evidence
 
-Recog ships `<example>` strings with each fingerprint. They are not turned
-into stored validation cases yet, but `go test` runs them against the
-extractor's rules with the matcher (1662 examples on the full snapshot, all
-pass; `OWF_RECOG_SNAPSHOT=<clone> go test ./internal/extractor/recog -run
-FullSnapshot -v`). They are positive examples only, so they cannot give a
-rule `health: ok` by themselves.
+Some sources ship examples with their rules: strings a rule must match, often
+with the version it must read. Recog does (1662 on the imported rules). They are
+kept in the rule's raw fragment, and `owf fingerprint test --upstream-examples
+[--apply]` turns them into cases:
+
+- **positive:** the rule's own examples (at most 5), with the expected version
+  when the rule reads one;
+- **negative:** the first example of rules of *other technologies* in the same
+  database that come **later** in the file. The source tries a database in
+  order and stops at the first match, so an earlier rule's banner is never seen
+  by a later rule; the registry reports every match, so a rule that would claim
+  a later product's banner is a real false positive and fails. Every candidate
+  is evaluated; at most 5 passing negatives are kept (the 3 nearest, 2 spread by
+  a stable hash), and every failing one;
+- **no negatives for exact digests** (favicon hashes): a hash cannot be
+  over-broad, so a negative would prove nothing.
+
+Evidence from these cases is stored with `origin: upstream_example` on each test
+run, and `owf stats` says how many `ok` rules rest on it alone. A regenerated
+set replaces the previous generated set of a rule; runs from case files stay.
+Run it again after refreshing the source.
+
+What it is worth, on Recog `f1191e2` (7 web databases, 1176 rules): 1602
+positive and 3382 negative cases from 92861 negative checks, all pass, and 685
+rules reach `ok`. Be clear about what that means: the examples and the rules
+were written by the same people, so the evidence shows that a rule is
+consistent with its maintainers' own data and does not match their other
+products' banners. It does not show behaviour on real sites. The 460 favicon
+rules stay `unknown` (positives only), and so do the last rules of each
+database, which have no later rules to give negatives.
+
+Not available for sources without examples (Wappalyzer-format, nuclei): their
+rules still need case files.
+
+## Conformance of the mapping
+
+The Recog extractor tests run all of a source's examples against its rules with
+the matcher as well (1662 examples on the full snapshot, all pass;
+`OWF_RECOG_SNAPSHOT=<clone> go test ./internal/extractor/recog -run
+FullSnapshot -v`). This checks the mapping (case rules, versions).

@@ -170,7 +170,7 @@ func (x *Extractor) database(res *extractor.ExtractionResult, techs map[string]i
 	vendors map[string]string, path string, obs domain.Observation, target string, db dbXML) {
 	pref := parseUnit(db.Preference)
 	skipped := map[string]int{}
-	for _, fp := range db.Fingerprints {
+	for index, fp := range db.Fingerprints {
 		params := map[string][]paramXML{}
 		for _, p := range fp.Params {
 			params[p.Name] = append(params[p.Name], p)
@@ -222,7 +222,7 @@ func (x *Extractor) database(res *extractor.ExtractionResult, techs map[string]i
 			Operator: domain.OpRegex, Pattern: pattern,
 			RegexFlavor:    extractor.RegexFlavorFor(pattern, domain.FlavorPCRE),
 			VersionExtract: versionOf(params["service.version"]), Confidence: conf, File: path,
-			Raw: rawFingerprint(path, db.Matches, fp),
+			Raw: rawFingerprint(path, db.Matches, index, fp),
 		}
 		if f.RegexFlavor == domain.FlavorPCRE {
 			res.Warnings = append(res.Warnings, extractor.Warning{Code: "unsupported_regex", Ref: prod,
@@ -325,10 +325,12 @@ func contains(l []string, s string) bool {
 }
 
 // rawFingerprint keeps the whole upstream element, including the examples.
-func rawFingerprint(path, matches string, fp fingerprintXM) json.RawMessage {
+func rawFingerprint(path, matches string, index int, fp fingerprintXM) json.RawMessage {
 	type ex struct {
-		Text  string            `json:"text"`
-		Attrs map[string]string `json:"attrs,omitempty"`
+		Text string `json:"text"`
+		// Version is the service.version the example is expected to give.
+		Version string            `json:"version,omitempty"`
+		Attrs   map[string]string `json:"attrs,omitempty"`
 	}
 	type param struct {
 		Pos   int     `json:"pos"`
@@ -338,12 +340,13 @@ func rawFingerprint(path, matches string, fp fingerprintXM) json.RawMessage {
 	out := struct {
 		File        string  `json:"file"`
 		Matches     string  `json:"matches"`
+		Index       int     `json:"index"` // position in the file: Recog tries fingerprints in order
 		Pattern     string  `json:"pattern"`
 		Flags       string  `json:"flags,omitempty"`
 		Description string  `json:"description,omitempty"`
 		Examples    []ex    `json:"examples,omitempty"`
 		Params      []param `json:"params,omitempty"`
-	}{File: path, Matches: matches, Pattern: fp.Pattern, Flags: fp.Flags, Description: strings.TrimSpace(fp.Description)}
+	}{File: path, Matches: matches, Index: index, Pattern: fp.Pattern, Flags: fp.Flags, Description: strings.TrimSpace(fp.Description)}
 	for _, e := range fp.Examples {
 		x := ex{Text: e.Text}
 		for _, a := range e.Attrs {
@@ -351,6 +354,9 @@ func rawFingerprint(path, matches string, fp fingerprintXM) json.RawMessage {
 				x.Attrs = map[string]string{}
 			}
 			x.Attrs[a.Name.Local] = a.Value
+			if a.Name.Local == "service.version" {
+				x.Version = a.Value
+			}
 		}
 		out.Examples = append(out.Examples, x)
 	}

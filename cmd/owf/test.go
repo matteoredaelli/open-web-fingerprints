@@ -15,20 +15,30 @@ import (
 )
 
 func newFingerprintTestCmd(o *options) *cobra.Command {
-	var apply, asJSON, verbose bool
+	var apply, asJSON, verbose, upstream bool
 	c := &cobra.Command{
-		Use:   "test <file-or-dir>",
+		Use:   "test [file-or-dir]",
 		Short: "Run validation cases against the stored fingerprints",
 		Long: "test evaluates recorded observations (JSON case files) against the rules they\n" +
 			"select. Nothing is requested from the network. A case that fails makes the command\n" +
 			"exit with an error. With --apply the results are stored as test evidence:\n" +
 			"a rule becomes healthy only with a passing positive and a passing negative case,\n" +
-			"and broken when any case fails.",
-		Args: cobra.ExactArgs(1),
+			"and broken when any case fails.\n\n" +
+			"--upstream-examples also generates cases from the examples that some sources ship\n" +
+			"with their rules (Recog): positives from a rule's own examples, negatives from\n" +
+			"examples of other products later in the same database. Their evidence is marked\n" +
+			"as coming from upstream examples.",
+		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cases, err := validation.Load(args[0])
-			if err != nil {
-				return err
+			if len(args) == 0 && !upstream {
+				return fmt.Errorf("give a case file or directory, or --upstream-examples")
+			}
+			var cases []validation.Loaded
+			if len(args) == 1 {
+				var err error
+				if cases, err = validation.Load(args[0]); err != nil {
+					return err
+				}
 			}
 			r, err := o.open(cmd.Context())
 			if err != nil {
@@ -38,6 +48,12 @@ func newFingerprintTestCmd(o *options) *cobra.Command {
 			all, err := r.AllRecords(cmd.Context())
 			if err != nil {
 				return err
+			}
+			var gen validation.UpstreamStats
+			if upstream {
+				var g []validation.Loaded
+				g, gen = validation.FromUpstreamExamples(all)
+				cases = append(cases, g...)
 			}
 			results := validation.Run(cases, all)
 			sum := validation.Summarize(results)
@@ -71,6 +87,14 @@ func newFingerprintTestCmd(o *options) *cobra.Command {
 				}
 				fmt.Fprintf(out, "%d cases: %d pass, %d fail, %d error, %d unsupported\n",
 					len(results), sum[validation.Pass], sum[validation.Fail], sum[validation.Error], sum[validation.Unsupported])
+				if upstream {
+					fmt.Fprintf(out, "upstream examples: %d rules, %d positive and %d negative cases (%d negatives checked)",
+						gen.Rules, gen.Positive, gen.Negative, gen.NegativeChecks)
+					for _, why := range sortedKeys(gen.Skipped) {
+						fmt.Fprintf(out, "; %d rules skipped: %s", gen.Skipped[why], why)
+					}
+					fmt.Fprintln(out)
+				}
 				if apply {
 					fmt.Fprintf(out, "evidence stored on %d fingerprints\n", stored)
 				}
@@ -81,6 +105,7 @@ func newFingerprintTestCmd(o *options) *cobra.Command {
 			return nil
 		},
 	}
+	c.Flags().BoolVar(&upstream, "upstream-examples", false, "also test rules with the examples their source ships")
 	c.Flags().BoolVar(&apply, "apply", false, "store the results as test evidence on the fingerprints")
 	c.Flags().BoolVar(&asJSON, "json", false, "output JSON")
 	c.Flags().BoolVarP(&verbose, "verbose", "v", false, "list passing cases too")
@@ -156,4 +181,13 @@ func distinct(fs []validation.Finding) int {
 		seen[f.RuleID] = true
 	}
 	return len(seen)
+}
+
+func sortedKeys(m map[string]int) []string {
+	out := make([]string, 0, len(m))
+	for k := range m {
+		out = append(out, k)
+	}
+	sort.Strings(out)
+	return out
 }

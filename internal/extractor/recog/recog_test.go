@@ -193,9 +193,11 @@ func TestRawKeepsExamplesAndParams(t *testing.T) {
 	var raw struct {
 		Matches  string
 		Pattern  string
+		Index    int
 		Examples []struct {
-			Text  string
-			Attrs map[string]string
+			Text    string
+			Version string
+			Attrs   map[string]string
 		}
 		Params []struct {
 			Pos   int
@@ -206,8 +208,24 @@ func TestRawKeepsExamplesAndParams(t *testing.T) {
 	if err := json.Unmarshal(f.Raw, &raw); err != nil {
 		t.Fatal(err)
 	}
-	if raw.Matches != "http_header.server" || len(raw.Examples) != 1 || raw.Examples[0].Attrs["service.version"] != "7.9.3" {
+	if raw.Matches != "http_header.server" || len(raw.Examples) != 1 || raw.Examples[0].Attrs["service.version"] != "7.9.3" ||
+		raw.Examples[0].Version != "7.9.3" {
 		t.Errorf("raw: %s", f.Raw)
+	}
+	// Recog tries fingerprints in file order, and validation needs that order.
+	var last = -1
+	for _, r := range res.Fingerprints {
+		if r.File != "xml/http_servers.xml" {
+			continue
+		}
+		var x struct{ Index int }
+		if err := json.Unmarshal(r.Raw, &x); err != nil {
+			t.Fatal(err)
+		}
+		if x.Index <= last {
+			t.Errorf("index must grow with the position in the file: %d after %d", x.Index, last)
+		}
+		last = x.Index
 	}
 	var captured bool
 	for _, p := range raw.Params {

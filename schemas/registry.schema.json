@@ -646,6 +646,12 @@
                   "no_match"
                 ],
                 "description": "What the test asserted."
+              },
+              "origin": {
+                "enum": [
+                  "upstream_example"
+                ],
+                "description": "Absent for cases written for this registry."
               }
             }
           }

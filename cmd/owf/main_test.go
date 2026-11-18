@@ -420,3 +420,53 @@ func TestExportGuardAndSourceReview(t *testing.T) {
 		t.Error("an unreviewed source must block the export again")
 	}
 }
+
+func TestUpstreamExamplesAsEvidence(t *testing.T) {
+	nowFunc = func() time.Time { return time.Date(2026, 11, 17, 12, 0, 0, 0, time.UTC) }
+	db := filepath.Join(t.TempDir(), "owf.db")
+	mustRun(t, db, "init")
+	mustRun(t, db, "import", "rapid7-recog", "--snapshot", "../../internal/extractor/recog/testdata/snapshot", "--revision", "f1191e2")
+
+	if _, err := run(t, db, "fingerprint", "test"); err == nil {
+		t.Error("with neither a path nor --upstream-examples there is nothing to test")
+	}
+	out := mustRun(t, db, "fingerprint", "test", "--upstream-examples")
+	if !strings.Contains(out, "0 fail, 0 error") || !strings.Contains(out, "upstream examples:") ||
+		!strings.Contains(out, "positive and") || !strings.Contains(out, "negatives checked") {
+		t.Errorf("summary:\n%s", out)
+	}
+	if out := mustRun(t, db, "stats"); strings.Contains(out, "ok ") && !strings.Contains(out, "unknown") {
+		t.Errorf("a plain run must store nothing:\n%s", out)
+	}
+
+	out = mustRun(t, db, "fingerprint", "test", "--upstream-examples", "--apply")
+	if !strings.Contains(out, "evidence stored on") {
+		t.Errorf("apply:\n%s", out)
+	}
+	out = mustRun(t, db, "stats")
+	if !strings.Contains(out, "only from upstream examples") {
+		t.Errorf("stats must say that the evidence comes from the source's own examples:\n%s", out)
+	}
+	list := mustRun(t, db, "fingerprint", "list", "--observation", "http_header", "--json")
+	for _, want := range []string{`"health": "ok"`, `"origin": "upstream_example"`, `"fixture_ref": "upstream#ex1"`, `"expect": "no_match"`} {
+		if !strings.Contains(list, want) {
+			t.Errorf("evidence lacks %s", want)
+		}
+	}
+	// Repeating replaces the generated set: the export does not change.
+	before := mustRun(t, db, "export", "--include-unreviewed")
+	mustRun(t, db, "fingerprint", "test", "--upstream-examples", "--apply")
+	if after := mustRun(t, db, "export", "--include-unreviewed"); after != before {
+		t.Error("repeating the same generation must not change the registry")
+	}
+	if err := schemas.ValidateRegistry([]byte(before)); err != nil {
+		t.Fatalf("export with upstream evidence violates the schema: %v", err)
+	}
+	// A re-import keeps the evidence (it belongs to the rule, not to the refresh).
+	if out := mustRun(t, db, "import", "rapid7-recog", "--snapshot", "../../internal/extractor/recog/testdata/snapshot", "--revision", "f1191e2"); !strings.Contains(out, "no changes") {
+		t.Errorf("re-import:\n%s", out)
+	}
+	if out := mustRun(t, db, "stats"); !strings.Contains(out, "only from upstream examples") {
+		t.Errorf("evidence lost after a re-import:\n%s", out)
+	}
+}
