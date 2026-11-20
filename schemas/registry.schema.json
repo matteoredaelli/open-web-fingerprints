@@ -716,6 +716,14 @@
             "approved",
             "rejected"
           ]
+        },
+        "reviewed_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "review_note": {
+          "type": "string",
+          "description": "The reviewer's basis for the decision."
         }
       }
     },
@@ -723,13 +731,35 @@
       "type": "object",
       "description": "A reviewer's change to a rule the source got wrong. The field holds the corrected value; original is what the source gave.",
       "additionalProperties": false,
-      "required": ["field", "original", "value", "reason", "at"],
+      "required": [
+        "field",
+        "original",
+        "value",
+        "reason",
+        "at"
+      ],
       "properties": {
-        "field": {"enum": ["target", "pattern"]},
-        "original": {"type": "string"},
-        "value": {"type": "string", "minLength": 1},
-        "reason": {"type": "string", "minLength": 1},
-        "at": {"type": "string", "format": "date-time"}
+        "field": {
+          "enum": [
+            "target",
+            "pattern"
+          ]
+        },
+        "original": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        },
+        "at": {
+          "type": "string",
+          "format": "date-time"
+        }
       }
     },
     "validation": {

@@ -24,18 +24,20 @@ import (
 
 // Reasons a rule is not evaluated. They appear in the coverage of the result.
 const (
-	ReasonProbe      = "probe disabled"
-	ReasonBrowser    = "needs a browser"
-	ReasonRobots     = "robots.txt not fetched"
-	ReasonNoDNS      = "no DNS data"
-	ReasonNoTLS      = "no TLS data"
-	ReasonNoFavicon  = "favicon not fetched"
-	ReasonFlavor     = "pattern needs a backtracking engine"
-	ReasonHealth     = "below the minimum health"
-	ReasonDeprecated = "deprecated"
-	ReasonOther      = "not supported by the matcher"
-	ReasonInvalid    = "invalid rule"
-	ReasonInert      = "cookie name is a pattern (inert upstream too)"
+	ReasonProbe        = "probe disabled"
+	ReasonProbeNotOK   = "probe not approved"
+	ReasonProbeNotSent = "probe not sent"
+	ReasonBrowser      = "needs a browser"
+	ReasonRobots       = "robots.txt not fetched"
+	ReasonNoDNS        = "no DNS data"
+	ReasonNoTLS        = "no TLS data"
+	ReasonNoFavicon    = "favicon not fetched"
+	ReasonFlavor       = "pattern needs a backtracking engine"
+	ReasonHealth       = "below the minimum health"
+	ReasonDeprecated   = "deprecated"
+	ReasonOther        = "not supported by the matcher"
+	ReasonInvalid      = "invalid rule"
+	ReasonInert        = "cookie name is a pattern (inert upstream too)"
 )
 
 // Health levels, from worst to best.
@@ -62,6 +64,10 @@ type Input struct {
 	// were made. HasBrowser says the page was run in a browser, so the global
 	// variables (Observation.JS) and the XHR calls (Observation.XHR) are known.
 	DNSLooked, HasTLS, FaviconTried, RobotsFetched, HasBrowser bool
+	// ActiveOn says that probes were allowed; ProbesSent lists the paths that were requested
+	// and answered (their responses are in Observation.Probes).
+	ActiveOn   bool
+	ProbesSent map[string]bool
 }
 
 // Output is the outcome of a run.
@@ -209,9 +215,12 @@ func (t *techRules) count() int {
 
 // reason says why a rule is not evaluated for this input, or "".
 func (r *run) reason(f domain.Fingerprint) string {
+	if f.Probe != nil || f.Observation == domain.ObsProbeResponse {
+		if why := r.probeReason(f); why != "" {
+			return why
+		}
+	}
 	switch {
-	case f.Probe != nil || f.Observation == domain.ObsProbeResponse:
-		return ReasonProbe
 	case f.Status == domain.StatusDeprecated:
 		return ReasonDeprecated
 	case matcher.InertReason(f) != "":
@@ -643,6 +652,56 @@ func CollapseSameName(techs []scan.Technology, maxEvidence int) []scan.Technolog
 			return la < lb
 		}
 		return a.Slug < b.Slug
+	})
+	return out
+}
+
+// probeReason says why a rule that needs a probe is not evaluated, or "" when its probe was
+// approved, sent and answered.
+func (r *run) probeReason(f domain.Fingerprint) string {
+	switch {
+	case !r.in.ActiveOn:
+		return ReasonProbe
+	case f.Probe == nil || f.Probe.SafetyReview != "approved":
+		return ReasonProbeNotOK
+	case !r.in.ProbesSent[f.Probe.Path]:
+		return ReasonProbeNotSent
+	}
+	return ""
+}
+
+// ProbePlan is one request the scanner may send: a path that approved rules probe.
+type ProbePlan struct {
+	Method string
+	Path   string
+	Rules  int
+}
+
+// ApprovedProbes lists the distinct probes of rules whose safety review is approved and that
+// are not deprecated, the ones shared by most rules first. Rules that share a path share one
+// request.
+func (e *Engine) ApprovedProbes() []ProbePlan {
+	by := map[string]*ProbePlan{}
+	for _, f := range e.reg.Fingerprints {
+		if f.Probe == nil || f.Probe.SafetyReview != "approved" || f.Status == domain.StatusDeprecated {
+			continue
+		}
+		p := by[f.Probe.Path]
+		if p == nil {
+			p = &ProbePlan{Method: f.Probe.Method, Path: f.Probe.Path}
+			by[f.Probe.Path] = p
+		}
+		p.Rules++
+	}
+	out := make([]ProbePlan, 0, len(by))
+	for _, p := range by {
+		out = append(out, *p)
+	}
+	sort.Slice(out, func(i, j int) bool {
+		if out[i].Rules != out[j].Rules {
+			return out[i].Rules > out[j].Rules
+		}
+		return out[i].Path < out[j].Path
 	})
 	return out
 }

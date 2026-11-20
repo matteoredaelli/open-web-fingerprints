@@ -15,6 +15,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/matteoredaelli/open-web-fingerprints/internal/curate"
 	"github.com/matteoredaelli/open-web-fingerprints/internal/domain"
 	"github.com/matteoredaelli/open-web-fingerprints/internal/export"
 	"github.com/matteoredaelli/open-web-fingerprints/internal/extractor"
@@ -32,7 +33,11 @@ func root() string {
 
 // RegistryJSON imports the fixtures of the three sources and returns them as an
 // export, as `owf export --include-unreviewed` would write it.
-func RegistryJSON(t testing.TB) []byte {
+func RegistryJSON(t testing.TB) []byte { return RegistryJSONApproving(t) }
+
+// RegistryJSONApproving is RegistryJSON with the probes of the given paths approved, as a
+// reviewer would with `owf probe review`.
+func RegistryJSONApproving(t testing.TB, paths ...string) []byte {
 	t.Helper()
 	ex := extractor.NewRegistry()
 	for _, e := range []extractor.Extractor{wappalyzer.New(), recog.New(), nuclei.New()} {
@@ -51,6 +56,11 @@ func RegistryJSON(t testing.TB) []byte {
 		fsys := os.DirFS(filepath.Join(root(), s.dir, "testdata", "snapshot"))
 		if _, err := p.Run(context.Background(), pipeline.Request{Source: src, Revision: "fixture", FS: fsys}); err != nil {
 			t.Fatalf("%s: %v", s.slug, err)
+		}
+	}
+	if len(paths) > 0 {
+		if _, err := curate.ReviewProbes(context.Background(), repo, curate.ProbeReview{Paths: paths, Decision: curate.ProbeApproved, Note: "test"}, time.Now()); err != nil {
+			t.Fatal(err)
 		}
 	}
 	reg, err := export.Build(context.Background(), repo, time.Now(), export.Options{IncludeUnreviewed: true, Generator: "test"})

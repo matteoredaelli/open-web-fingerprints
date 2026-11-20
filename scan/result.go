@@ -54,6 +54,8 @@ type Result struct {
 	Suppressed []Suppressed `json:"suppressed,omitempty"`
 	// Friends is present only when friend detection was asked for.
 	Friends *Friends `json:"friends,omitempty"`
+	// Active is present only when probes were allowed (--active).
+	Active *Active `json:"active,omitempty"`
 	// Browser is present only when the first page was also run in a browser.
 	Browser  *Browser    `json:"browser,omitempty"`
 	Coverage Coverage    `json:"coverage"`
@@ -182,6 +184,17 @@ const (
 	SuppressedExcluded    = "excluded"
 	SuppressedRequirement = "requirement_not_met"
 )
+
+// Active says what the approved probes did. Probes are requests to paths of the scanned site
+// that the scanner was not told to read; only probes a reviewer approved are ever sent.
+type Active struct {
+	Approved   int `json:"approved"`   // distinct probe paths approved in the registry
+	Sent       int `json:"sent"`       // requests made
+	Failed     int `json:"failed"`     // sent, but no usable answer (error, or it left the site)
+	NotSent    int `json:"not_sent"`   // approved but not sent (limit, robots.txt, refused path)
+	Disallowed int `json:"disallowed"` // of those, paths robots.txt asks crawlers not to fetch
+	Refused    int `json:"refused"`    // of those, paths or methods the scanner will not send
+}
 
 // Browser says that the first page was opened in a headless browser, and how that went.
 // With it the page's global variables and XHR calls are known (the rules that need them are

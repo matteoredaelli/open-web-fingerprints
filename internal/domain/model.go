@@ -248,6 +248,9 @@ type Probe struct {
 	Path           string `json:"path"`
 	RateLimitClass string `json:"rate_limit_class,omitempty"`
 	SafetyReview   string `json:"safety_review"` // pending | approved | rejected
+	// ReviewedAt and ReviewNote record the reviewer's decision (empty while pending).
+	ReviewedAt *time.Time `json:"reviewed_at,omitempty"`
+	ReviewNote string     `json:"review_note,omitempty"`
 }
 
 // Validation holds test evidence and rule health.

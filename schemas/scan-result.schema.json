@@ -315,6 +315,45 @@
           }
         }
       }
+    },
+    "active": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Present only when probes were allowed. Probes are requests to paths of the scanned site that a reviewer approved.",
+      "required": [
+        "approved",
+        "sent",
+        "failed",
+        "not_sent",
+        "disallowed",
+        "refused"
+      ],
+      "properties": {
+        "approved": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "sent": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "failed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "not_sent": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "disallowed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "refused": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
     }
   },
   "$defs": {

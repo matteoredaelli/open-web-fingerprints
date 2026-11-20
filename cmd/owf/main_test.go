@@ -618,3 +618,57 @@ func TestFingerprintCorrectThroughTheCLI(t *testing.T) {
 		t.Errorf("after revert:\n%s", out)
 	}
 }
+
+func TestProbeReviewThroughTheCLI(t *testing.T) {
+	db := filepath.Join(t.TempDir(), "owf.db")
+	mustRun(t, db, "init")
+	mustRun(t, db, "import", "projectdiscovery-nuclei-templates", "--snapshot", "../../internal/extractor/nuclei/testdata/snapshot", "--revision", "x")
+
+	out := mustRun(t, db, "probe", "list")
+	if !strings.Contains(out, "/cfadmin/") || !strings.Contains(out, "pending") || !strings.Contains(out, "Accellion") {
+		t.Fatalf("list:\n%s", out)
+	}
+	for name, args := range map[string][]string{
+		"no note":      {"probe", "review", "/cfadmin/", "--decision", "approved"},
+		"no decision":  {"probe", "review", "/cfadmin/"},
+		"no path":      {"probe", "review", "--decision", "approved", "--note", "n"},
+		"both":         {"probe", "review", "/cfadmin/", "--all-pending", "--decision", "approved", "--note", "n"},
+		"other host":   {"probe", "review", "//evil.example/", "--decision", "approved", "--note", "n"},
+		"unknown path": {"probe", "review", "/nope", "--decision", "rejected", "--note", "n"},
+	} {
+		if out, err := run(t, db, args...); err == nil {
+			t.Errorf("%s: expected an error\n%s", name, out)
+		}
+	}
+	out = mustRun(t, db, "probe", "review", "--all-pending", "--decision", "approved", "--note", "n", "--dry-run")
+	if !strings.Contains(out, "dry run") || !strings.Contains(out, "/cfadmin/") {
+		t.Errorf("dry run:\n%s", out)
+	}
+	if out := mustRun(t, db, "probe", "list", "--state", "approved"); strings.Contains(out, "/cfadmin/") {
+		t.Errorf("a dry run stores nothing:\n%s", out)
+	}
+	out = mustRun(t, db, "probe", "review", "/cfadmin/", "--decision", "approved", "--note", "static login page, only fetched")
+	if !strings.Contains(out, "approved:") {
+		t.Errorf("review: %s", out)
+	}
+	if out := mustRun(t, db, "probe", "list", "--state", "approved"); !strings.Contains(out, "/cfadmin/") {
+		t.Errorf("approved:\n%s", out)
+	}
+	// The export carries the decision and satisfies the schema; a refresh keeps it.
+	file := filepath.Join(t.TempDir(), "registry.json")
+	mustRun(t, db, "export", "--include-unreviewed", "-o", file)
+	doc, _ := os.ReadFile(file)
+	if !strings.Contains(string(doc), "static login page, only fetched") || !strings.Contains(string(doc), `"reviewed_at"`) {
+		t.Error("the export must carry who decided what")
+	}
+	if out := mustRun(t, db, "import", "projectdiscovery-nuclei-templates", "--snapshot", "../../internal/extractor/nuclei/testdata/snapshot", "--revision", "x"); !strings.Contains(out, "no changes") {
+		t.Errorf("re-import: %s", out)
+	}
+	if out := mustRun(t, db, "probe", "list", "--state", "approved"); !strings.Contains(out, "/cfadmin/") {
+		t.Errorf("the decision survives a re-import:\n%s", out)
+	}
+	mustRun(t, db, "probe", "review", "/cfadmin/", "--decision", "pending")
+	if out := mustRun(t, db, "probe", "list", "--state", "approved"); strings.Contains(out, "/cfadmin/") {
+		t.Errorf("reset:\n%s", out)
+	}
+}

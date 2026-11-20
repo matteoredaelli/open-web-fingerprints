@@ -36,10 +36,13 @@ and plan: `docs/scan.md`.
 - **`health: ok` needs evidence**: a passing positive and a passing negative
   test, each run labelled with its origin (`upstream_example` when the source's
   own examples). Imports start `unknown`. Never call a rule reliable without tests.
-- **Active probes are safe by construction**: `GET`/`HEAD` only, explicit path,
-  imported as `draft` with `safety_review: pending`, never approved by an
-  extractor. The project never runs probes, never exploits, never authenticates.
-  Out of scope: CVE, vulnerability, misconfiguration and default-login templates.
+- **Active probes are safe by construction**: explicit path, imported as `draft` with
+  `safety_review: pending`, never approved by an extractor or by an agent: approving a
+  path is the maintainer's decision (`owf probe review`, with a note). The scanner sends
+  a probe only if its path is approved **and** the scan asks for `--active`; it sends
+  `GET` only, honours robots.txt with no override, pauses and caps the requests. It never
+  exploits and never authenticates. Out of scope: CVE, vulnerability, misconfiguration
+  and default-login templates.
 - **One licence: GPL-3.0-or-later for all that the project writes** (code, `scan` and
   `schemas` packages, schemas, docs, cases). Decided by the maintainer; do not propose
   a second licence for part of it.
@@ -122,7 +125,7 @@ before claiming value. Prefer sources with different data and clear licences.
 ## CLI
 
 `init`, `source list|info|refresh|review`, `import`, `technology list|show`,
-`vendor list|show|set`, `fingerprint list|validate|test|lint|correct`,
+`vendor list|show|set`, `fingerprint list|validate|test|lint|correct`, `probe list|review`,
 `conflict list|show|resolve`, `export`, `verify`, `stats`. `owfscan`:
 `scan`, `extract`, `links`, `social`, `observe`. `refresh` fetches one commit
 with `git` (sparse, pinned by SHA) and imports it; `--dry-run` first.
@@ -152,8 +155,8 @@ guard.
 
 Open, roughly in order:
 0. Scanner `owfscan` (docs/scan.md): links, domains, social profiles and contacts
-   `owfscan scan` works (fetch, observe, engine, links, social, contacts, `--depth`, friend domains, `--browser`). Next:
-   approved probes, `excludes` between technologies, browser on more pages.
+   `owfscan scan` works (fetch, observe, engine, links, social, contacts, `--depth`, friend domains, `--browser`,
+   `excludes`/`requires`, `--active` with `owf probe review`). Next: show implied technologies, browser on more pages.
 1. More cases: 115 Enthec rules and 2 nuclei groups have test evidence (Recog has
    685 from upstream examples). Next: the remaining popular technologies, nuclei
    groups, and cookie rules whose names look like patterns.

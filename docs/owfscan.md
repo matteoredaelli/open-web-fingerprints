@@ -421,6 +421,47 @@ as it can for any script-based detector; and shared global names give false posi
 define `_`; the reference engines solve this with `excludes` between technologies, which
 the registry does not carry yet).
 
+## Active probes (`--active`)
+
+Some rules need the answer to a request to a fixed path of the site: `/robots.txt`,
+`/admin`, an API index (2236 rules on 305 paths in the registry, all `GET`). They are
+imported as drafts with a pending safety review and, by default, **never sent**
+(`probe disabled` in the coverage). Two things are needed to send one, and both are
+deliberate:
+
+1. **A reviewer approves the path**, once, in the registry:
+   ```sh
+   owf probe list --limit 30          # paths, how many rules need each, which technologies
+   owf probe review /robots.txt /sitemap.xml /favicon.ico --decision approved --note "static files, read-only"
+   ```
+   The review is per path (rules that share a path share one request). Approving makes every
+   rule on the path active and records the note and the time; the decision survives refreshes
+   and travels in the export (`reviewed_at`, `review_note`). Approve a request you are willing
+   to have sent to **any** site anyone scans with this registry. Never approve a path that
+   changes state, even if it is a `GET`. Paths that are not absolute, that name another host
+   (`//host`), contain a URL, a control character or a space are refused; only `GET` can be
+   approved.
+2. **The scan asks for it**: `owfscan scan <url> --registry ... --active`.
+
+What the scanner then does, and no more (`internal/scan/scanner/active.go`):
+
+- only approved probes, only `GET`, only on the host that was scanned;
+- `robots.txt` is read first and a disallowed path is not requested (no option overrides
+  this); if `robots.txt` cannot be read because of a server error, nothing is sent;
+- a pause before each request (`--delay`) and at most `--active-max` requests (default 30),
+  the ones shared by most rules first; the rest are counted as `not sent`;
+- the same guard against non-public addresses; an answer that comes from another registrable
+  domain (a redirect away) is thrown away;
+- the result has an `active` section (approved, sent, failed, not sent, disallowed, refused)
+  and the coverage says `probe not approved` for the rules whose path nobody approved, apart
+  from `probe disabled` when `--active` is off.
+
+**I have not approved any probe in your registry.** Which requests are acceptable is a
+safety decision for the reviewer. On a copy of it, approving only `/robots.txt`,
+`/sitemap.xml` and `/favicon.ico` (444 rules) and scanning `mr70.eu` with `--active` sent 3
+requests, evaluated 443 more rules and found no new technology (a Hugo site), which is what I
+expected.
+
 ## Technologies that matched but are not reported
 
 The registry carries relationships between technologies, from its sources, and the scanner

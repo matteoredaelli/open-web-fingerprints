@@ -36,7 +36,8 @@ func version() string {
 func newScanCmd() *cobra.Command {
 	n := &netFlags{}
 	var registry, minHealth, verifyCache string
-	var friends, useBrowser bool
+	var friends, useBrowser, active bool
+	var activeMax int
 	var chrome string
 	var browserTimeout time.Duration
 	var friendsMax int
@@ -68,6 +69,7 @@ func newScanCmd() *cobra.Command {
 				Registry: reg, NoFavicon: noFavicon, MinHealth: minHealth, Version: version(),
 				Depth: n.depth, MaxPages: n.maxPages, Delay: n.delay, IgnoreRobots: n.ignoreRobots,
 				Friends: friends, FriendsMax: friendsMax,
+				Active: active, ActiveMax: activeMax,
 				Browser: useBrowser, BrowserPath: chrome, BrowserTimeout: browserTimeout,
 				Fetch: fetch.Options{Timeout: n.timeout, AllowPrivate: n.allowPrivate, Insecure: n.insecure, CacheDir: n.cacheDir, MaxAge: n.maxAge},
 			}
@@ -91,6 +93,8 @@ func newScanCmd() *cobra.Command {
 	n.add(c)
 	n.addCrawl(c)
 	c.Flags().BoolVar(&friends, "friends", false, "also look for friend domains: linked from the home page and linking back to it (contacts other sites; see `owfscan friends --help`)")
+	c.Flags().BoolVar(&active, "active", false, "also send the probes a reviewer approved (GET to fixed paths of the site, robots.txt honoured; see `owf probe --help`)")
+	c.Flags().IntVar(&activeMax, "active-max", scanner.DefaultActiveMax, "most probe requests to send with --active")
 	c.Flags().BoolVar(&useBrowser, "browser", false, "also open the first page in headless Chrome, to see global variables, XHR calls and the DOM after scripts ran (runs the page's JavaScript; see docs/owfscan.md)")
 	c.Flags().StringVar(&chrome, "chrome", os.Getenv("OWFSCAN_CHROME"), "Chrome or Chromium executable for --browser (env OWFSCAN_CHROME; default: the usual places)")
 	c.Flags().DurationVar(&browserTimeout, "browser-timeout", 30*time.Second, "time allowed to the browser for the page")
@@ -189,6 +193,9 @@ func printScan(cmd *cobra.Command, r *scan.Result, verbose bool) {
 			}
 			fmt.Fprintf(out, "  %s (confidence %.2f): %s%s\n", s.Name, s.Confidence, why, strings.Join(s.By, ", "))
 		}
+	}
+	if a := r.Active; a != nil {
+		fmt.Fprintf(out, "\nPROBES: %d approved, %d sent, %d failed, %d not sent (%d disallowed by robots.txt, %d refused)\n", a.Approved, a.Sent, a.Failed, a.NotSent, a.Disallowed, a.Refused)
 	}
 	if r.Browser != nil {
 		b := r.Browser

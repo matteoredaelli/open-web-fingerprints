@@ -2,7 +2,7 @@
 
 Status: **phases 1 to 3 done**: `owfscan scan <url> --registry FILE` returns the
 technologies, links, domains, social profiles and contacts of a live page, with the
-coverage of the rules. `--depth`, `--friends` and `--browser` (headless Chrome, JS globals and XHR) work; approved probes are still to do. Go only.
+coverage of the rules. `--depth`, `--friends` and `--browser` (headless Chrome, JS globals and XHR) work; approved probes (`--active`, after `owf probe review`) work. Go only.
 Contract: `scan/result.go`, `schemas/scan-result.schema.json`, examples in
 `examples/`. Try it: `owfscan extract --url https://site.example/ page.html`.
 

@@ -267,7 +267,7 @@ var (
 				// A probe's safety review is a human decision; never reset it.
 				if dst.Probe != nil && old.Probe != nil {
 					p := *dst.Probe
-					p.SafetyReview = old.Probe.SafetyReview
+					p.SafetyReview, p.ReviewedAt, p.ReviewNote = old.Probe.SafetyReview, old.Probe.ReviewedAt, old.Probe.ReviewNote
 					dst.Probe = &p
 				}
 			}

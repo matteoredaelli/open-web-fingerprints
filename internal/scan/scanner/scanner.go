@@ -132,6 +132,9 @@ type Options struct {
 	// Friends looks for friend domains (see FindFriends); FriendsMax bounds how many
 	// other sites are contacted (0: DefaultMaxFriends).
 	Friends bool
+	// Active sends the approved probes (see RunProbes); ActiveMax bounds the requests.
+	Active    bool
+	ActiveMax int
 	// Browser also opens the first page in headless Chrome (see package browser).
 	// BrowserPath names the executable (empty: the usual places); BrowserTimeout bounds the run.
 	Browser        bool
@@ -170,6 +173,16 @@ func Scan(ctx context.Context, opt Options, target string) (*scan.Result, error)
 		return nil, fmt.Errorf("scanner: %w", err)
 	}
 	ob.Observation.Robots = crawl.Robots
+	var probed *Probed
+	if opt.Active {
+		if plan := opt.Registry.Engine.ApprovedProbes(); len(plan) == 0 {
+			probed = &Probed{Warnings: []scan.Warning{{Code: "no_approved_probes",
+				Message: "--active was given but no probe is approved in this registry (see `owf probe list`)"}}}
+		} else {
+			probed = RunProbes(ctx, ActiveOptions{Fetch: opt.Fetch, Max: opt.ActiveMax, Delay: opt.Delay}, final, web.RegistrableDomain(final.Hostname()), plan)
+			ob.Observation.Probes = probed.Responses
+		}
+	}
 	var browserInfo *scan.Browser
 	var browserWarn []scan.Warning
 	if opt.Browser {
@@ -208,12 +221,15 @@ func Scan(ctx context.Context, opt Options, target string) (*scan.Result, error)
 			// Host-level observations belong to the first page.
 			in.DNSLooked, in.HasTLS, in.FaviconTried, in.RobotsFetched = ob.DNSLooked, ob.Host.TLS != nil, ob.FaviconTried, crawl.RobotsFetched
 			in.HasBrowser = browserInfo != nil
+			if probed != nil {
+				in.ActiveOn, in.ProbesSent = true, probed.Sent
+			}
 		}
 		outs = append(outs, opt.Registry.Engine.Run(in, engine.Options{MinHealth: opt.MinHealth}))
 	}
 	ex := web.Extract(pages, final.Hostname())
 	out := opt.Registry.Engine.Resolve(engine.Merge(outs, 0))
-	ex.Warnings = append(append(append([]scan.Warning{}, crawl.Warnings...), browserWarn...), ex.Warnings...)
+	ex.Warnings = append(append(append(append([]scan.Warning{}, crawl.Warnings...), browserWarn...), probedWarnings(probed)...), ex.Warnings...)
 
 	res := &scan.Result{
 		Schema: "https://github.com/matteoredaelli/open-web-fingerprints/schemas/scan-result.schema.json", SchemaVersion: scan.SchemaVersion,
@@ -225,6 +241,10 @@ func Scan(ctx context.Context, opt Options, target string) (*scan.Result, error)
 		Warnings: append(append([]scan.Warning{}, ex.Warnings...), out.Warnings...),
 	}
 	res.Browser = browserInfo
+	if probed != nil {
+		r := probed.Report
+		res.Active = &r
+	}
 	for _, p := range crawl.Pages {
 		res.Pages = append(res.Pages, p.Page)
 	}
@@ -258,4 +278,11 @@ func Validate(r *scan.Result) error {
 
 func marshal(r *scan.Result) ([]byte, error) {
 	return json.Marshal(r)
+}
+
+func probedWarnings(p *Probed) []scan.Warning {
+	if p == nil {
+		return nil
+	}
+	return p.Warnings
 }
