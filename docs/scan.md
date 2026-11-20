@@ -1,7 +1,8 @@
 # owfscan: scanning a site
 
-Status: **phase 1 done** (links, domains, social profiles, contacts from HTML);
-fetching, the rule engine and the `scan` command are still to do. Go only.
+Status: **phases 1 and 2 done**: links, domains, social profiles and contacts of a
+live page (`owfscan links|social|observe <url>`). The rule engine and the `scan`
+command are still to do. Go only.
 Contract: `scan/result.go`, `schemas/scan-result.schema.json`, examples in
 `examples/`. Try it: `owfscan extract --url https://site.example/ page.html`.
 
@@ -104,9 +105,36 @@ internal/scan/...   links, social, fetch, observe, engine (public later if neede
      accepted 7 of 38 non-profile URLs (`github.com/features`, `/login`,
      `/sponsors`, `twitter.com/home`, `facebook.com/login`,
      `instagram.com/explore`). It is not a dependency.
-2. **Fetch and observe.** `net/http` with redirect chain, cookies, size and time
-   limits; favicon (md5, mmh3); DNS and TLS of the host; on-disk response cache so
-   a scan can be re-evaluated offline. Page to `matcher.Observation`.
+2. **Fetch and observe.** *Done.* `internal/scan/fetch` and `internal/scan/observe`.
+   - **Requests:** one GET of the page, following redirects (recorded, at most 10),
+     cookies kept along the chain, a 20 s timeout and a 5 MiB cap per request, all
+     settable. An identifying User-Agent. Only `http`/`https`. No crawling, no
+     `robots.txt`, no probes. A bare `host` is tried over https, and over http only
+     if the connection cannot be made (a warning says so).
+   - **Safety:** addresses that are not public (loopback, private ranges,
+     link-local including the cloud metadata address, CGNAT, unique-local) are
+     refused at connect time, so also when a public site *redirects* to one; the
+     environment's proxy is ignored; `--allow-private` opts in for your own
+     network and `--insecure` accepts bad certificates (the certificate is still
+     recorded). A request to a blocked address is never made.
+   - **Observation** (what the matcher reads): headers, `Set-Cookie` lines and
+     cookies, the page decoded to UTF-8 from its declared charset, HTTP status,
+     the favicon (the declared icon, else `/favicon.ico`; a response that is HTML
+     is not a favicon) as md5 and as Shodan-style mmh3 (verified against the
+     reference implementation), DNS (IPs, CNAME, NS, MX, TXT; a failed lookup is a
+     warning), and the certificate (issuer, subject, validity, names). An IP-literal
+     host is not looked up. The favicon is one extra request.
+   - **Cache:** `--cache-dir` stores responses on disk (body with its SHA-256, so a
+     damaged entry is ignored), reused for `--max-age` (24 h); 5xx are not cached;
+     results say `cached`. It lets a scan be repeated offline.
+   - `owfscan observe <url>` prints the observation as JSON: the input of a
+     validation case from a real page, once its licence allows keeping it.
+   - Live check on `mr70.eu` (yours): 86 links to 9 domains, GitHub, GitLab, X and
+     Mastodon (`rel="me"`), certificate, NS records and the favicon hashes, in
+     1.6 s. The legacy YouTube URL `youtube.com/<name>` was not recognised at first
+     and now is (with a reserved list: `watch`, `playlist`, `shorts`, ...).
+   - Not done: HTTP/2 and HTTP/3 information, `robots.txt`, SOA records (the
+     standard library cannot ask), IDN handling beyond what `net/url` does.
 3. **Engine.** Load and verify the export, evaluate rules, groups and versions
    with the matcher's semantics, aggregate evidence, fill `coverage`.
 4. **CLI and docs.**

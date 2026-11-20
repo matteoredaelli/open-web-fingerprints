@@ -69,6 +69,8 @@ internal/repository         interface; memory/ and sqlite/ (goose migrations)
 internal/validator          semantic checks of records
 internal/matcher            offline rule evaluation (rules and groups)
 internal/scan/web           links, domains, social profiles, contacts from HTML
+internal/scan/fetch         guarded HTTP fetch with redirects, limits, disk cache
+internal/scan/observe       page -> matcher observation (favicon hashes, DNS, TLS)
 internal/validation         test cases, health, static lint
 internal/fetch              pinned single-commit git fetch
 internal/export             schema-validated JSON with the redistribution guard
@@ -111,7 +113,8 @@ before claiming value. Prefer sources with different data and clear licences.
 
 `init`, `source list|info|refresh|review`, `import`, `technology list|show`,
 `vendor list|show|set`, `fingerprint list|validate|test|lint`,
-`conflict list|show|resolve`, `export`, `verify`, `stats`. `refresh` fetches one commit
+`conflict list|show|resolve`, `export`, `verify`, `stats`. `owfscan`:
+`extract`, `links`, `social`, `observe`. `refresh` fetches one commit
 with `git` (sparse, pinned by SHA) and imports it; `--dry-run` first.
 
 ## Working conventions
@@ -139,7 +142,8 @@ guard.
 
 Open, roughly in order:
 0. Scanner `owfscan` (docs/scan.md): links, domains, social profiles and contacts
-   are done; next fetch and observation, then the rule engine, then `scan`.
+   fetch and observation are done (`links`, `social`, `observe` work on a URL); next
+   the rule engine, then `scan`.
 1. Write cases for groups and rules of the Wappalyzer-format and nuclei sources
    (only 16 and a few groups have evidence; Recog has upstream examples).
 2. Review the 281 candidate conflicts; legal review of every source.

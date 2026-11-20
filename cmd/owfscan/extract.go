@@ -4,12 +4,10 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
 	"net/url"
 	"os"
-	"text/tabwriter"
 
 	"github.com/spf13/cobra"
 
@@ -42,43 +40,7 @@ func newExtractCmd() *cobra.Command {
 				return err
 			}
 			ex := web.Extract([]web.Page{{URL: pageURL, Body: body}}, u.Hostname())
-			out := cmd.OutOrStdout()
-			if asJSON {
-				enc := json.NewEncoder(out)
-				enc.SetIndent("", "  ")
-				return enc.Encode(map[string]any{
-					"links": ex.Links, "domains": ex.Domains, "socials": ex.Socials,
-					"contacts": ex.Contacts, "warnings": ex.Warnings,
-				})
-			}
-			fmt.Fprintln(out, ex.String())
-			w := tabwriter.NewWriter(out, 0, 4, 2, ' ', 0)
-			fmt.Fprintln(w, "\nDOMAIN\tLINKS\tINTERNAL")
-			for _, d := range ex.Domains {
-				fmt.Fprintf(w, "%s\t%d\t%v\n", d.Domain, d.Links, d.Internal)
-			}
-			fmt.Fprintln(w, "\nPLATFORM\tKIND\tHANDLE\tFOUND VIA")
-			for _, s := range ex.Socials {
-				via := ""
-				for i, f := range s.Found {
-					if i > 0 {
-						via += ","
-					}
-					via += f.Via
-				}
-				fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", s.Platform, s.Kind, s.Handle, via)
-			}
-			fmt.Fprintln(w, "\nCONTACT\tVALUE")
-			for _, c := range ex.Contacts {
-				fmt.Fprintf(w, "%s\t%s\n", c.Kind, c.Value)
-			}
-			if err := w.Flush(); err != nil {
-				return err
-			}
-			for _, wn := range ex.Warnings {
-				fmt.Fprintf(cmd.ErrOrStderr(), "warning: %s: %s (%s)\n", wn.Code, wn.Message, wn.Ref)
-			}
-			return nil
+			return printExtraction(cmd, ex, asJSON, true)
 		},
 	}
 	c.Flags().StringVar(&pageURL, "url", "", "address the page was fetched from (required)")
