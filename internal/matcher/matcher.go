@@ -325,3 +325,16 @@ func Version(rules []domain.Fingerprint, o *Observation) (string, error) {
 	}
 	return "", nil
 }
+
+// InertReason returns why a rule can never match by construction, or "". A
+// cookie rule is looked up by exact name, and some rules of the Wappalyzer
+// format give a name that is a pattern (`connect\.sid`, `_ga_*`,
+// `SESS[a-f0-9]{32}`): no cookie is called that, and the reference engines (the
+// JavaScript Wappalyzer and wappalyzergo) look names up exactly too, so such a
+// rule is inert there as well.
+func InertReason(f domain.Fingerprint) string {
+	if f.Observation == domain.ObsCookie && strings.ContainsAny(f.Target, `\[]*+(){}^$|?`) {
+		return "cookie name is a pattern"
+	}
+	return ""
+}

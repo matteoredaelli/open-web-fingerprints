@@ -157,21 +157,22 @@ func TestRulesThatCannotBeEvaluatedAreCountedWithAReason(t *testing.T) {
 	dep.Status = domain.StatusDeprecated
 	prop := rule("fp_prop", "tech_1", domain.ObsDOM, "div::prop(foo)", domain.OpExists, "")
 	bad := rule("fp_bad", "tech_1", domain.ObsHTML, "", domain.OpRegex, "(")
+	inert := rule("fp_inert", "tech_1", domain.ObsCookie, `connect\.sid`, domain.OpExists, "")
 	good := rule("fp_ok", "tech_1", domain.ObsHTML, "", domain.OpContains, "Acme")
 	e := New(reg([]domain.Technology{tech("tech_1", "X")},
-		probe, pcre, dep, prop, bad, good,
+		probe, pcre, dep, prop, bad, good, inert,
 		rule("fp_js", "tech_1", domain.ObsJSGlobal, "jQuery", domain.OpExists, ""),
 		rule("fp_xhr", "tech_1", domain.ObsXHR, "", domain.OpRegex, "x"),
 		rule("fp_rb", "tech_1", domain.ObsRobots, "", domain.OpRegex, "x")))
 	in := input()
 	o := e.Run(in, Options{})
-	want := map[string]int{ReasonProbe: 1, ReasonFlavor: 1, ReasonDeprecated: 1, ReasonBrowser: 3, ReasonInvalid: 1, ReasonRobots: 1}
+	want := map[string]int{ReasonProbe: 1, ReasonFlavor: 1, ReasonDeprecated: 1, ReasonBrowser: 3, ReasonInvalid: 1, ReasonRobots: 1, ReasonInert: 1}
 	for k, v := range want {
 		if o.Coverage.Skipped[k] != v {
 			t.Errorf("skipped[%q] = %d, want %d (%v)", k, o.Coverage.Skipped[k], v, o.Coverage.Skipped)
 		}
 	}
-	if o.Coverage.RulesUnsupported != 8 || o.Coverage.RulesEvaluated != 1 || o.Coverage.RulesTotal != 9 {
+	if o.Coverage.RulesUnsupported != 9 || o.Coverage.RulesEvaluated != 1 || o.Coverage.RulesTotal != 10 {
 		t.Errorf("coverage: %+v", o.Coverage)
 	}
 	if n := byName(o, "X"); n == nil || len(n.Evidence) != 1 {

@@ -35,6 +35,7 @@ const (
 	ReasonDeprecated = "deprecated"
 	ReasonOther      = "not supported by the matcher"
 	ReasonInvalid    = "invalid rule"
+	ReasonInert      = "cookie name is a pattern (inert upstream too)"
 )
 
 // Health levels, from worst to best.
@@ -201,6 +202,8 @@ func (r *run) reason(f domain.Fingerprint) string {
 		return ReasonProbe
 	case f.Status == domain.StatusDeprecated:
 		return ReasonDeprecated
+	case matcher.InertReason(f) != "":
+		return ReasonInert
 	case rankOf(f) < healthRank[r.opt.MinHealth]:
 		return ReasonHealth
 	case f.Operator == domain.OpRegex && f.RegexFlavor != domain.FlavorRE2:

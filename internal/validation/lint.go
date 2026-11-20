@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/matteoredaelli/open-web-fingerprints/internal/domain"
+	"github.com/matteoredaelli/open-web-fingerprints/internal/matcher"
 )
 
 // Finding is a static quality problem of a rule. It is a warning about
@@ -25,6 +26,7 @@ const (
 	UbiquitousHeader  = "ubiquitous_header"
 	UbiquitousMeta    = "ubiquitous_meta"
 	ProbeQuery        = "probe_query"
+	InertCookieName   = "inert_cookie_name"
 )
 
 // Headers and meta names that almost every site has: an "exists" rule on
@@ -70,6 +72,9 @@ func Lint(f domain.Fingerprint) []Finding {
 				add(UbiquitousMeta, "meta "+f.Target+" is present on almost every site")
 			}
 		}
+	}
+	if why := matcher.InertReason(f); why != "" {
+		add(InertCookieName, why+": a cookie is looked up by exact name, so this rule never matches (it is inert in the reference engines too)")
 	}
 	if f.Probe != nil && strings.Contains(f.Probe.Path, "?") {
 		add(ProbeQuery, "the probe path carries a query string; check at review that it is harmless")

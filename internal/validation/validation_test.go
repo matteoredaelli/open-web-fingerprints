@@ -323,6 +323,8 @@ func TestLint(t *testing.T) {
 		"short hash is fine":    {rule(domain.ObsFaviconHash, "", domain.OpHashEquals, "1"), ""},
 		"probe with query":      {domain.Fingerprint{Observation: domain.ObsProbeResponse, Target: "status", Operator: domain.OpEquals, Pattern: "200", Probe: &domain.Probe{Method: "GET", Path: "/x?a=1", SafetyReview: "pending"}}, validation.ProbeQuery},
 		"probe without query":   {domain.Fingerprint{Observation: domain.ObsProbeResponse, Target: "status", Operator: domain.OpEquals, Pattern: "200", Probe: &domain.Probe{Method: "GET", Path: "/x", SafetyReview: "pending"}}, ""},
+		"inert cookie name":     {rule(domain.ObsCookie, `connect\.sid`, domain.OpExists, ""), validation.InertCookieName},
+		"plain cookie name":     {rule(domain.ObsCookie, "connect.sid", domain.OpExists, ""), ""},
 		"ecmascript not tested": {domain.Fingerprint{Observation: domain.ObsHTML, Operator: domain.OpRegex, RegexFlavor: domain.FlavorECMAScript, Pattern: "(?!x)y?"}, ""},
 	} {
 		if got := codes(tc.f); got != tc.want {

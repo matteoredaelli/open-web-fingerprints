@@ -161,11 +161,20 @@ of false positives on the web, and `ok` should not be read as "reliable".
 
 ### Findings from writing the corpus
 
-- **Wildcards and regex in cookie names.** 13 Enthec cookie rules have a name with
-  regular-expression syntax (`connect\.sid`, `ASP\.NET_SessionId`, `SESS[a-f0-9]{32}`,
-  `joomla_[a-z0-9]+`, `_ga_*`). The matcher compares cookie names exactly, so a real
-  cookie never matches them. Whether the upstream engines treat names as patterns is
-  not verified here; the rules are inert in this registry until that is settled.
+- **Cookie names that are patterns are inert, upstream too.** 13 rules in the
+  Wappalyzer-format sources name a cookie with regular-expression syntax
+  (`connect\.sid`, `ASP\.NET_SessionId`, `\.ASPXAUTH`, `sails\.sid`,
+  `SESS[a-f0-9]{32}`, `joomla_[a-z0-9]+`, `wiki\d+_session`, `_ga_*`,
+  `CFID|CFTOKEN|…`, `mybb[lastvisit]`, `(?i)ltpatoken`). Both reference engines look a
+  cookie up by its exact name: the JavaScript Wappalyzer reads `items[key]` in
+  `analyzeManyToMany` (`src/js/wappalyzer.js`, only lower-casing the rule's key) and
+  wappalyzergo reads `keyValue[data]`. No cookie is called `connect\.sid`, so these
+  rules never match anywhere. `owf fingerprint lint` reports them
+  (`inert_cookie_name`) and the scanner skips them and counts them in the coverage
+  (`cookie name is a pattern (inert upstream too)`). Five of them only escape a dot
+  (`connect\.sid`, `ASP\.NET_SessionId`, `\.ASPXAUTH`, `sails\.sid`) and would work
+  if written without the backslash: that is a correction to propose upstream or to make
+  as a reviewed edit of the registry, not something the importer does silently.
 - **`swiper(?:\.min)?\.js`** (Swiper) does not match `swiper-bundle.min.js`, the
   usual file name of the library.
 - **Fixed versions on `exists` rules** (`_gat` gives version `UA`) were lost by the
@@ -183,6 +192,8 @@ of false positives on the web, and `ok` should not be read as "reliable".
 | `pattern_too_short` | under 3 characters |
 | `ubiquitous_header` | `exists` on a header every site has |
 | `ubiquitous_meta` | `exists` on a meta every page has |
+| `inert_cookie_name` | a cookie rule whose name is a pattern: it can never match |
+| `probe_query` | a probe path with a query string |
 
 It is advisory and stores nothing. Enthec `9e52f10`: 23 findings on 22 of
 15836 rules. Many are legitimate (`(.*)` on a version global is an existence

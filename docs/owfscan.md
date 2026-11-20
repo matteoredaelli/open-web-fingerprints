@@ -146,6 +146,7 @@ It runs in about 1.3 s, including the load and verification of a 34 MB export.
   | `no DNS data`, `no TLS data`, `favicon not fetched` | the observation was not made (`--no-dns`, `--no-favicon`, plain http) |
   | `robots.txt not fetched` | not fetched |
   | `below the minimum health` | excluded by `--min-health` |
+  | `cookie name is a pattern (inert upstream too)` | a cookie rule whose name has regex syntax (13 rules); the reference engines never match it either, see [validation.md](validation.md#findings-from-writing-the-corpus) |
   | `deprecated` | deprecated rules and technologies |
   | `invalid rule`, `not supported by the matcher` | a rule that does not compile, or an observation type the matcher does not know |
 

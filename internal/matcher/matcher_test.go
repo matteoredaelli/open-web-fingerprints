@@ -356,3 +356,20 @@ func TestExistsRuleWithAFixedVersion(t *testing.T) {
 		t.Errorf("a miss has no version: %+v", got)
 	}
 }
+
+func TestInertReason(t *testing.T) {
+	for name, want := range map[string]string{
+		`connect\.sid`: "cookie name is a pattern", "_ga_*": "cookie name is a pattern", "SESS[a-f0-9]{32}": "cookie name is a pattern",
+		"(?i)ltpatoken": "cookie name is a pattern", "A|B": "cookie name is a pattern",
+		"connect.sid": "", "PHPSESSID": "", "wordpress_logged_in_": "", "__utma": "", "a-b": "",
+	} {
+		if got := InertReason(rule(domain.ObsCookie, name, domain.OpExists, "")); got != want {
+			t.Errorf("cookie %q: %q, want %q", name, got, want)
+		}
+	}
+	// Only cookie names are looked up exactly; a header or meta name with such
+	// characters is not flagged here.
+	if got := InertReason(rule(domain.ObsHTTPHeader, "X-A*", domain.OpExists, "")); got != "" {
+		t.Errorf("%q", got)
+	}
+}
