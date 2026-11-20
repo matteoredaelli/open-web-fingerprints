@@ -53,6 +53,31 @@ JSON, validated by `schemas/validation-cases.schema.json`:
   answer (`probes`).
 - Case IDs are unique across all files. Unknown fields are rejected.
 
+## Cases for groups
+
+Rules that share a `group_id` (nuclei templates with `and` matchers) only hold
+together, so a case tests the group, not a member. Use `group` instead of `rule`
+and list **every** member:
+
+```json
+{"id": "4d-action-positive",
+ "group": [
+   {"technology": "4d", "observation": "html", "pattern": "/4DACTION/"},
+   {"technology": "4d", "observation": "http_status"}],
+ "input": {"status": 200, "html": "<a href=\"/4DACTION/home\">"},
+ "expect": {"match": true}}
+```
+
+Groups of a technology often share members (4D has five groups, each with
+"status is 200"), so the group is found by what it contains: exactly one group
+of the technology must have these members, no more and no fewer, otherwise the
+case is an error ("no group has exactly these members", "N groups have these
+members"). Listing only part of a group is refused, because it would test a
+weaker rule. The case matches if all members match, and the evidence (with its
+`fixture_ref`) is stored on **every** member of the group; a failure marks them
+all `broken`. A group needs its own positive and negative case to become `ok`.
+Probed members read the recorded answer to their path (`input.probes`).
+
 ## Matching semantics
 
 These were an open question; the matcher fixes them so they are explicit:
@@ -73,9 +98,7 @@ These were an open question; the matcher fixes them so they are explicit:
   status code; `probe_response` reads the recorded answer to the rule's probe path
   (`input.probes`) with the targets `status`, `body`, `headers`, `response`,
   `content_type` and `server`;
-- rules that share a `group_id` hold only together: `matcher.EvaluateGroup`.
-  Validation cases do not select groups yet, so grouped rules cannot get test
-  evidence and stay `unknown`;
+- rules that share a `group_id` hold only together: `matcher.EvaluateGroup`;
 - `dom` rules are evaluated on the page's HTML with a CSS selector engine
   (`cascadia`). The target is `selector`, `selector::text`,
   `selector::attr(name)` or `selector::prop(name)`. `exists` means an element

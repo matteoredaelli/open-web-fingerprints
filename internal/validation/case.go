@@ -31,11 +31,14 @@ type File struct {
 
 // Case is one assertion: when the rule sees Input, does it match?
 type Case struct {
-	ID          string              `json:"id"`
-	Description string              `json:"description,omitempty"`
-	Rule        Selector            `json:"rule"`
-	Input       matcher.Observation `json:"input"`
-	Expect      Expect              `json:"expect"`
+	ID          string   `json:"id"`
+	Description string   `json:"description,omitempty"`
+	Rule        Selector `json:"rule"`
+	// Group selects a group of rules that must hold together, by listing every
+	// member. Use it instead of Rule for rules that share a group ID.
+	Group  []Selector          `json:"group,omitempty"`
+	Input  matcher.Observation `json:"input"`
+	Expect Expect              `json:"expect"`
 }
 
 // Selector identifies a canonical rule by what it means, not by an ID that
@@ -129,6 +132,19 @@ func Load(root string) ([]Loaded, error) {
 				return nil, fmt.Errorf("validation: case ID %q is used in %s and %s", c.ID, prev, rel)
 			}
 			seen[c.ID] = rel
+			if (len(c.Group) > 0) == (c.Rule.Technology != "") {
+				return nil, fmt.Errorf("validation: %s: case %s needs exactly one of rule and group", rel, c.ID)
+			}
+			if len(c.Group) > 0 {
+				if len(c.Group) < 2 {
+					return nil, fmt.Errorf("validation: %s: case %s: a group lists at least two rules", rel, c.ID)
+				}
+				for _, g := range c.Group[1:] {
+					if g.Technology != c.Group[0].Technology {
+						return nil, fmt.Errorf("validation: %s: case %s: a group belongs to one technology", rel, c.ID)
+					}
+				}
+			}
 			if !c.Expect.Match && c.Expect.Version != "" {
 				return nil, fmt.Errorf("validation: %s: case %s expects a version but no match", rel, c.ID)
 			}

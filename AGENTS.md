@@ -130,8 +130,9 @@ upstream examples, with the origin of each piece of evidence), redistribution
 guard.
 
 Open, roughly in order:
-1. Validation cases that select groups (grouped rules cannot be tested yet).
-2. nuclei version extractors (209 templates lose versions).
+1. nuclei version extractors (209 templates lose versions).
+2. Write cases for groups and rules of the Wappalyzer-format and nuclei sources
+   (only 16 and a few groups have evidence; Recog has upstream examples).
 3. Review the 281 candidate conflicts; legal review of every source.
 4. Export 0.2: conflicts, aliases, test evidence, manifest with revisions and
    checksums; semantic versioning and releases (always explicit, never

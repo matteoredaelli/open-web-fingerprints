@@ -37,7 +37,6 @@
       "additionalProperties": false,
       "required": [
         "id",
-        "rule",
         "input",
         "expect"
       ],
@@ -50,37 +49,7 @@
           "type": "string"
         },
         "rule": {
-          "type": "object",
-          "additionalProperties": false,
-          "required": [
-            "technology",
-            "observation"
-          ],
-          "properties": {
-            "technology": {
-              "type": "string",
-              "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
-            },
-            "observation": {
-              "type": "string",
-              "pattern": "^[a-z][a-z0-9_]*$"
-            },
-            "target": {
-              "type": "string"
-            },
-            "operator": {
-              "enum": [
-                "exists",
-                "equals",
-                "contains",
-                "regex",
-                "hash_equals"
-              ]
-            },
-            "pattern": {
-              "type": "string"
-            }
-          }
+          "$ref": "#/$defs/selector"
         },
         "input": {
           "type": "object",
@@ -201,6 +170,59 @@
               "type": "string"
             }
           }
+        },
+        "group": {
+          "type": "array",
+          "minItems": 2,
+          "items": {
+            "$ref": "#/$defs/selector"
+          },
+          "description": "Every member of a group of rules that must hold together (rules sharing a group_id). Use instead of rule."
+        }
+      },
+      "oneOf": [
+        {
+          "required": [
+            "rule"
+          ]
+        },
+        {
+          "required": [
+            "group"
+          ]
+        }
+      ]
+    },
+    "selector": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "technology",
+        "observation"
+      ],
+      "properties": {
+        "technology": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+        },
+        "observation": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*$"
+        },
+        "target": {
+          "type": "string"
+        },
+        "operator": {
+          "enum": [
+            "exists",
+            "equals",
+            "contains",
+            "regex",
+            "hash_equals"
+          ]
+        },
+        "pattern": {
+          "type": "string"
         }
       }
     }

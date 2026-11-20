@@ -1,0 +1,61 @@
+{
+  "schema_version": "0.1.0",
+  "cases": [
+    {
+      "id": "4d-action-positive",
+      "description": "Five groups of 4D repeat 'status is 200'; the group is found by its other member.",
+      "group": [
+        {"technology": "4d", "observation": "html", "pattern": "/4DACTION/"},
+        {"technology": "4d", "observation": "http_status"}
+      ],
+      "input": {"status": 200, "html": "<a href=\"/4DACTION/home\">"},
+      "expect": {"match": true}
+    },
+    {
+      "id": "4d-action-wrong-status",
+      "group": [
+        {"technology": "4d", "observation": "html", "pattern": "/4DACTION/"},
+        {"technology": "4d", "observation": "http_status"}
+      ],
+      "input": {"status": 404, "html": "<a href=\"/4DACTION/home\">"},
+      "expect": {"match": false}
+    },
+    {
+      "id": "4d-action-missing-path",
+      "group": [
+        {"technology": "4d", "observation": "html", "pattern": "/4DACTION/"},
+        {"technology": "4d", "observation": "http_status"}
+      ],
+      "input": {"status": 200, "html": "<a href=\"/home\">"},
+      "expect": {"match": false}
+    },
+    {
+      "id": "accellion-probe-positive",
+      "group": [
+        {"technology": "accellion", "observation": "probe_response", "target": "body", "pattern": "secured by accellion"},
+        {"technology": "accellion", "observation": "probe_response", "target": "status"}
+      ],
+      "input": {"probes": {"/cfadmin/": {"status": 200, "body": "<p>secured by accellion</p>"}}},
+      "expect": {"match": true}
+    },
+    {
+      "id": "accellion-probe-case-matters",
+      "description": "nuclei word matchers are case-sensitive.",
+      "group": [
+        {"technology": "accellion", "observation": "probe_response", "target": "body", "pattern": "secured by accellion"},
+        {"technology": "accellion", "observation": "probe_response", "target": "status"}
+      ],
+      "input": {"probes": {"/cfadmin/": {"status": 200, "body": "Secured by Accellion"}}},
+      "expect": {"match": false}
+    },
+    {
+      "id": "accellion-probe-negative",
+      "group": [
+        {"technology": "accellion", "observation": "probe_response", "target": "body", "pattern": "secured by accellion"},
+        {"technology": "accellion", "observation": "probe_response", "target": "status"}
+      ],
+      "input": {"probes": {"/cfadmin/": {"status": 200, "body": "Welcome"}}},
+      "expect": {"match": false}
+    }
+  ]
+}

@@ -31,6 +31,9 @@ type Result struct {
 	Message string
 	// RuleID is set when the selector resolved to exactly one rule.
 	RuleID domain.FingerprintID
+	// RuleIDs lists every rule the case is evidence for: one rule, or all the
+	// members of a group.
+	RuleIDs []domain.FingerprintID
 }
 
 // Run evaluates every case against the registry. It never changes it.
@@ -49,6 +52,10 @@ func Run(cases []Loaded, recs domain.Records) []Result {
 	out := make([]Result, 0, len(cases))
 	for _, l := range cases {
 		r := Result{Loaded: l}
+		if len(l.Case.Group) > 0 {
+			out = append(out, runGroup(l, byTech[l.Case.Group[0].Technology]))
+			continue
+		}
 		var rule domain.Fingerprint
 		var err error
 		if l.RuleID != "" {
@@ -64,7 +71,7 @@ func Run(cases []Loaded, recs domain.Records) []Result {
 			out = append(out, r)
 			continue
 		}
-		r.RuleID = rule.ID
+		r.RuleID, r.RuleIDs = rule.ID, []domain.FingerprintID{rule.ID}
 		got, err := matcher.Evaluate(rule, &l.Case.Input)
 		switch {
 		case errors.Is(err, matcher.ErrUnsupported):
@@ -143,10 +150,18 @@ func Apply(results []Result, recs domain.Records, now time.Time) []domain.Finger
 	}
 	touched := map[domain.FingerprintID]bool{}
 	cleared := map[domain.FingerprintID]bool{}
+	var flat []Result
 	for _, r := range results {
-		if r.RuleID == "" || (r.Status != Pass && r.Status != Fail) {
+		if r.Status != Pass && r.Status != Fail {
 			continue
 		}
+		for _, id := range r.RuleIDs {
+			one := r
+			one.RuleID = id
+			flat = append(flat, one)
+		}
+	}
+	for _, r := range flat {
 		f := byID[r.RuleID]
 		v := domain.Validation{Health: "unknown"}
 		if f.Validation != nil {
