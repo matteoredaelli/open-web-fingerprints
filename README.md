@@ -101,5 +101,11 @@ and may change.
 
 ## License
 
-GPL-3.0-or-later (see [LICENSE](LICENSE)). Third-party fingerprint data keeps
-its original license; provenance and licensing are tracked per source.
+GPL-3.0-or-later (see [LICENSE](LICENSE)) for everything the project writes: the
+programs, the Go packages (`scan` and `schemas` included: a program that imports them
+is subject to the GPL when distributed), the JSON Schemas, the documentation and the
+validation cases. This is the maintainer's decision, one licence for code and data.
+
+Third-party fingerprint data keeps its original license; provenance and licensing are
+tracked per source, and the redistribution status of each source is a separate decision
+(`owf source review`, see [docs/redistribution.md](docs/redistribution.md)).

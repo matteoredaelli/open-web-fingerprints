@@ -40,6 +40,9 @@ and plan: `docs/scan.md`.
   imported as `draft` with `safety_review: pending`, never approved by an
   extractor. The project never runs probes, never exploits, never authenticates.
   Out of scope: CVE, vulnerability, misconfiguration and default-login templates.
+- **One licence: GPL-3.0-or-later for all that the project writes** (code, `scan` and
+  `schemas` packages, schemas, docs, cases). Decided by the maintainer; do not propose
+  a second licence for part of it.
 - **Redistribution is guarded.** Sources are `unreviewed` by default;
   `owf export` refuses them unless `--include-unreviewed` (internal use, noted in
   the file). `no` is never exported. Decisions are recorded with
