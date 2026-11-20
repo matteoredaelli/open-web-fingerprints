@@ -43,3 +43,36 @@ func ValidateCases(doc []byte) error {
 	}
 	return nil
 }
+
+//go:embed scan-result.schema.json
+var scanSchema []byte
+
+const scanURL = "https://github.com/matteoredaelli/open-web-fingerprints/schemas/scan-result.schema.json"
+
+// ScanResultSchema returns the raw JSON Schema of a scan result.
+func ScanResultSchema() []byte { return append([]byte(nil), scanSchema...) }
+
+// ValidateScanResult validates a scan result document against its schema.
+func ValidateScanResult(doc []byte) error {
+	schemaDoc, err := jsonschema.UnmarshalJSON(bytes.NewReader(scanSchema))
+	if err != nil {
+		return fmt.Errorf("parse schema: %w", err)
+	}
+	c := jsonschema.NewCompiler()
+	c.AssertFormat()
+	if err := c.AddResource(scanURL, schemaDoc); err != nil {
+		return fmt.Errorf("add schema: %w", err)
+	}
+	sch, err := c.Compile(scanURL)
+	if err != nil {
+		return fmt.Errorf("compile schema: %w", err)
+	}
+	inst, err := jsonschema.UnmarshalJSON(bytes.NewReader(doc))
+	if err != nil {
+		return fmt.Errorf("parse document: %w", err)
+	}
+	if err := sch.Validate(inst); err != nil {
+		return fmt.Errorf("validate: %w", err)
+	}
+	return nil
+}

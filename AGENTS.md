@@ -11,8 +11,13 @@ normalizes them into one model, keeps provenance, reconciles overlaps, tests
 rules, and exports language-neutral JSON. The CLI is `owf`; the module is
 `github.com/matteoredaelli/open-web-fingerprints`; Go 1.25.
 
-The runtime detection engine is a **separate project**. `internal/matcher`
-exists only to test rules offline. Do not grow it into a scanner.
+The scanner (`owfscan`: give it a URL, get a structured result with technologies,
+links, linked domains and social profiles) is a **separate component** in this
+repository: its own binary (`cmd/owfscan`, no database) and public package
+(`scan/`). It reads a registry export and applies the rules. Go only, no Python
+layer. `internal/matcher` still exists only to test rules offline; the scanner
+may reuse its code, but do not grow the matcher itself into a scanner. Design
+and plan: `docs/scan.md`.
 
 ## Rules that must hold
 
@@ -67,7 +72,8 @@ internal/validation         test cases, health, static lint
 internal/fetch              pinned single-commit git fetch
 internal/export             schema-validated JSON with the redistribution guard
 internal/builtin            static catalogue of sources and extractors
-schemas/                    public JSON Schemas (registry, validation cases)
+scan/                       public result types of the scanner
+schemas/                    public JSON Schemas (registry, validation cases, scan result)
 validation/cases/           corpus of cases on real rules
 examples/  docs/  testdata under each package
 ```
@@ -131,6 +137,8 @@ upstream examples, with the origin of each piece of evidence), redistribution
 guard.
 
 Open, roughly in order:
+0. Scanner `owfscan` (docs/scan.md): links, domains and social profiles first, then
+   fetch and observation, then the rule engine, then the CLI.
 1. Write cases for groups and rules of the Wappalyzer-format and nuclei sources
    (only 16 and a few groups have evidence; Recog has upstream examples).
 2. Review the 281 candidate conflicts; legal review of every source.
