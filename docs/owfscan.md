@@ -376,6 +376,38 @@ it is evaluated. Without `--depth` it is not fetched.
 On `mr70.eu` (my own site), `--depth 1` read the home page and `/contact/` in about 3 s
 and added the contact email address that the home page does not have.
 
+## Friend domains (`--friends`, `owfscan friends`)
+
+A **friend** is a domain that the target's home page links to and whose own home page
+links back to the target's registrable domain. `owfscan friends <url>` prints them;
+`owfscan scan <url> --friends` adds them to the result (`friends`, in the schema). It says
+what two home pages link to and nothing more: not that the sites are related, owned by
+the same people, or that the link is a recommendation.
+
+How it is decided:
+
+- **Candidates.** The external domains linked by ordinary links (`<a>`) on the home page
+  that was asked for (not the pages a `--depth` crawl added). Social platforms are left out
+  (their home pages link to everything), and so are links from scripts, images and
+  stylesheets. Ordered by number of links, then by name.
+- **The check.** The candidate's home page (`/` on the host that was linked) is fetched
+  and its `<a>` links are read; one pointing to the target's registrable domain (any
+  subdomain) makes it a friend. The links found are listed as `links_back`.
+- **Statuses.** `friend`, `not_friend` (page read, no link back), `not_allowed` (its
+  robots.txt disallows `/`, or could not be read because of a server error),
+  `unreachable` (no answer, not a page, or an error status), `not_checked` (over the limit).
+
+What it costs, because it contacts sites you did not name:
+
+- one request for `robots.txt` and one for the home page per candidate;
+- `robots.txt` is **always** honoured here; `--ignore-robots` does not apply;
+- `--delay` (default 500 ms) before each request, `--friends-max` (default 20) sites at
+  most; the rest are listed as `not_checked` so nothing is hidden;
+- the same guard against non-public addresses as everywhere.
+
+On `mr70.eu` (my own site) it found 2 candidates (creativecommons.org, fosstodon.org),
+neither linking back: 0 friends. That is the honest result, not a sample of a busy site.
+
 ## Loading the registry
 
 `scan` checks the export against its schema and manifest before use. For a registry of

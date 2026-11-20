@@ -206,21 +206,28 @@ func sleep(ctx context.Context, d time.Duration) bool {
 // fetchRobots reads /robots.txt of an origin. A missing file (4xx) allows everything;
 // a server error or a network failure means the site cannot be asked, and ok is false.
 func fetchRobots(ctx context.Context, f *fetch.Fetcher, origin string) (rules *robots.Rules, text string, ok bool) {
+	rules, text, ok, _ = fetchRobotsErr(ctx, f, origin)
+	return rules, text, ok
+}
+
+// fetchRobotsErr is fetchRobots that also returns the network error, if any, so a caller
+// can tell a site that cannot be reached from one that answers with a server error.
+func fetchRobotsErr(ctx context.Context, f *fetch.Fetcher, origin string) (rules *robots.Rules, text string, ok bool, err error) {
 	resp, err := f.Get(ctx, origin+"/robots.txt")
 	switch {
 	case err != nil:
-		return &robots.Rules{}, "", false
+		return &robots.Rules{}, "", false, err
 	case resp.Status >= 500:
-		return &robots.Rules{}, "", false
+		return &robots.Rules{}, "", false, nil
 	case resp.Status >= 400 || resp.Status < 200:
-		return robots.Parse("", userAgentToken), "", true
+		return robots.Parse("", userAgentToken), "", true, nil
 	}
 	body := resp.Body
 	if len(body) > 512<<10 {
 		body = body[:512<<10]
 	}
 	text = string(body)
-	return robots.Parse(text, userAgentToken), text, true
+	return robots.Parse(text, userAgentToken), text, true, nil
 }
 
 // skipExt are files, not pages.

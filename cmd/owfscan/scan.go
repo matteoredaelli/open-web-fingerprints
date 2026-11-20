@@ -35,6 +35,8 @@ func version() string {
 func newScanCmd() *cobra.Command {
 	n := &netFlags{}
 	var registry, minHealth, verifyCache string
+	var friends bool
+	var friendsMax int
 	var noDNS, noFavicon, verbose bool
 	c := &cobra.Command{
 		Use:   "scan <url>",
@@ -62,6 +64,7 @@ func newScanCmd() *cobra.Command {
 			opt := scanner.Options{
 				Registry: reg, NoFavicon: noFavicon, MinHealth: minHealth, Version: version(),
 				Depth: n.depth, MaxPages: n.maxPages, Delay: n.delay, IgnoreRobots: n.ignoreRobots,
+				Friends: friends, FriendsMax: friendsMax,
 				Fetch: fetch.Options{Timeout: n.timeout, AllowPrivate: n.allowPrivate, Insecure: n.insecure, CacheDir: n.cacheDir, MaxAge: n.maxAge},
 			}
 			if !noDNS {
@@ -83,6 +86,8 @@ func newScanCmd() *cobra.Command {
 	}
 	n.add(c)
 	n.addCrawl(c)
+	c.Flags().BoolVar(&friends, "friends", false, "also look for friend domains: linked from the home page and linking back to it (contacts other sites; see `owfscan friends --help`)")
+	c.Flags().IntVar(&friendsMax, "friends-max", scanner.DefaultMaxFriends, "most candidate domains to look at with --friends")
 	c.Flags().StringVar(&verifyCache, "verify-cache", "", "where to remember that a registry file was verified (default: the user cache directory; \"off\" verifies every time)")
 	c.Flags().StringVar(&registry, "registry", os.Getenv("OWFSCAN_REGISTRY"), "registry export to apply (env OWFSCAN_REGISTRY)")
 	c.Flags().StringVar(&minHealth, "min-health", "", "use only rules at least this healthy: broken (all, default), degraded, unknown, ok")
@@ -168,6 +173,9 @@ func printScan(cmd *cobra.Command, r *scan.Result, verbose bool) {
 		fmt.Fprintf(w, "%s\t%s\n", c.Kind, c.Value)
 	}
 	_ = w.Flush()
+	if r.Friends != nil {
+		printFriends(cmd, r.Friends)
+	}
 
 	c := r.Coverage
 	fmt.Fprintf(out, "\nCOVERAGE: %d of %d rules evaluated, %d could not be", c.RulesEvaluated, c.RulesTotal, c.RulesUnsupported)

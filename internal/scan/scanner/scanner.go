@@ -127,7 +127,11 @@ type Options struct {
 	Depth, MaxPages int
 	Delay           time.Duration
 	IgnoreRobots    bool
-	MinHealth       string
+	// Friends looks for friend domains (see FindFriends); FriendsMax bounds how many
+	// other sites are contacted (0: DefaultMaxFriends).
+	Friends    bool
+	FriendsMax int
+	MinHealth  string
 	// Version names the scanner in the result.
 	Version string
 	Now     func() time.Time
@@ -188,6 +192,12 @@ func Scan(ctx context.Context, opt Options, target string) (*scan.Result, error)
 	}
 	for _, p := range crawl.Pages {
 		res.Pages = append(res.Pages, p.Page)
+	}
+	if opt.Friends {
+		// Only the home page counts: the page that was asked for, not the pages a crawl added.
+		homeLinks := web.Extract([]web.Page{{URL: ob.Page.FinalURL, Body: ob.HTML}}, final.Hostname()).Links
+		res.Friends = FindFriends(ctx, FriendsOptions{Fetch: opt.Fetch, Max: opt.FriendsMax, Delay: opt.Delay},
+			Home{Domain: res.Target.RegistrableDomain, Links: homeLinks})
 	}
 	if len(ob.Host.IPs) > 0 || ob.Host.DNS != nil || ob.Host.TLS != nil {
 		h := ob.Host

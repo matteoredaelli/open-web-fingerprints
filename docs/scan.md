@@ -205,6 +205,9 @@ internal/scan/...   links, social, fetch, observe, engine (public later if neede
 
 - How much of `internal/matcher` to promote to a public package (or whether the
   scanner keeps importing it from inside the module).
+- Friends (`--friends`) look at home pages only; a link back from `/about` or a footer on
+  another page is missed. A candidate behind JavaScript, or whose home page redirects to a
+  language page without the link, is `not_friend`. Not measured on many sites.
 - Which words select pages for `--depth`; they are a judgement call, not measured on many sites.
 - Loading is still decode + regex compilation on each run (about 0.3 s for 22000 rules);
   an index that is not JSON would save the decode only. Not done: not worth it yet.

@@ -195,6 +195,22 @@ func mastodonProfile(raw string) (Profile, bool) {
 	return Profile{Platform: "mastodon", Kind: "user", Handle: "@" + strings.ToLower(m[1]) + "@" + host, URL: "https://" + host + "/@" + m[1]}, true
 }
 
+// IsPlatformHost reports whether a host belongs to a social platform the table knows
+// (a profile site, not a company's own site).
+func IsPlatformHost(host string) bool {
+	host = strings.ToLower(strings.TrimSuffix(host, "."))
+	ps, err := loadPlatforms()
+	if err != nil {
+		return false
+	}
+	for _, p := range ps {
+		if hostIn(host, p.Hosts) {
+			return true
+		}
+	}
+	return false
+}
+
 // Platforms lists the platform names the table knows.
 func Platforms() []string {
 	ps, err := loadPlatforms()

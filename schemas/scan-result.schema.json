@@ -172,6 +172,72 @@
           }
         }
       }
+    },
+    "friends": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Present only when friend detection was asked for. A friend is a domain that the target's home page links to and whose own home page links back. It says what two home pages link to, no more.",
+      "required": [
+        "candidates",
+        "checked",
+        "domains"
+      ],
+      "properties": {
+        "candidates": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "External domains the home page links to, social platforms left out."
+        },
+        "checked": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "domains": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "domain",
+              "status",
+              "linked_from"
+            ],
+            "properties": {
+              "domain": {
+                "type": "string",
+                "minLength": 1
+              },
+              "status": {
+                "enum": [
+                  "friend",
+                  "not_friend",
+                  "not_allowed",
+                  "unreachable",
+                  "not_checked"
+                ]
+              },
+              "url": {
+                "type": "string"
+              },
+              "linked_from": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "links_back": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "detail": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
     }
   },
   "$defs": {

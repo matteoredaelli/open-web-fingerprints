@@ -6,6 +6,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -312,5 +313,66 @@ func TestDepth(t *testing.T) {
 	}
 	if err := schemas.ValidateScanResult([]byte(out)); err != nil {
 		t.Errorf("a crawled result must satisfy the schema: %v", err)
+	}
+}
+
+func TestFriendsCommand(t *testing.T) {
+	// A is served on 127.0.0.1, its friend and a stranger on "localhost": different domains.
+	var aURL string
+	friend := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/robots.txt" {
+			http.NotFound(w, r)
+			return
+		}
+		w.Header().Set("Content-Type", "text/html")
+		_, _ = w.Write([]byte(`<a href="` + aURL + `/about">our partner</a>`))
+	}))
+	defer friend.Close()
+	stranger := httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/robots.txt" {
+			http.NotFound(w, r)
+			return
+		}
+		w.Header().Set("Content-Type", "text/html")
+		_, _ = w.Write([]byte(`<p>nothing</p>`))
+	}))
+	l6, err := net.Listen("tcp", "[::1]:0") // a third "domain": the IPv6 loopback
+	if err != nil {
+		t.Skip("no IPv6 loopback")
+	}
+	stranger.Listener = l6
+	stranger.Start()
+	defer stranger.Close()
+	local := func(u string) string { return strings.Replace(u, "127.0.0.1", "localhost", 1) }
+	a := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html")
+		_, _ = w.Write([]byte(`<a href="` + local(friend.URL) + `/">f</a> <a href="` + stranger.URL + `/">s</a>`))
+	}))
+	defer a.Close()
+	aURL = a.URL
+
+	out, err := run(t, "", "friends", "--allow-private", "--delay", "1ms", a.URL)
+	if err != nil {
+		t.Fatalf("%v\n%s", err, out)
+	}
+	if !strings.Contains(out, "FRIENDS (1 of 2 checked, 2 candidates)") || !strings.Contains(out, "friend") || !strings.Contains(out, "not_friend") {
+		t.Errorf("output:\n%s", out)
+	}
+	out, err = run(t, "", "friends", "--allow-private", "--delay", "1ms", "--friends-max", "1", "--json", a.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var doc struct {
+		Friends struct {
+			Candidates, Checked int
+			Domains             []struct{ Domain, Status string }
+		}
+	}
+	if err := json.Unmarshal([]byte(out), &doc); err != nil || doc.Friends.Checked != 1 || doc.Friends.Candidates != 2 || len(doc.Friends.Domains) != 2 {
+		t.Errorf("%v %+v", err, doc)
+	}
+	// The private-address guard applies to the friends too: without --allow-private nothing is read.
+	if out, err := run(t, "", "friends", a.URL); err == nil {
+		t.Errorf("a private target is refused:\n%s", out)
 	}
 }

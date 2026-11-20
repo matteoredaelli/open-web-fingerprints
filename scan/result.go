@@ -31,9 +31,11 @@ type Result struct {
 	Domains       []Domain     `json:"domains"`
 	Socials       []Social     `json:"socials"`
 	Contacts      []Contact    `json:"contacts"`
-	Coverage      Coverage     `json:"coverage"`
-	Registry      RegistryRef  `json:"registry"`
-	Warnings      []Warning    `json:"warnings"`
+	// Friends is present only when friend detection was asked for.
+	Friends  *Friends    `json:"friends,omitempty"`
+	Coverage Coverage    `json:"coverage"`
+	Registry RegistryRef `json:"registry"`
+	Warnings []Warning   `json:"warnings"`
 }
 
 // Target is what was asked for and where it led.
@@ -136,6 +138,40 @@ type Domain struct {
 	Internal bool     `json:"internal"`
 	Links    int      `json:"links"`
 	Examples []string `json:"examples,omitempty"`
+}
+
+// Friends is the outcome of looking for "friend" domains: sites that the target's home
+// page links to and whose own home page links back to the target. It says what two home
+// pages link to, no more: it does not say the two sites are related in any other way.
+type Friends struct {
+	// Candidates is how many external domains the home page links to, after leaving out
+	// the social platforms; Checked is how many of them were looked at (the rest hit the
+	// limit).
+	Candidates int      `json:"candidates"`
+	Checked    int      `json:"checked"`
+	Domains    []Friend `json:"domains"`
+}
+
+// Friend statuses.
+const (
+	FriendYes        = "friend"      // its home page links back to the target
+	FriendNo         = "not_friend"  // its home page was read and does not link back
+	FriendBlocked    = "not_allowed" // its robots.txt asks crawlers not to fetch the home page
+	FriendUnreadable = "unreachable" // could not be fetched or was not a page
+	FriendNotChecked = "not_checked" // over the limit
+)
+
+// Friend is one candidate domain.
+type Friend struct {
+	Domain string `json:"domain"`
+	Status string `json:"status"`
+	// URL is the home page that was fetched (after redirects).
+	URL string `json:"url,omitempty"`
+	// LinkedFrom lists links on the target's home page that point to the domain.
+	LinkedFrom []string `json:"linked_from"`
+	// LinksBack lists links on the domain's home page that point to the target.
+	LinksBack []string `json:"links_back,omitempty"`
+	Detail    string   `json:"detail,omitempty"`
 }
 
 // Social is a profile of a person or organisation on a platform.
