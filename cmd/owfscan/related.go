@@ -130,4 +130,7 @@ func printRelated(cmd *cobra.Command, r *scan.Related) {
 	}
 	_ = w.Flush()
 	fmt.Fprintln(out, "  * strong signal")
+	if len(r.Probable) > 0 {
+		fmt.Fprintf(out, "  probable: %s\n", strings.Join(r.Probable, ", "))
+	}
 }

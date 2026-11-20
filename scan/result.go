@@ -54,6 +54,10 @@ type Result struct {
 	Suppressed []Suppressed `json:"suppressed,omitempty"`
 	// Friends is present only when friend detection was asked for.
 	Friends *Friends `json:"friends,omitempty"`
+	// Implied lists technologies that the registry says follow from the ones found (WordPress
+	// implies PHP and MySQL) but that no rule matched on this site. They are not detections: there
+	// is no evidence of their own, only the technologies that imply them.
+	Implied []Implied `json:"implied,omitempty"`
 	// Related is present only when related domains were asked for.
 	Related *Related `json:"related,omitempty"`
 	// Active is present only when probes were allowed (--active).
@@ -187,6 +191,20 @@ const (
 	SuppressedRequirement = "requirement_not_met"
 )
 
+// Implied is a technology that follows from others that were found.
+type Implied struct {
+	ID         string   `json:"id"`
+	Slug       string   `json:"slug"`
+	Name       string   `json:"name"`
+	Vendor     string   `json:"vendor,omitempty"`
+	Categories []string `json:"categories,omitempty"`
+	// ImpliedBy names the technologies that imply it directly, found or themselves implied.
+	ImpliedBy []string `json:"implied_by"`
+	// Confidence is at most that of what implies it, lowered by the relationship's own
+	// confidence when the source gave one.
+	Confidence float64 `json:"confidence"`
+}
+
 // Related lists domains that may belong to the same owner as the target, with what ties each
 // to it. It says what the pages and certificates have in common, never that the owner is the
 // same: an agency can share an account across clients, and a domain with the same name can be
@@ -198,9 +216,11 @@ type Related struct {
 	Checked    int `json:"checked"`
 	// VariantsTried and VariantsResolved are set when the name was tried under other TLDs
 	// (--related-tlds): how many names were looked up and how many exist in DNS.
-	VariantsTried    int             `json:"variants_tried,omitempty"`
-	VariantsResolved int             `json:"variants_resolved,omitempty"`
-	Domains          []RelatedDomain `json:"domains"`
+	VariantsTried    int `json:"variants_tried,omitempty"`
+	VariantsResolved int `json:"variants_resolved,omitempty"`
+	// Probable lists the domains whose level is probable, in the order of Domains: the short answer.
+	Probable []string        `json:"probable"`
+	Domains  []RelatedDomain `json:"domains"`
 }
 
 // Related levels and statuses.

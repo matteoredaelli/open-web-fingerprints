@@ -227,6 +227,12 @@ func FindRelated(ctx context.Context, opt RelatedOptions, home HomeInfo) *scan.R
 		}
 		return a.Domain < b.Domain
 	})
+	out.Probable = []string{}
+	for _, d := range out.Domains {
+		if d.Level == scan.RelatedProbable {
+			out.Probable = append(out.Probable, d.Domain)
+		}
+	}
 	return out
 }
 

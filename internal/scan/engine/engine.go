@@ -77,6 +77,8 @@ type Output struct {
 	Warnings     []scan.Warning
 	// Suppressed is filled by Resolve.
 	Suppressed []scan.Suppressed
+	// Implied is filled by Resolve.
+	Implied []scan.Implied
 }
 
 // Engine holds an indexed registry. It is built once and can serve many runs.
@@ -84,6 +86,7 @@ type Engine struct {
 	reg        *domain.Registry
 	rel        relations
 	techs      []domain.Technology
+	byID       map[domain.TechnologyID]domain.Technology
 	vendors    map[domain.VendorID]string
 	categories map[domain.CategoryID]string
 	sources    map[domain.SourceID]string
@@ -113,6 +116,10 @@ func New(reg *domain.Registry) *Engine {
 		e.sources[s.ID] = s.Slug
 	}
 	e.techs = append(e.techs, reg.Technologies...)
+	e.byID = make(map[domain.TechnologyID]domain.Technology, len(reg.Technologies))
+	for _, t := range reg.Technologies {
+		e.byID[t.ID] = t
+	}
 	sort.Slice(e.techs, func(i, j int) bool { return e.techs[i].ID < e.techs[j].ID })
 	for _, f := range reg.Fingerprints {
 		r := e.rules[f.TechnologyID]

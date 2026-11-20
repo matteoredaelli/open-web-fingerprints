@@ -447,7 +447,8 @@ with the target's. The evidence, **strong** signals first:
 | `linked_from_home`, `links_back`, `hreflang_back` | medium | the home pages link to each other, or it declares the target as an alternate |
 
 A domain with at least one strong signal, or whose home page and the target's link to each
-other, is `probable`; the rest are `candidate`.
+other, is `probable`; the rest are `candidate`. `related.probable` lists the probable ones by
+name, the short answer; `related.domains` has the evidence for each.
 
 Results (read on 2026-11-20; a home page each, nothing else):
 
@@ -549,14 +550,34 @@ technologies responsible: nothing is dropped silently.
   technology in that category. With several required technologies, **one** is enough: I did
   not find a source that says whether Wappalyzer means "one" or "all", and "one" holds back
   less.
-- **`implies`** is used for that check only: implied technologies are **not added** to the
-  result yet.
+- **`implies`** is used for that check, and also gives the `implied` list below.
 
 I could not read Wappalyzer's own JavaScript for these rules (its source was not at the
 addresses I tried), and the two `wappalyzergo` files I read say nothing about `excludes` or
 `requires`. So the semantics above are the ones of the Wappalyzer data-format description as
 I know it, not checked against an engine, and the relationships are only as good as the
 sources that wrote them.
+
+### Implied technologies (`implied`)
+
+The registry also says which technologies follow from others (WordPress implies PHP and
+MySQL). Starting from the technologies that are reported, the scanner follows `implies`
+through the ones it reaches and lists those no rule matched in `implied` (printed as
+`IMPLIED`). They are **not detections**: there is no evidence of their own, only the technologies
+that imply them (`implied_by`), and they are kept apart from `technologies` so a consumer
+cannot mistake one for the other.
+
+- Confidence is at most that of what implies it, and is lowered by the relationship's own
+  confidence when the source gave one (Wappalyzer's `\;confidence:N`). With several implying
+  technologies the best one counts.
+- A technology that was found is not also implied; one that a found technology excludes is not
+  implied; a deprecated one is not implied; a technology held back (excluded or missing a
+  requirement) implies nothing.
+- The chain is followed transitively, and a cycle is harmless (it can make A "implied by" B
+  when B is itself implied by A: the list says what the registry says).
+
+On `pirelli.com` (with `--browser`) the only implied technology is Amazon Web Services, from
+Amazon CloudFront.
 
 On `pirelli.com` with `--browser`, `Underscore.js` (reported before with Lodash's version
 3.8.0 and confidence 0.00) is now `excluded by Lodash`.

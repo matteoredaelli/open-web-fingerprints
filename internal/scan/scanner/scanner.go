@@ -241,7 +241,7 @@ func Scan(ctx context.Context, opt Options, target string) (*scan.Result, error)
 		Schema: "https://github.com/matteoredaelli/open-web-fingerprints/schemas/scan-result.schema.json", SchemaVersion: scan.SchemaVersion,
 		ScannedAt: started, Scanner: "owfscan " + opt.Version,
 		Target:       scan.Target{Input: target, URL: ob.Page.FinalURL, Host: final.Hostname(), RegistrableDomain: web.RegistrableDomain(final.Hostname())},
-		Technologies: out.Technologies, Suppressed: out.Suppressed,
+		Technologies: out.Technologies, Suppressed: out.Suppressed, Implied: out.Implied,
 		Links: ex.Links, Domains: ex.Domains, Socials: ex.Socials, Contacts: ex.Contacts,
 		Coverage: out.Coverage, Registry: opt.Registry.Ref,
 		Warnings: append(append([]scan.Warning{}, ex.Warnings...), out.Warnings...),

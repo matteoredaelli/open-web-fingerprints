@@ -26,9 +26,11 @@ const doc = `{
      "confidence": 0.5, "sources": ["enthec-webappanalyzer"],
      "evidence": [{"rule_id": "fp_01a1f9ac-6969-7e6f-a646-cbae610161c6", "observation": "meta_tag", "target": "generator", "matched": "Hugo 0.119.0", "health": "unknown", "source": "enthec-webappanalyzer"}]}
   ],
+  "implied": [{"id": "tech_01a1f9ac-67ad-7aa2-9ef9-43d88dc74a50", "slug": "go-lang", "name": "Go", "implied_by": ["Hugo"], "confidence": 0.5}],
   "suppressed": [{"id": "tech_01a1f9ac-67ad-7aa2-9ef9-43d88dc74a4f", "slug": "underscore-js", "name": "Underscore.js", "reason": "excluded", "by": ["Lodash"], "confidence": 0}],
   "links": [], "domains": [], "socials": [{"platform": "github", "kind": "account", "handle": "example", "url": "https://github.com/example", "found": [{"page": "https://www.example.org/", "via": "a"}]}],
   "contacts": [],
+  "related": {"candidates": 1, "checked": 1, "probable": ["sister.example"], "domains": [{"domain": "sister.example", "level": "probable", "status": "checked", "evidence": [{"kind": "cert_org", "strength": "strong", "detail": "Example SA"}]}]},
   "friends": {"candidates": 2, "checked": 2, "domains": [
     {"domain": "partner.example", "status": "friend", "linked_from": ["https://partner.example/"], "links_back": ["https://www.example.org/about"]},
     {"domain": "other.example", "status": "not_friend", "linked_from": ["https://other.example/"]}]},
@@ -91,4 +93,27 @@ func ExampleSuppressed() {
 		fmt.Printf("%s: %s by %s\n", s.Name, s.Reason, s.By[0])
 	}
 	// Output: Underscore.js: excluded by Lodash
+}
+
+func ExampleImplied() {
+	var r scan.Result
+	if err := json.Unmarshal([]byte(doc), &r); err != nil {
+		panic(err)
+	}
+	// Implied technologies were not matched: nothing in the page shows them, the registry says
+	// they follow from the ones that were found.
+	for _, im := range r.Implied {
+		fmt.Printf("%s is implied by %s\n", im.Name, im.ImpliedBy[0])
+	}
+	// Output: Go is implied by Hugo
+}
+
+func ExampleRelated() {
+	var r scan.Result
+	if err := json.Unmarshal([]byte(doc), &r); err != nil {
+		panic(err)
+	}
+	// The short answer; each domain in Domains says why it is listed.
+	fmt.Println(r.Related.Probable)
+	// Output: [sister.example]
 }

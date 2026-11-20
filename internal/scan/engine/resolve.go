@@ -16,14 +16,21 @@ type relations struct {
 	excludes map[domain.TechnologyID][]domain.TechnologyID
 	requires map[domain.TechnologyID][]domain.TechnologyID
 	// requiresCat are category requirements: a technology needs one technology of the category.
-	requiresCat map[domain.TechnologyID][]domain.CategoryID
-	implies     map[domain.TechnologyID][]domain.TechnologyID
+	requiresCat  map[domain.TechnologyID][]domain.CategoryID
+	implies      map[domain.TechnologyID][]domain.TechnologyID
+	impliesEdges map[domain.TechnologyID][]impliesEdge
+}
+
+type impliesEdge struct {
+	to   domain.TechnologyID
+	conf *float64
 }
 
 func indexRelations(reg *domain.Registry) relations {
 	r := relations{
 		excludes: map[domain.TechnologyID][]domain.TechnologyID{}, requires: map[domain.TechnologyID][]domain.TechnologyID{},
 		requiresCat: map[domain.TechnologyID][]domain.CategoryID{}, implies: map[domain.TechnologyID][]domain.TechnologyID{},
+		impliesEdges: map[domain.TechnologyID][]impliesEdge{},
 	}
 	for _, rel := range reg.Relationships {
 		if len(rel.Provenance) > 0 && allRemoved(rel.Provenance) {
@@ -40,6 +47,7 @@ func indexRelations(reg *domain.Registry) relations {
 			}
 		case "implies":
 			r.implies[rel.FromTechnologyID] = append(r.implies[rel.FromTechnologyID], rel.ToTechnologyID)
+			r.impliesEdges[rel.FromTechnologyID] = append(r.impliesEdges[rel.FromTechnologyID], impliesEdge{to: rel.ToTechnologyID, conf: rel.Confidence})
 		}
 	}
 	return r
@@ -197,9 +205,6 @@ func (e *Engine) Resolve(out Output) Output {
 		}
 	}
 
-	if len(dropped) == 0 && len(warns) == 0 {
-		return out
-	}
 	kept := make([]scan.Technology, 0, len(out.Technologies))
 	for i, t := range out.Technologies {
 		if s, ok := dropped[i]; ok {
@@ -211,6 +216,81 @@ func (e *Engine) Resolve(out Output) Output {
 	sort.SliceStable(out.Suppressed, func(i, j int) bool { return out.Suppressed[i].Name < out.Suppressed[j].Name })
 	out.Technologies = kept
 	out.Warnings = append(out.Warnings, warns...)
+	out.Implied = e.implied(kept)
+	return out
+}
+
+// implied follows the registry's implies relationships from the technologies that are reported,
+// through the ones they imply in turn, and returns what no rule matched. A technology that a
+// reported one excludes is not implied. The confidence is at most that of what implies it and is
+// lowered by the relationship's own confidence when the source gave one.
+func (e *Engine) implied(found []scan.Technology) []scan.Implied {
+	type node struct {
+		id   domain.TechnologyID
+		name string
+		conf float64
+	}
+	have := map[domain.TechnologyID]bool{}
+	var queue []node
+	for _, t := range found {
+		for _, id := range append([]string{t.ID}, t.SameName...) {
+			have[domain.TechnologyID(id)] = true
+		}
+		queue = append(queue, node{domain.TechnologyID(t.ID), t.Name, t.Confidence})
+		for _, s := range t.SameName {
+			queue = append(queue, node{domain.TechnologyID(s), t.Name, t.Confidence})
+		}
+	}
+	excluded := map[domain.TechnologyID]bool{}
+	for _, t := range found {
+		for _, id := range append([]string{t.ID}, t.SameName...) {
+			for _, x := range e.rel.excludes[domain.TechnologyID(id)] {
+				excluded[x] = true
+			}
+		}
+	}
+	byName := map[string]*scan.Implied{}
+	var order []string
+	for len(queue) > 0 {
+		cur := queue[0]
+		queue = queue[1:]
+		for _, rel := range e.rel.impliesEdges[cur.id] {
+			if have[rel.to] || excluded[rel.to] {
+				continue
+			}
+			t, ok := e.byID[rel.to]
+			if !ok || t.Status == domain.StatusDeprecated {
+				continue
+			}
+			conf := cur.conf
+			if rel.conf != nil && *rel.conf < conf {
+				conf = *rel.conf
+			}
+			key := strings.ToLower(t.Name)
+			im := byName[key]
+			if im == nil {
+				im = &scan.Implied{ID: string(t.ID), Slug: t.Slug, Name: t.Name, Vendor: e.vendors[t.VendorID], Confidence: conf}
+				for _, c := range t.CategoryIDs {
+					if n := e.categories[c]; n != "" {
+						im.Categories = append(im.Categories, n)
+					}
+				}
+				byName[key] = im
+				order = append(order, key)
+				queue = append(queue, node{rel.to, t.Name, conf})
+			} else if conf > im.Confidence {
+				im.Confidence = conf
+			}
+			im.ImpliedBy = uniqueStrings(append(im.ImpliedBy, cur.name))
+		}
+	}
+	var out []scan.Implied
+	for _, k := range order {
+		im := byName[k]
+		sort.Strings(im.ImpliedBy)
+		out = append(out, *im)
+	}
+	sort.SliceStable(out, func(i, j int) bool { return strings.ToLower(out[i].Name) < strings.ToLower(out[j].Name) })
 	return out
 }
 

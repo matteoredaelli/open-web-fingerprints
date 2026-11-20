@@ -195,6 +195,12 @@ func printScan(cmd *cobra.Command, r *scan.Result, verbose bool) {
 		fmt.Fprintf(w, "%s\t%s\n", c.Kind, c.Value)
 	}
 	_ = w.Flush()
+	if len(r.Implied) > 0 {
+		fmt.Fprintf(out, "\nIMPLIED (%d): not matched on this site, but they follow from what was found\n", len(r.Implied))
+		for _, im := range r.Implied {
+			fmt.Fprintf(out, "  %s (confidence %.2f): implied by %s\n", im.Name, im.Confidence, strings.Join(im.ImpliedBy, ", "))
+		}
+	}
 	if len(r.Suppressed) > 0 {
 		fmt.Fprintf(out, "\nNOT REPORTED (%d): matched, but the registry says otherwise\n", len(r.Suppressed))
 		for _, s := range r.Suppressed {

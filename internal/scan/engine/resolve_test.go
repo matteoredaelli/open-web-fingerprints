@@ -128,3 +128,64 @@ func TestResolveUsesSameNameRecordsAndIgnoresRemovedRelationships(t *testing.T) 
 		t.Errorf("%+v", got)
 	}
 }
+
+func TestImpliedTechnologies(t *testing.T) {
+	low := 0.3
+	rImplies := func(id, from, to string, conf *float64) domain.Relationship {
+		r := rel(id, from, to, "implies")
+		r.Confidence = conf
+		return r
+	}
+	cat := tech("t_cat", "Cat")
+	dep := tech("t_dep", "Dep")
+	dep.Status = domain.StatusDeprecated
+	r := reg([]domain.Technology{
+		tech("t_wp", "WordPress"), tech("t_php", "PHP"), tech("t_mysql", "MySQL"), tech("t_linux", "Linux"), tech("t_back", "Backbone.js"),
+		tech("t_under", "Underscore.js"), tech("t_lodash", "Lodash"), cat, dep,
+	})
+	r.Relationships = []domain.Relationship{
+		rImplies("r1", "t_wp", "t_php", nil), rImplies("r2", "t_wp", "t_mysql", &low), rImplies("r3", "t_php", "t_linux", nil),
+		rImplies("r4", "t_linux", "t_php", nil),                                                // a cycle
+		rImplies("r5", "t_back", "t_under", nil), rel("r6", "t_lodash", "t_under", "excludes"), // Lodash excludes Underscore
+		rImplies("r7", "t_wp", "t_dep", nil),   // deprecated: not implied
+		rImplies("r8", "t_back", "t_php", nil), // a second implier of PHP
+	}
+	e := New(r)
+	out := e.Resolve(Output{Technologies: []scan.Technology{tc("t_wp", "WordPress", 0.8), tc("t_back", "Backbone.js", 0.6), tc("t_lodash", "Lodash", 0.5)}})
+	got := map[string]scan.Implied{}
+	for _, i := range out.Implied {
+		got[i.Name] = i
+	}
+	if len(out.Implied) != 3 {
+		t.Fatalf("implied: %+v", out.Implied)
+	}
+	if p := got["PHP"]; strings.Join(p.ImpliedBy, ",") != "Backbone.js,Linux,WordPress" || p.Confidence != 0.8 {
+		t.Errorf("PHP is implied by both found ones (and, through the cycle, by Linux), with the better confidence: %+v", p)
+	}
+	if m := got["MySQL"]; m.Confidence != 0.3 || strings.Join(m.ImpliedBy, ",") != "WordPress" {
+		t.Errorf("the relationship's own confidence lowers it: %+v", m)
+	}
+	if l := got["Linux"]; strings.Join(l.ImpliedBy, ",") != "PHP" || l.Confidence != 0.8 {
+		t.Errorf("implied through another implied technology: %+v", l)
+	}
+	if _, ok := got["Underscore.js"]; ok {
+		t.Error("what a found technology excludes is not implied")
+	}
+	if _, ok := got["Dep"]; ok {
+		t.Error("a deprecated technology is not implied")
+	}
+	// A technology that was found is not also "implied".
+	out = e.Resolve(Output{Technologies: []scan.Technology{tc("t_wp", "WordPress", 0.8), tc("t_php", "PHP", 0.5)}})
+	for _, i := range out.Implied {
+		if i.Name == "PHP" || i.Name == "WordPress" {
+			t.Errorf("already found: %+v", i)
+		}
+	}
+	// A suppressed technology implies nothing.
+	r2 := reg([]domain.Technology{tech("t_wp", "WordPress"), tech("t_php", "PHP"), tech("t_woo", "WooCommerce")})
+	r2.Relationships = []domain.Relationship{rel("r1", "t_woo", "t_wp", "requires"), rel("r2", "t_woo", "t_php", "implies")}
+	out = New(r2).Resolve(Output{Technologies: []scan.Technology{tc("t_woo", "WooCommerce", 0.5)}})
+	if len(out.Technologies) != 0 || len(out.Implied) != 0 {
+		t.Errorf("a technology held back implies nothing: %+v %+v", out.Technologies, out.Implied)
+	}
+}
