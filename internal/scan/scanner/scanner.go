@@ -132,6 +132,10 @@ type Options struct {
 	// Friends looks for friend domains (see FindFriends); FriendsMax bounds how many
 	// other sites are contacted (0: DefaultMaxFriends).
 	Friends bool
+	// Related looks for domains that may belong to the same owner (see FindRelated);
+	// RelatedMax bounds how many other sites are contacted (0: DefaultMaxRelated).
+	Related    bool
+	RelatedMax int
 	// Active sends the approved probes (see RunProbes); ActiveMax bounds the requests.
 	Active    bool
 	ActiveMax int
@@ -254,6 +258,11 @@ func Scan(ctx context.Context, opt Options, target string) (*scan.Result, error)
 		res.Friends = FindFriends(ctx, FriendsOptions{Fetch: opt.Fetch, Max: opt.FriendsMax, Delay: opt.Delay},
 			Home{Domain: res.Target.RegistrableDomain, Links: homeLinks})
 	}
+	if opt.Related {
+		res.Related = FindRelated(ctx, RelatedOptions{Fetch: opt.Fetch, Max: opt.RelatedMax, Delay: opt.Delay}, HomeInfo{
+			Domain: res.Target.RegistrableDomain, URL: ob.Page.FinalURL, HTML: crawl.Main.HTML, Links: homeLinks(crawl, final), TLS: ob.Host.TLS,
+		})
+	}
 	if len(ob.Host.IPs) > 0 || ob.Host.DNS != nil || ob.Host.TLS != nil {
 		h := ob.Host
 		res.Host = &h
@@ -285,4 +294,10 @@ func probedWarnings(p *Probed) []scan.Warning {
 		return nil
 	}
 	return p.Warnings
+}
+
+// homeLinks are the links of the first page alone: what the site says on the page that was
+// asked for, not on the pages a crawl added.
+func homeLinks(c *Crawled, final *url.URL) []scan.Link {
+	return web.Extract([]web.Page{{URL: c.Main.Page.FinalURL, Body: c.Main.HTML}}, final.Hostname()).Links
 }

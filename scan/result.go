@@ -54,6 +54,8 @@ type Result struct {
 	Suppressed []Suppressed `json:"suppressed,omitempty"`
 	// Friends is present only when friend detection was asked for.
 	Friends *Friends `json:"friends,omitempty"`
+	// Related is present only when related domains were asked for.
+	Related *Related `json:"related,omitempty"`
 	// Active is present only when probes were allowed (--active).
 	Active *Active `json:"active,omitempty"`
 	// Browser is present only when the first page was also run in a browser.
@@ -184,6 +186,56 @@ const (
 	SuppressedExcluded    = "excluded"
 	SuppressedRequirement = "requirement_not_met"
 )
+
+// Related lists domains that may belong to the same owner as the target, with what ties each
+// to it. It says what the pages and certificates have in common, never that the owner is the
+// same: an agency can share an account across clients, and a domain with the same name can be
+// someone else's.
+type Related struct {
+	// Candidates is how many domains were found by any signal; Checked how many had their home
+	// page read (the rest hit the limit).
+	Candidates int             `json:"candidates"`
+	Checked    int             `json:"checked"`
+	Domains    []RelatedDomain `json:"domains"`
+}
+
+// Related levels and statuses.
+const (
+	RelatedProbable  = "probable"  // at least one strong signal, or the two home pages link to each other
+	RelatedCandidate = "candidate" // found, with only weak signals
+)
+
+// Evidence kinds of a related domain. The strong ones are things only the owner of both sites
+// would normally put in place.
+const (
+	RelEvLinkedFromHome   = "linked_from_home"  // the target's home page links to it (medium)
+	RelEvLinksBack        = "links_back"        // its home page links to the target (medium)
+	RelEvHreflangHome     = "hreflang_home"     // the target declares it as an alternate version (strong)
+	RelEvHreflangBack     = "hreflang_back"     // it declares the target as an alternate version (medium)
+	RelEvCertSAN          = "cert_san"          // the target's certificate lists it (strong)
+	RelEvCertOrg          = "cert_org"          // its certificate names the same organization (strong)
+	RelEvSiteVerification = "site_verification" // the same search-engine or social ownership token (strong)
+	RelEvAnalyticsID      = "analytics_id"      // the same Tag Manager or Analytics identifier (strong)
+)
+
+// RelatedDomain is one domain and why it was listed.
+type RelatedDomain struct {
+	Domain string `json:"domain"`
+	Level  string `json:"level"`
+	// Status is "checked" (its home page was read), "not_allowed" (robots.txt), "unreachable" or
+	// "not_checked" (over the limit).
+	Status   string            `json:"status"`
+	URL      string            `json:"url,omitempty"`
+	Evidence []RelatedEvidence `json:"evidence"`
+	Detail   string            `json:"detail,omitempty"`
+}
+
+// RelatedEvidence is one thing that ties a domain to the target.
+type RelatedEvidence struct {
+	Kind     string `json:"kind"`
+	Strength string `json:"strength"` // strong or medium
+	Detail   string `json:"detail,omitempty"`
+}
 
 // Active says what the approved probes did. Probes are requests to paths of the scanned site
 // that the scanner was not told to read; only probes a reviewer approved are ever sent.

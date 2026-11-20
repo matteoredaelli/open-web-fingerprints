@@ -319,3 +319,45 @@ func TestEmailAndPhone(t *testing.T) {
 		}
 	}
 }
+
+func TestExtractSignals(t *testing.T) {
+	page := `<html><head>
+<meta name="google-site-verification" content=" TOKEN-1 ">
+<meta name="msvalidate.01" content="MS123">
+<meta property="facebook-domain-verification" content="fb9">
+<meta name="description" content="not a token">
+<link rel="alternate" hreflang="it" href="https://example.it/">
+<link rel="Alternate" hreflang="fr" href="/fr/">
+<link rel="alternate" type="application/rss+xml" href="/feed">
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-ABCDEFGH12"></script>
+<script>window.dataLayer=[];gtag('config','G-ABCDEFGH12');(function(){/* GTM-ABC123 */})();ga('create','UA-123456-2')</script>
+</head><body><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-ABC123"></iframe><p>G-NOTINSCRIPT1 UA-999999-1</p></body></html>`
+	s := ExtractSignals([]byte(page), "https://example.com/en/")
+	if s.Verification["google-site-verification"] != "TOKEN-1" || s.Verification["msvalidate.01"] != "MS123" || s.Verification["facebook-domain-verification"] != "fb9" || len(s.Verification) != 3 {
+		t.Errorf("verification: %v", s.Verification)
+	}
+	if strings.Join(s.IDs, ",") != "G-ABCDEFGH12,GTM-ABC123,UA-123456-2" {
+		t.Errorf("ids (only from scripts and frames, not from text): %v", s.IDs)
+	}
+	if strings.Join(s.Alternates, ",") != "https://example.it/,https://example.com/fr/" {
+		t.Errorf("alternates (only with hreflang): %v", s.Alternates)
+	}
+	if got := ExtractSignals([]byte("\x00not html"), "https://example.com/"); len(got.Verification) != 0 || len(got.IDs) != 0 {
+		t.Errorf("%+v", got)
+	}
+}
+
+func TestCertOrganization(t *testing.T) {
+	for in, want := range map[string]string{
+		"CN=www.michelin.com,O=Manufacture Française des Pneumatiques Michelin,ST=Puy-de-Dôme,C=FR": "Manufacture Française des Pneumatiques Michelin",
+		`CN=a.example,O=Acme\, Inc.,C=US`: "Acme, Inc.",
+		"CN=a.example":                    "",
+		"O= Spaced ,C=US":                 "Spaced",
+		"":                                "",
+		"o=lower":                         "lower",
+	} {
+		if got := CertOrganization(in); got != want {
+			t.Errorf("%q: %q, want %q", in, got, want)
+		}
+	}
+}

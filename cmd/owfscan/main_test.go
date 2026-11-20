@@ -389,3 +389,53 @@ func TestBrowserFlagWithoutChromeFails(t *testing.T) {
 		t.Errorf("a missing Chrome must be an error that says so: %v\n%s", err, out)
 	}
 }
+
+func TestRelatedCommand(t *testing.T) {
+	const token = `<meta name="google-site-verification" content="SHARED-TOKEN-123">`
+	site := func(body string) *httptest.Server {
+		return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Path == "/robots.txt" {
+				http.NotFound(w, r)
+				return
+			}
+			w.Header().Set("Content-Type", "text/html")
+			_, _ = w.Write([]byte(body))
+		}))
+	}
+	sister := site(`<html><head>` + token + `</head><body>sister</body></html>`)
+	defer sister.Close()
+	local := strings.Replace(sister.URL, "127.0.0.1", "localhost", 1)
+	a := site(`<html><head>` + token + `</head><body><a href="` + local + `/">sister</a></body></html>`)
+	defer a.Close()
+
+	out, err := run(t, "", "related", "--allow-private", "--delay", "1ms", a.URL)
+	if err != nil {
+		t.Fatalf("%v\n%s", err, out)
+	}
+	if !strings.Contains(out, "RELATED DOMAINS (1 probable of 1 candidates, 1 read)") || !strings.Contains(out, "site_verification*") {
+		t.Errorf("output:\n%s", out)
+	}
+	out, err = run(t, "", "related", "--allow-private", "--delay", "1ms", "--json", a.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var doc struct {
+		Related struct {
+			Domains []struct {
+				Domain, Level string
+				Evidence      []struct{ Kind, Strength, Detail string }
+			}
+		}
+	}
+	if err := json.Unmarshal([]byte(out), &doc); err != nil || len(doc.Related.Domains) != 1 || doc.Related.Domains[0].Level != "probable" {
+		t.Fatalf("%v %+v", err, doc)
+	}
+	for _, e := range doc.Related.Domains[0].Evidence {
+		if e.Kind == "site_verification" && strings.Contains(e.Detail, "TOKEN-123") {
+			t.Errorf("the token is shortened: %q", e.Detail)
+		}
+	}
+	if out, err := run(t, "", "related", a.URL); err == nil {
+		t.Errorf("a private target is refused:\n%s", out)
+	}
+}

@@ -421,6 +421,51 @@ as it can for any script-based detector; and shared global names give false posi
 define `_`; the reference engines solve this with `excludes` between technologies, which
 the registry does not carry yet).
 
+## Related domains (`--related`, `owfscan related`)
+
+Domains that **may** belong to the same owner as the target, with what ties each to it. It
+says what two sites have in common; it never says who owns them. A domain with the same name
+can be someone else's, and an agency can share an account across clients.
+
+Candidates come from what the target says about itself (nothing is guessed yet):
+
+- the external domains its home page links to (social platforms left out);
+- the domains it declares as other-language versions (`<link rel="alternate" hreflang>`);
+- the other names in its TLS certificate.
+
+Each candidate's home page is read (the same limits as friend domains: `robots.txt` always
+honoured, a pause, `--related-max` sites at most, non-public addresses refused) and compared
+with the target's. The evidence, **strong** signals first:
+
+| Evidence | Strength | Meaning |
+|---|---|---|
+| `cert_org` | strong | its certificate names the same organization (`O=`) as the target's |
+| `cert_san` | strong | the target's certificate lists it |
+| `site_verification` | strong | the same Google/Bing/Facebook/Yandex ... ownership token in a meta tag (shown shortened) |
+| `analytics_id` | strong | the same Tag Manager or Analytics identifier (GTM-, G-, UA-) in a script or frame |
+| `hreflang_home` | strong | the target declares it as an alternate version of itself |
+| `linked_from_home`, `links_back`, `hreflang_back` | medium | the home pages link to each other, or it declares the target as an alternate |
+
+A domain with at least one strong signal, or whose home page and the target's link to each
+other, is `probable`; the rest are `candidate`.
+
+Results (read on 2026-11-20; a home page each, nothing else):
+
+- `michelin.com`: `michelin.fr` is `probable` (the same certificate organization,
+  "Manufacture Française des Pneumatiques Michelin", and the link). `cloudimg.io`, an image
+  service, stays a `candidate` and unreachable. `michelin.it` and the other country domains
+  are **not found**: nobody links to them from the home page.
+- `pirelli.com`: `pirelli.cn` has the same certificate organization and the same
+  analytics identifier. `fondazionepirelli.org`, `pirellidesign.com` and
+  `pirellihangarbicocca.org` are `probable` only because the home pages link to each other
+  (no strong signal).
+
+Limits: a signal that is only on a page other than the home page is missed; a site that
+builds its links with JavaScript needs `--browser` (the first page is then the rendered
+one); and a certificate that names no organization (most free certificates) gives no
+`cert_org`. Trying other TLDs of the same name (`michelin.it`) is not done yet and would be
+an option, because it means contacting names nobody pointed to.
+
 ## Active probes (`--active`)
 
 Some rules need the answer to a request to a fixed path of the site: `/robots.txt`,

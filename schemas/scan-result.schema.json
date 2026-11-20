@@ -354,6 +354,99 @@
           "minimum": 0
         }
       }
+    },
+    "related": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Present only when related domains were asked for. Domains that may belong to the same owner, with what ties each to the target. Never a statement of ownership.",
+      "required": [
+        "candidates",
+        "checked",
+        "domains"
+      ],
+      "properties": {
+        "candidates": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "checked": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "domains": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "domain",
+              "level",
+              "status",
+              "evidence"
+            ],
+            "properties": {
+              "domain": {
+                "type": "string",
+                "minLength": 1
+              },
+              "level": {
+                "enum": [
+                  "probable",
+                  "candidate"
+                ]
+              },
+              "status": {
+                "enum": [
+                  "checked",
+                  "not_allowed",
+                  "unreachable",
+                  "not_checked"
+                ]
+              },
+              "url": {
+                "type": "string"
+              },
+              "detail": {
+                "type": "string"
+              },
+              "evidence": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "kind",
+                    "strength"
+                  ],
+                  "properties": {
+                    "kind": {
+                      "enum": [
+                        "linked_from_home",
+                        "links_back",
+                        "hreflang_home",
+                        "hreflang_back",
+                        "cert_san",
+                        "cert_org",
+                        "site_verification",
+                        "analytics_id"
+                      ]
+                    },
+                    "strength": {
+                      "enum": [
+                        "strong",
+                        "medium"
+                      ]
+                    },
+                    "detail": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "$defs": {
