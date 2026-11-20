@@ -8,3 +8,7 @@ coverage.out
 .idea/
 .vscode/
 .corpus.db*
+
+# exports may contain rules from unreviewed sources: never commit them
+/registry.json
+*.registry.json

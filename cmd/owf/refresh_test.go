@@ -142,6 +142,9 @@ func TestRefreshErrors(t *testing.T) {
 	}
 	for name, args := range map[string][]string{
 		"unknown source": {"source", "refresh", "nope"},
+		"nothing given":  {"source", "refresh"},
+		"both":           {"source", "refresh", "enthec-webappanalyzer", "--all"},
+		"all + revision": {"source", "refresh", "--all", "--revision", "0123456789012345678901234567890123456789"},
 		"short revision": {"source", "refresh", "enthec-webappanalyzer", "--revision", "abc123"},
 		"unknown branch": {"source", "refresh", "enthec-webappanalyzer", "--branch", "nope", "--cache", t.TempDir()},
 		"bad branch":     {"source", "refresh", "enthec-webappanalyzer", "--branch", "--evil", "--cache", t.TempDir()},
@@ -153,5 +156,21 @@ func TestRefreshErrors(t *testing.T) {
 	// The real catalogue only allows https.
 	if _, err := runWith(t, &options{entries: entries, git: fetch.New()}, db, "source", "refresh", "enthec-webappanalyzer", "--cache", t.TempDir()); err == nil {
 		t.Error("file:// must be refused without the test opt-in")
+	}
+}
+
+func TestRefreshAll(t *testing.T) {
+	_, entries := localUpstream(t)
+	o := &options{entries: entries, git: &fetch.Git{AllowLocal: true}}
+	db := filepath.Join(t.TempDir(), "owf.db")
+	if _, err := runWith(t, o, db, "init"); err != nil {
+		t.Fatal(err)
+	}
+	out, err := runWith(t, o, db, "source", "refresh", "--all", "--cache", t.TempDir())
+	if err != nil {
+		t.Fatalf("%v\n%s", err, out)
+	}
+	if !strings.Contains(out, "enthec-webappanalyzer") {
+		t.Errorf("%s", out)
 	}
 }

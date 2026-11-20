@@ -1,3 +1,6 @@
+// Copyright 2026 Matteo Redaelli
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 // Package robots reads robots.txt, the file by which a site says which paths
 // crawlers should not fetch. The scanner uses it for the pages it follows on its
 // own; the page the user names is fetched regardless.

@@ -24,6 +24,7 @@ make build   # builds bin/owf
 owf init                                      # creates owf.db
 owf source refresh enthec-webappanalyzer --dry-run   # fetch the branch tip, show the diff
 owf source refresh enthec-webappanalyzer             # fetch and import
+owf source refresh --all                             # every source, one after the other
 owf source refresh enthec-webappanalyzer --revision <40-char sha>   # pin a commit
 
 # or import a checkout you made yourself
