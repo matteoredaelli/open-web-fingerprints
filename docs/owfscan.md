@@ -1,13 +1,13 @@
 # owfscan: user guide
 
-`owfscan` looks at a web site and tells you what it finds: the links on the page
-and the domains they point to, the social profiles and contact details it
-publishes, and (coming) the technologies it runs, with the evidence for each.
+`owfscan` looks at a web site and tells you what it finds: the technologies it
+runs, with the evidence for each, the links on the page and the domains they point
+to, and the social profiles and contact details it publishes.
 It is a separate program from `owf`: it has no database and makes requests to the
 network. Design, decisions and roadmap: [scan.md](scan.md).
 
-**Status.** Working today: `extract`, `links`, `social`, `observe`. Not yet: `scan`
-(technologies from a registry export). See [What is not there yet](#what-is-not-there-yet).
+**Status.** Working: `scan`, `links`, `social`, `observe`, `extract`. See
+[What is not there yet](#what-is-not-there-yet) for the limits.
 
 ## Install and build
 
@@ -33,12 +33,13 @@ so). Add `--json` to any command for machine-readable output.
 
 | Command | What it does | Requests |
 |---|---|---|
+| `owfscan scan <url> --registry FILE` | technologies with their evidence, plus links, domains, social profiles, contacts and the coverage of the rules | the page, its favicon, DNS lookups |
 | `owfscan links <url>` | links of the page and the registrable domains they point to | the page |
 | `owfscan social <url>` | social profiles, email addresses and telephone numbers | the page |
 | `owfscan observe <url>` | the observation the rules read, as JSON | the page, its favicon, DNS lookups |
 | `owfscan extract --url <page-url> <file\|->` | the same extraction as `links` and `social` on saved HTML | none |
 
-### Flags of the commands that fetch
+### Flags of the commands that fetch (and `scan`)
 
 | Flag | Default | Meaning |
 |---|---|---|
@@ -49,8 +50,109 @@ so). Add `--json` to any command for machine-readable output.
 | `--allow-private` | off | allow private and local addresses (your own network) |
 | `--insecure` | off | accept invalid TLS certificates (the certificate is still recorded) |
 
-`observe` also has `--no-dns`, `--no-favicon` and `--no-html` (leave the body out
-of the output). There is a hard cap of 5 MiB per body and at most 10 redirects.
+`observe` and `scan` also have `--no-dns` and `--no-favicon`; `observe` has
+`--no-html` (leave the body out of the output). `scan` has `--registry FILE`
+(env `OWFSCAN_REGISTRY`), `--min-health` and `-e/--evidence`. There is a hard cap of 5 MiB per body and at most 10 redirects.
+
+## Scanning for technologies
+
+`scan` applies the rules of a registry export to the page. The export is what
+`owf export` writes ([redistribution.md](redistribution.md)); build one from the
+sources you imported:
+
+```sh
+owf export --include-unreviewed -o registry.json   # internal use: the sources are unreviewed
+owfscan scan https://mr70.eu --registry registry.json -e
+```
+
+The export is verified first against its manifest (schema, content hash, counts);
+a damaged or edited file is refused. It may contain data of sources whose
+redistribution has not been reviewed: `scan` uses it anyway and repeats the
+export's notice in the result, which is then **not** meant to be published as
+registry data.
+
+Real output, abridged (a Hugo site on Netlify; export of Enthec, Recog and nuclei,
+22178 rules):
+
+```
+https://www.mr70.eu/  (200, 1303 ms, cached)
+registry sha256:d3fc565733b3: enthec-webappanalyzer, projectdiscovery-nuclei-templates, rapid7-recog
+NOTICE: This export contains data from sources whose redistribution terms have not been reviewed. ...
+
+TECHNOLOGIES (11)
+NAME                VERSION  CONFIDENCE  BEST HEALTH  RULES  SOURCES
+Google Analytics    GA4      0.50        unknown      2      enthec-webappanalyzer
+  script_url                             unknown             "googletagmanager.com/gtag/js"
+  script_content    GA4                  unknown             "gtag('config', 'G-"
+Hugo                0.119.0  0.50        unknown      1      enthec-webappanalyzer
+  meta_tag generator 0.119.0             unknown             "Hugo 0.119.0"
+Let's Encrypt                0.50        unknown      1      enthec-webappanalyzer
+  tls_cert issuer                        unknown             "Let's Encrypt"
+Metatag CMS                  0.50        unknown      2      projectdiscovery-nuclei-templates
+  response_headers                       unknown             "text/html" [group]
+  html                                   unknown             "<meta name=\"generator\" content=\"Hugo 0.119.0\"" [group]
+Netlify                      0.50        unknown      2      enthec-webappanalyzer
+  http_header Server                     unknown             "Netlify"
+  ...                                                       (Google AdSense, Tag Manager, HSTS, Open Graph, PWA, RSS)
+
+LINKS: 86 to 9 domains (mr70.eu 78, creativecommons.org 1, fosstodon.org 1, ...)
+
+SOCIAL    KIND     HANDLE
+github    account  matteoredaelli
+gitlab    account  matteoredaelli
+mastodon  user     @matteoredaelli@fosstodon.org
+x         user     matteoredaelli
+youtube   channel  matteoredaelli
+
+COVERAGE: 13967 of 22178 rules evaluated, 8061 could not be: needs a browser 5867, probe disabled 2174, pattern needs a backtracking engine 19, robots.txt not fetched 1
+```
+
+It runs in about 1.3 s, including the load and verification of a 34 MB export.
+
+### How to read a result
+
+- **Evidence.** Each technology lists the rules that matched: the kind of
+  observation, the target (header name, selector, …), the text that matched (cut to
+  300 characters), the rule's `health`, and its source. Rules of a group (several
+  conditions that must hold together, from nuclei templates) are marked `[group]`
+  and are listed together. Up to 50 rules are listed per technology; a warning says
+  when there are more.
+- **`health` is mostly `unknown`.** Almost no rule has tests ([validation.md](validation.md)),
+  so "detected" means "a rule from a public project matched", not "confirmed".
+  The example above shows it: `Metatag CMS` comes from a nuclei group whose conditions
+  ("the response is text/html" and a generator meta tag) are met by any Hugo site.
+  Look at the evidence before believing a technology; `--min-health ok` keeps only
+  rules that have passing positive and negative tests (today a small minority).
+- **`confidence`** is the highest confidence among the matching rules that are not
+  `broken`. Several rules agreeing do **not** raise it: sources with a common
+  ancestor are not independent evidence. It is a property of the rules, not a
+  probability that the technology is there.
+- **`version`** comes from the rules that read one: a regex with a capture group
+  (Wappalyzer, Recog), a literal, or a version rule (nuclei extractors). If rules
+  disagree, the rule with the best health, then the highest confidence, wins, and
+  a `conflicting_versions` warning lists them.
+- **Technologies with the same name** can appear twice (for example `PHP` from two
+  sources): the registry does not merge records of different sources without a
+  review.
+- **Coverage.** `rules_total` is every rule of the export. `rules_evaluated` counts
+  rules that were applied (matching or not). `rules_unsupported` counts rules that
+  could not be applied, with the reasons in `skipped`:
+
+  | Reason | Meaning |
+  |---|---|
+  | `needs a browser` | the rule reads a JavaScript variable, an XHR request or a DOM property (about a quarter of all rules) |
+  | `probe disabled` | the rule needs a request to another path; probes are never run |
+  | `pattern needs a backtracking engine` | a lookahead or similar that Go's RE2 cannot run |
+  | `no DNS data`, `no TLS data`, `favicon not fetched` | the observation was not made (`--no-dns`, `--no-favicon`, plain http) |
+  | `robots.txt not fetched` | not fetched |
+  | `below the minimum health` | excluded by `--min-health` |
+  | `deprecated` | deprecated rules and technologies |
+  | `invalid rule`, `not supported by the matcher` | a rule that does not compile, or an observation type the matcher does not know |
+
+  The remainder (`total - evaluated - unsupported`) are version rules of
+  technologies that were not detected: they have nothing to read.
+  A technology can be missing because its rules were skipped, not because it is
+  absent. Compare the coverage with what you expect.
 
 ## Examples
 
@@ -237,8 +339,6 @@ you fetch are private.
 
 ## What is not there yet
 
-- **`owfscan scan`**: applying a registry export to the page to list technologies,
-  versions and evidence. Decisions already taken are in [scan.md](scan.md#decisions).
 - **Several pages** (`--depth`): today only the page you name is read, so a profile
   that appears only on `/contact` is missed.
 - **JavaScript.** Nothing is executed. Links, handles and widgets added by scripts
@@ -255,6 +355,10 @@ you fetch are private.
 | `address not allowed: … is not a public address` | the host (or a redirect) resolves to a private or local address; use `--allow-private` only for your own network |
 | `x509: certificate signed by unknown authority` | the site's certificate is not trusted; `--insecure` accepts it (the certificate is still recorded) |
 | `stopped after 10 redirects` | a redirect loop |
+| `registry: verify: content hash is …` | the export was edited or damaged; write it again with `owf export` |
+| `registry: verify: the document has no manifest` | the export was written by an older `owf` (schema before 0.2.0) |
+| `--registry is required` | `scan` needs an export; set `--registry` or `OWFSCAN_REGISTRY` |
+| few or no technologies | the page may show little without JavaScript; check `coverage.skipped` and the registry you exported |
 | `https_unavailable` warning | the bare host did not answer over https and was fetched over http |
 | `body_truncated` warning | the page is larger than 5 MiB and was cut |
 | `invalid_jsonld` warning | a JSON-LD block on the page is not valid JSON (the rest is still read) |
@@ -272,6 +376,13 @@ internal/scan/fetch/     guarded HTTP fetch, redirects, limits, disk cache
 internal/scan/observe/   page -> observation (favicon hashes, DNS, TLS)
 schemas/scan-result.schema.json    contract of the result
 ```
+
+**Rules and the engine.** `internal/scan/engine` applies the registry (built once,
+reusable); `internal/scan/scanner` runs a whole scan; `internal/scan/scantest` builds an
+export and a local site from the source fixtures for tests. The rules are evaluated by
+`internal/matcher` (`Prepare` readies an observation once for many rules; `Outcome.Value`
+is what matched). Header names in the observation keep the case the server sent, because
+rules on the raw header block (`Server: …`) are case-sensitive.
 
 **Add or fix a social platform.** Edit `internal/scan/web/platforms.json`. A platform
 has `hosts` and `rules`; a rule has a `kind`, a `path` regular expression with one

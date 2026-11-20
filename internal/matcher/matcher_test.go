@@ -306,3 +306,38 @@ func TestVersionRulesDoNotDetect(t *testing.T) {
 		t.Errorf("unsupported flavor: %v", err)
 	}
 }
+
+func TestOutcomeValueAndPrepared(t *testing.T) {
+	o := &Observation{
+		Headers: map[string]string{"Server": "nginx/1.25.3 (Ubuntu)"},
+		HTML:    `<html><head><title>Acme</title></head><body><a class="x" href="/a">link</a></body></html>`,
+	}
+	p := Prepare(o)
+	for name, tc := range map[string]struct {
+		f    domain.Fingerprint
+		want string
+	}{
+		"regex gives the matched text, not the whole value": {rule(domain.ObsHTTPHeader, "Server", domain.OpRegex, `nginx/[\d.]+`), "nginx/1.25.3"},
+		"contains gives the pattern":                        {rule(domain.ObsHTTPHeader, "Server", domain.OpContains, "Ubuntu"), "Ubuntu"},
+		"equals gives the value":                            {rule(domain.ObsHTTPHeader, "Server", domain.OpEquals, "nginx/1.25.3 (Ubuntu)"), "nginx/1.25.3 (Ubuntu)"},
+		"exists gives the first value":                      {rule(domain.ObsHTTPHeader, "Server", domain.OpExists, ""), "nginx/1.25.3 (Ubuntu)"},
+		"dom attribute":                                     {rule(domain.ObsDOM, "a.x::attr(href)", domain.OpRegex, `^/a$`), "/a"},
+		"title":                                             {rule("page_title", "", domain.OpRegex, `Ac`), "Ac"},
+	} {
+		got, err := p.Evaluate(tc.f)
+		if err != nil || !got.Matched || got.Value != tc.want {
+			t.Errorf("%s: %+v err=%v, want value %q", name, got, err, tc.want)
+		}
+	}
+	// One prepared observation serves many rules and gives what Evaluate gives.
+	for i := 0; i < 3; i++ {
+		a, _ := p.Evaluate(rule(domain.ObsDOM, "a.x", domain.OpExists, ""))
+		b, _ := Evaluate(rule(domain.ObsDOM, "a.x", domain.OpExists, ""), o)
+		if a != b || !a.Matched {
+			t.Errorf("prepared %+v, plain %+v", a, b)
+		}
+	}
+	if got, _ := p.Evaluate(rule(domain.ObsHTTPHeader, "Server", domain.OpRegex, `apache`)); got.Matched || got.Value != "" {
+		t.Errorf("a miss has no value: %+v", got)
+	}
+}

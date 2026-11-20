@@ -59,12 +59,15 @@ See [docs/domain-model.md](docs/domain-model.md),
 
 ## Scanning a site: `owfscan`
 
-A second program, `owfscan`, looks at a web site and returns its links, the domains
-they point to, the social profiles and the contact details it publishes (rules for
-technologies are the next step). It has no database and makes only GET requests.
+A second program, `owfscan`, looks at a web site and returns the technologies it
+finds (applying the rules of an export, with the evidence for each), its links, the
+domains they point to, the social profiles and the contact details it publishes. It
+has no database and makes only GET requests.
 
 ```sh
 make build
+owf export --include-unreviewed -o registry.json     # the rules (internal use)
+bin/owfscan scan   mr70.eu --registry registry.json -e   # technologies + evidence + the rest
 bin/owfscan links  mr70.eu            # links and linked domains
 bin/owfscan social mr70.eu            # profiles, emails, telephone numbers
 bin/owfscan observe mr70.eu --no-html # what the rules read: headers, cookies, favicon hashes, DNS, TLS

@@ -98,6 +98,9 @@ type Observed struct {
 	// HTML is the body decoded to UTF-8 when it is a text page, else empty.
 	HTML     []byte
 	Warnings []scan.Warning
+	// DNSLooked and FaviconTried say whether those observations were attempted, so
+	// that a rule on them is not mistaken for "looked and found nothing".
+	DNSLooked, FaviconTried bool
 }
 
 // Observe fetches the target and builds its observation. rawURL may omit the
@@ -142,7 +145,9 @@ func Observe(ctx context.Context, opt Options, rawURL string) (*Observed, error)
 		if strings.EqualFold(k, "Set-Cookie") {
 			continue
 		}
-		obs.Headers[strings.ToLower(k)] = strings.Join(v, ", ")
+		// Names stay as the server sent them: rules on the raw header block read
+		// "Server: ..." with its capital. Lookups by name ignore case.
+		obs.Headers[k] = strings.Join(v, ", ")
 	}
 	obs.SetCookies = resp.SetCookies
 	obs.Cookies = cookieMap(resp.SetCookies)
@@ -160,9 +165,11 @@ func Observe(ctx context.Context, opt Options, rawURL string) (*Observed, error)
 		obs.TLS = map[string]string{"issuer": t.Issuer, "subject": t.Subject, "version": t.Version}
 	}
 	if opt.Resolver != nil {
+		o.DNSLooked = true
 		o.dns(ctx, opt.Resolver, final.Hostname(), obs)
 	}
 	if !opt.NoFavicon && len(o.HTML) > 0 {
+		o.FaviconTried = true
 		o.favicon(ctx, opt, final, obs)
 	}
 	return o, nil

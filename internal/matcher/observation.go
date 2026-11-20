@@ -99,10 +99,11 @@ type derived struct {
 	css           string
 	text          string
 	title         string
+	headers       string // the raw header block, see headerBlock
 }
 
 func derive(o *Observation) derived {
-	d := derived{meta: map[string]string{}}
+	d := derived{meta: map[string]string{}, headers: headerBlock(o.Headers)}
 	if o.HTML != "" {
 		parseHTML(o.HTML, &d)
 	}

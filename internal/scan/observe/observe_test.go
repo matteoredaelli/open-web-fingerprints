@@ -82,10 +82,10 @@ func TestObserveBuildsTheObservation(t *testing.T) {
 		t.Fatal(err)
 	}
 	obs := o.Observation
-	if obs.Status != 200 || obs.Headers["server"] != "nginx/1.25.3" || obs.Cookies["PHPSESSID"] != "abc" || len(obs.SetCookies) != 2 {
+	if obs.Status != 200 || obs.Headers["Server"] != "nginx/1.25.3" || obs.Cookies["PHPSESSID"] != "abc" || len(obs.SetCookies) != 2 {
 		t.Errorf("observation: %+v", obs)
 	}
-	if _, ok := obs.Headers["set-cookie"]; ok {
+	if _, ok := obs.Headers["Set-Cookie"]; ok {
 		t.Error("set-cookie lives in SetCookies, not in Headers")
 	}
 	// The page is decoded to UTF-8 and the title derives from it.
@@ -137,6 +137,11 @@ func TestObservationFeedsTheMatcher(t *testing.T) {
 	}
 	if got, _ := matcher.Evaluate(rules["header"], &o.Observation); got.Version != "1.25.3" {
 		t.Errorf("version = %q", got.Version)
+	}
+	// A rule on the raw header block sees the names as sent ("Server: nginx/..").
+	block := domain.Fingerprint{Observation: "response_headers", Operator: domain.OpRegex, RegexFlavor: domain.FlavorRE2, Pattern: `(?-i)Server:\s+nginx/([\d.]+)`, VersionExtract: `\1`}
+	if got, err := matcher.Evaluate(block, &o.Observation); err != nil || !got.Matched || got.Version != "1.25.3" {
+		t.Errorf("raw header block: %+v %v", got, err)
 	}
 	// And a wrong hash does not match.
 	bad := rules["nuclei mmh3"]

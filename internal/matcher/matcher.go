@@ -10,6 +10,8 @@ import (
 	"strings"
 	"sync"
 
+	"golang.org/x/net/html"
+
 	"github.com/matteoredaelli/open-web-fingerprints/internal/domain"
 )
 
@@ -22,6 +24,10 @@ type Outcome struct {
 	Matched bool
 	// Version is the version read through the rule's version_extract.
 	Version string
+	// Value is what matched: the matched text of a regex, the pattern of a
+	// contains rule, the observed value of an equals rule, the first observed value
+	// of an exists rule. It is not shortened.
+	Value string
 }
 
 var regexCache sync.Map // pattern -> *regexp.Regexp
@@ -38,26 +44,62 @@ func compile(pattern string) (*regexp.Regexp, error) {
 	return re, nil
 }
 
-// Evaluate applies one fingerprint to an observation.
+// Prepared is an observation readied for evaluating many rules: the values that
+// derive from the HTML are computed once, and the document is parsed at most once.
+// It is not safe for concurrent use.
+type Prepared struct {
+	o       *Observation
+	d       derived
+	doc     *html.Node
+	docDone bool
+	docErr  error
+}
+
+// Prepare readies an observation. The observation must not change afterwards.
+func Prepare(o *Observation) *Prepared {
+	return &Prepared{o: o, d: derive(o)}
+}
+
+// document returns the parsed HTML, or nil when there is none.
+func (p *Prepared) document() (*html.Node, error) {
+	if !p.docDone {
+		p.docDone = true
+		if p.o.HTML != "" {
+			p.doc, p.docErr = html.Parse(strings.NewReader(p.o.HTML))
+		}
+	}
+	return p.doc, p.docErr
+}
+
+// Evaluate applies one fingerprint to an observation. To apply many rules to one
+// observation use Prepare and Prepared.Evaluate.
 func Evaluate(f domain.Fingerprint, o *Observation) (Outcome, error) {
+	return Prepare(o).Evaluate(f)
+}
+
+// Evaluate applies one fingerprint to the prepared observation.
+func (p *Prepared) Evaluate(f domain.Fingerprint) (Outcome, error) {
 	if f.Operator == domain.OpRegex && f.RegexFlavor != domain.FlavorRE2 {
 		return Outcome{}, fmt.Errorf("%w: regex flavor %q", ErrUnsupported, f.RegexFlavor)
 	}
-	d := derive(o)
-	vals, present, err := candidates(f, o, &d)
+	vals, present, err := candidates(f, p)
 	if err != nil {
 		return Outcome{}, err
 	}
 	if f.Operator == domain.OpExists {
-		return Outcome{Matched: present}, nil
+		out := Outcome{Matched: present}
+		if present && len(vals) > 0 {
+			out.Value = vals[0]
+		}
+		return out, nil
 	}
 	for _, v := range vals {
-		ok, groups, err := compare(f, v)
+		ok, groups, matched, err := compare(f, v)
 		if err != nil {
 			return Outcome{}, err
 		}
 		if ok {
-			return Outcome{Matched: true, Version: renderVersion(f.VersionExtract, groups)}, nil
+			return Outcome{Matched: true, Version: renderVersion(f.VersionExtract, groups), Value: matched}, nil
 		}
 	}
 	return Outcome{}, nil
@@ -65,7 +107,8 @@ func Evaluate(f domain.Fingerprint, o *Observation) (Outcome, error) {
 
 // candidates returns the observed values a rule looks at, and whether the
 // observed thing exists at all (for the exists operator).
-func candidates(f domain.Fingerprint, o *Observation, d *derived) (vals []string, present bool, err error) {
+func candidates(f domain.Fingerprint, p *Prepared) (vals []string, present bool, err error) {
+	o, d := p.o, &p.d
 	one := func(v string, ok bool) ([]string, bool, error) {
 		if !ok {
 			return nil, false, nil
@@ -90,7 +133,7 @@ func candidates(f domain.Fingerprint, o *Observation, d *derived) (vals []string
 		v, ok := d.meta[strings.ToLower(f.Target)]
 		return one(v, ok)
 	case domain.ObsDOM:
-		return domValues(f.Target, o.HTML)
+		return p.domValues(f.Target)
 	case domain.ObsHTML:
 		return text(o.HTML)
 	case domain.ObsScriptURL:
@@ -128,9 +171,9 @@ func candidates(f domain.Fingerprint, o *Observation, d *derived) (vals []string
 	case "page_title":
 		return text(d.title)
 	case "response_headers":
-		return text(headerBlock(o.Headers))
+		return text(d.headers)
 	case "http_response":
-		return text(headerBlock(o.Headers) + "\n\n" + o.HTML)
+		return text(d.headers + "\n\n" + o.HTML)
 	case "http_status":
 		if o.Status == 0 {
 			return nil, false, nil
@@ -142,21 +185,26 @@ func candidates(f domain.Fingerprint, o *Observation, d *derived) (vals []string
 	return nil, false, fmt.Errorf("%w: observation %q", ErrUnsupported, f.Observation)
 }
 
-func compare(f domain.Fingerprint, v string) (bool, []string, error) {
+// compare applies the operator of a rule to one observed value. matched is the
+// part of the value that matched.
+func compare(f domain.Fingerprint, v string) (ok bool, groups []string, matched string, err error) {
 	switch f.Operator {
 	case domain.OpEquals, domain.OpHashEquals:
-		return v == f.Pattern, nil, nil
+		return v == f.Pattern, nil, v, nil
 	case domain.OpContains:
-		return strings.Contains(v, f.Pattern), nil, nil
+		return strings.Contains(v, f.Pattern), nil, f.Pattern, nil
 	case domain.OpRegex:
 		re, err := compile(f.Pattern)
 		if err != nil {
-			return false, nil, fmt.Errorf("pattern does not compile: %w", err)
+			return false, nil, "", fmt.Errorf("pattern does not compile: %w", err)
 		}
 		m := re.FindStringSubmatch(v)
-		return m != nil, m, nil
+		if m == nil {
+			return false, nil, "", nil
+		}
+		return true, m, m[0], nil
 	}
-	return false, nil, fmt.Errorf("%w: operator %q", ErrUnsupported, f.Operator)
+	return false, nil, "", fmt.Errorf("%w: operator %q", ErrUnsupported, f.Operator)
 }
 
 var (

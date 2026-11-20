@@ -1,8 +1,8 @@
 # owfscan: scanning a site
 
-Status: **phases 1 and 2 done**: links, domains, social profiles and contacts of a
-live page (`owfscan links|social|observe <url>`). The rule engine and the `scan`
-command are still to do. Go only.
+Status: **phases 1 to 3 done**: `owfscan scan <url> --registry FILE` returns the
+technologies, links, domains, social profiles and contacts of a live page, with the
+coverage of the rules. `--depth`, a browser and approved probes are still to do. Go only.
 Contract: `scan/result.go`, `schemas/scan-result.schema.json`, examples in
 `examples/`. Try it: `owfscan extract --url https://site.example/ page.html`.
 
@@ -167,14 +167,46 @@ internal/scan/...   links, social, fetch, observe, engine (public later if neede
      and now is (with a reserved list: `watch`, `playlist`, `shorts`, ...).
    - Not done: HTTP/2 and HTTP/3 information, `robots.txt`, SOA records (the
      standard library cannot ask), IDN handling beyond what `net/url` does.
-3. **Engine.** Load and verify the export, evaluate rules, groups and versions
-   with the matcher's semantics, aggregate evidence, fill `coverage`.
-4. **CLI and docs.**
+3. **Engine.** *Done.* `internal/scan/engine`, `internal/scan/scanner`.
+   - The export is loaded with `export.Verify` (schema, content hash, counts), so an
+     edited or damaged file is refused; sources that are unreviewed are accepted and
+     the notice is repeated (decision 5).
+   - Each technology's rules are applied to the observation with the matcher:
+     single rules, groups (all members must match, on the same observation) and
+     version rules (applied only to a detected technology). The observation is
+     prepared once, so 22 000 rules take well under a second.
+   - Evidence per technology: rule ID, observation, target, the text that matched
+     (cut to 300 characters), the rule's health, its source, and the group. At most
+     50 per technology. Technologies are sorted by name.
+   - `confidence`: highest among matching rules that are not `broken`; `version`:
+     best health, then highest confidence, with a `conflicting_versions` warning.
+   - Coverage is exact: every rule is either evaluated or counted under a reason
+     (see [owfscan.md](owfscan.md#how-to-read-a-result)). Rules that need a
+     browser, a probe, `robots.txt`, DNS/TLS/favicon data that was not collected, a
+     backtracking regex, or that are deprecated or below `--min-health`, are not
+     treated as misses. A group with an unsupported member is skipped as a whole.
+   - Found while building it: header names were lower-cased in the observation,
+     which silently broke the nuclei rules that read the raw header block
+     (`Server: 4D…`); they now keep the case the server sent.
+   - Real check: Enthec + Recog + nuclei (22 178 rules) on `mr70.eu`, in 1.3 s:
+     11 technologies (Hugo 0.119.0, Netlify, Google Analytics/Tag Manager/AdSense,
+     Let's Encrypt, HSTS, PWA, RSS, Open Graph, and Metatag CMS), 13 967 rules
+     evaluated, 8 061 not (5 867 need a browser, 2 174 are probes, 19 need
+     backtracking, 1 needs `robots.txt`).
+   - Weakness shown by that check: `Metatag CMS` matches because its nuclei group
+     ("text/html" and a generator meta tag) is true for any Hugo site. Rules from
+     public projects are not tested; this is why the health of each rule is part of
+     the evidence and why `--min-health` exists.
+4. **CLI and docs.** *Done:* `owfscan scan|links|social|observe|extract`, the user
+   guide [owfscan.md](owfscan.md).
 5. **Later:** a browser for JavaScript rules; `--active` for approved probes.
 
 ## Open points
 
 - How much of `internal/matcher` to promote to a public package (or whether the
   scanner keeps importing it from inside the module).
-- `--depth` (several pages) and its limits; `--min-health`.
+- `--depth` (several pages) and its limits.
+- Caching the loaded registry between runs (loading a 34 MB export takes most of a scan).
+- Matching technologies of different sources that have the same name (two `PHP`).
+- Rules that are true for any site of a kind (`Metatag CMS`): flag them in the registry with tests rather than in the scanner.
 - Which platforms' patterns need live verification against real profile URLs.

@@ -37,7 +37,7 @@ func parseSelector(sel string) (cascadia.SelectorGroup, error) {
 
 // domValues evaluates the selector on the page and returns the values a rule
 // looks at, and whether the observed thing exists.
-func domValues(target, page string) (vals []string, present bool, err error) {
+func (p *Prepared) domValues(target string) (vals []string, present bool, err error) {
 	m := domTargetRE.FindStringSubmatch(target)
 	sel, text, attr, prop := m[1], m[2] != "", m[3], m[4] != ""
 	if prop {
@@ -47,12 +47,12 @@ func domValues(target, page string) (vals []string, present bool, err error) {
 	if err != nil {
 		return nil, false, err
 	}
-	if page == "" {
-		return nil, false, nil
-	}
-	root, err := html.Parse(strings.NewReader(page))
+	root, err := p.document()
 	if err != nil {
 		return nil, false, fmt.Errorf("parse html: %w", err)
+	}
+	if root == nil {
+		return nil, false, nil
 	}
 	nodes := cascadia.QueryAll(root, group)
 	switch {

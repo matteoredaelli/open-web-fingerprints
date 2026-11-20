@@ -9,8 +9,12 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/matteoredaelli/open-web-fingerprints/internal/scan/scantest"
+	"github.com/matteoredaelli/open-web-fingerprints/schemas"
 )
 
 func run(t *testing.T, stdin string, args ...string) (string, error) {
@@ -149,7 +153,7 @@ func TestNetworkCommands(t *testing.T) {
 	if err := json.Unmarshal([]byte(out), &ob); err != nil {
 		t.Fatalf("%v\n%s", err, out)
 	}
-	if ob.Page.Status != 200 || !ob.Page.Cached || ob.Observation.Headers["server"] != "nginx/1.25.3" ||
+	if ob.Page.Status != 200 || !ob.Page.Cached || ob.Observation.Headers["Server"] != "nginx/1.25.3" ||
 		ob.Observation.HTML != "" || ob.Observation.FaviconHashes["md5"] == "" {
 		t.Errorf("observe: %+v", ob)
 	}
@@ -167,5 +171,70 @@ func TestNetworkCommands(t *testing.T) {
 		if _, err := run(t, "", args...); err == nil {
 			t.Errorf("%s: expected an error", name)
 		}
+	}
+}
+
+func TestScanCommand(t *testing.T) {
+	srv := scantest.Site()
+	defer srv.Close()
+	reg := filepath.Join(t.TempDir(), "registry.json")
+	if err := os.WriteFile(reg, scantest.RegistryJSON(t), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	base := []string{"scan", "--registry", reg, "--allow-private", "--no-favicon", "--no-dns"}
+
+	out, err := run(t, "", append(base, "-e", srv.URL)...)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{"TECHNOLOGIES (", "4D", "20.4.1", "PHP", "8.2.1", "A-Frame", "projectdiscovery-nuclei-templates",
+		"NOTICE:", "SOCIAL", "linkedin", "info@acme.example", "+390212345678", "COVERAGE:", "needs a browser", "probe disabled", "[group]"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("output lacks %q:\n%s", want, out)
+		}
+	}
+
+	out, err = run(t, "", append(base, "--json", srv.URL)...)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := schemas.ValidateScanResult([]byte(out)); err != nil {
+		t.Fatalf("--json must print a valid result: %v", err)
+	}
+	var res struct {
+		Technologies []struct {
+			Name, Version string
+			Evidence      []struct{ Health string }
+		}
+	}
+	if err := json.Unmarshal([]byte(out), &res); err != nil || len(res.Technologies) < 3 {
+		t.Fatalf("%v %s", err, out)
+	}
+
+	// --min-health ok leaves nothing: no fixture rule has tests.
+	out, err = run(t, "", append(base, "--min-health", "ok", srv.URL)...)
+	if err != nil || !strings.Contains(out, "TECHNOLOGIES (0)") || !strings.Contains(out, "below the minimum health") {
+		t.Errorf("min-health: err=%v\n%s", err, out)
+	}
+
+	for name, args := range map[string][]string{
+		"no registry":    {"scan", "--allow-private", srv.URL},
+		"bad registry":   {"scan", "--registry", "/nonexistent.json", "--allow-private", srv.URL},
+		"bad min health": append(append([]string{}, base...), "--min-health", "great", srv.URL),
+		"local address":  {"scan", "--registry", reg, srv.URL},
+		"no url":         base,
+	} {
+		if _, err := run(t, "", args...); err == nil {
+			t.Errorf("%s: expected an error", name)
+		}
+	}
+	// A damaged export is refused before anything is fetched.
+	b := scantest.RegistryJSON(t)
+	bad := filepath.Join(t.TempDir(), "bad.json")
+	if err := os.WriteFile(bad, []byte(strings.Replace(string(b), `"name": "PHP"`, `"name": "PHPX"`, 1)), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := run(t, "", append([]string{"scan", "--registry", bad, "--allow-private"}, srv.URL)...); err == nil || !strings.Contains(err.Error(), "hash") {
+		t.Errorf("a damaged export must be refused: %v", err)
 	}
 }
