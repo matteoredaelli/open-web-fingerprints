@@ -19,6 +19,9 @@ import (
 
 func run(t *testing.T, stdin string, args ...string) (string, error) {
 	t.Helper()
+	// Never write verification stamps into the real user cache.
+	t.Setenv("HOME", t.TempDir())
+	t.Setenv("XDG_CACHE_HOME", t.TempDir())
 	cmd := newRootCmd()
 	var out, errb bytes.Buffer
 	cmd.SetOut(&out)

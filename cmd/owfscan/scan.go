@@ -6,6 +6,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"runtime/debug"
 	"sort"
 	"strings"
@@ -33,7 +34,7 @@ func version() string {
 
 func newScanCmd() *cobra.Command {
 	n := &netFlags{}
-	var registry, minHealth string
+	var registry, minHealth, verifyCache string
 	var noDNS, noFavicon, verbose bool
 	c := &cobra.Command{
 		Use:   "scan <url>",
@@ -54,7 +55,7 @@ func newScanCmd() *cobra.Command {
 			if minHealth != "" && !engine.ValidHealth(minHealth) {
 				return fmt.Errorf("--min-health must be broken, degraded, unknown or ok")
 			}
-			reg, err := scanner.LoadRegistry(registry)
+			reg, err := scanner.LoadRegistryCached(registry, stampDir(verifyCache))
 			if err != nil {
 				return err
 			}
@@ -82,6 +83,7 @@ func newScanCmd() *cobra.Command {
 	}
 	n.add(c)
 	n.addCrawl(c)
+	c.Flags().StringVar(&verifyCache, "verify-cache", "", "where to remember that a registry file was verified (default: the user cache directory; \"off\" verifies every time)")
 	c.Flags().StringVar(&registry, "registry", os.Getenv("OWFSCAN_REGISTRY"), "registry export to apply (env OWFSCAN_REGISTRY)")
 	c.Flags().StringVar(&minHealth, "min-health", "", "use only rules at least this healthy: broken (all, default), degraded, unknown, ok")
 	c.Flags().BoolVar(&noDNS, "no-dns", false, "do not look up DNS records")
@@ -183,4 +185,19 @@ func printScan(cmd *cobra.Command, r *scan.Result, verbose bool) {
 	}
 	fmt.Fprintln(out)
 	printWarnings(cmd, r.Warnings)
+}
+
+// stampDir is where verification stamps go: the flag, else the user cache directory.
+func stampDir(flag string) string {
+	switch flag {
+	case "off":
+		return ""
+	case "":
+		d, err := os.UserCacheDir()
+		if err != nil {
+			return ""
+		}
+		return filepath.Join(d, "owfscan", "verified")
+	}
+	return flag
 }

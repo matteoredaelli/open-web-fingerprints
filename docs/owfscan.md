@@ -376,6 +376,16 @@ it is evaluated. Without `--depth` it is not fetched.
 On `mr70.eu` (my own site), `--depth 1` read the home page and `/contact/` in about 3 s
 and added the contact email address that the home page does not have.
 
+## Loading the registry
+
+`scan` checks the export against its schema and manifest before use. For a registry of
+22000 rules that costs about 0.5 s, so after a file has passed, a stamp named by the
+SHA-256 of its **bytes** is stored in the user cache directory (`owfscan/verified`, or
+`--verify-cache DIR`; `--verify-cache off` always verifies). Any other content, one
+changed byte included, has no stamp and is verified in full. On a real export (45 MB,
+22178 rules) a scan of one page went from 0.87 s to 0.33 s, measured on one machine
+without DNS or favicon. Delete the directory to start over.
+
 ## What is not there yet
 
 - **JavaScript.** Nothing is executed. Links, handles and widgets added by scripts

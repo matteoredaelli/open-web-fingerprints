@@ -4,9 +4,14 @@
 package scanner
 
 import (
+	"bytes"
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -269,5 +274,69 @@ func TestScanDepthRespectsRobotsOnRequest(t *testing.T) {
 	}
 	if tech(res, "Shoporama") != nil || res.Coverage.Skipped["robots.txt not fetched"] == 0 {
 		t.Errorf("robots.txt is not read when it is ignored: %v", names(res))
+	}
+}
+
+func TestLoadRegistryCached(t *testing.T) {
+	dir := t.TempDir()
+	file := filepath.Join(dir, "registry.json")
+	good := scantest.RegistryJSON(t)
+	if err := os.WriteFile(file, good, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	stamps := filepath.Join(dir, "stamps", "deep")
+	first, err := LoadRegistryCached(file, stamps)
+	if err != nil {
+		t.Fatal(err)
+	}
+	entries, _ := os.ReadDir(stamps)
+	if len(entries) != 1 {
+		t.Fatalf("one stamp expected: %v", entries)
+	}
+	second, err := LoadRegistryCached(file, stamps)
+	if err != nil || second.Ref.ContentSHA256 != first.Ref.ContentSHA256 || second.Engine.Rules() != first.Engine.Rules() {
+		t.Fatalf("a stamped file loads the same: %v", err)
+	}
+
+	// The stamp is for these bytes only. Changed content is verified again and refused.
+	bad := bytes.Replace(good, []byte(`"slug"`), []byte(`"slugg"`), 1)
+	if err := os.WriteFile(file, bad, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := LoadRegistryCached(file, stamps); err == nil {
+		t.Error("an edited file must not ride on the stamp of the original")
+	}
+	// A stamp is worth nothing for a file that is not a registry.
+	if err := os.WriteFile(file, []byte("{}"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := LoadRegistryCached(file, stamps); err == nil {
+		t.Error("not a registry")
+	}
+	// A stamp that is present but whose file no longer decodes falls back to full verification.
+	sum := sha256.Sum256([]byte("{}"))
+	if err := os.WriteFile(filepath.Join(stamps, hex.EncodeToString(sum[:])+"."+verifyRev), nil, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := LoadRegistryCached(file, stamps); err == nil {
+		t.Error("a forged stamp does not make a bad file good")
+	}
+
+	// No stamp directory, or one that cannot be created: still works, nothing stored.
+	if err := os.WriteFile(file, good, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := LoadRegistryCached(file, ""); err != nil {
+		t.Error(err)
+	}
+	blocker := filepath.Join(dir, "blocker")
+	if err := os.WriteFile(blocker, nil, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := LoadRegistryCached(file, filepath.Join(blocker, "x")); err != nil {
+		t.Errorf("an unwritable stamp directory is ignored: %v", err)
+	}
+	if _, err := LoadRegistryCached(filepath.Join(dir, "missing.json"), stamps); err == nil {
+		t.Error("a missing file is an error")
 	}
 }

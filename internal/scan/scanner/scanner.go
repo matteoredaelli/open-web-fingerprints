@@ -7,13 +7,18 @@
 package scanner
 
 import (
+	"bytes"
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"net/url"
 	"os"
+	"path/filepath"
 	"time"
 
+	"github.com/matteoredaelli/open-web-fingerprints/internal/domain"
 	"github.com/matteoredaelli/open-web-fingerprints/internal/export"
 	"github.com/matteoredaelli/open-web-fingerprints/internal/scan/engine"
 	"github.com/matteoredaelli/open-web-fingerprints/internal/scan/fetch"
@@ -41,12 +46,66 @@ func LoadRegistry(path string) (*Registry, error) {
 	return ParseRegistry(b)
 }
 
+// verifyRev changes whenever what verification checks changes, so stamps written by
+// an older scanner are not trusted.
+const verifyRev = "1"
+
+// LoadRegistryCached is LoadRegistry, but remembers in stampDir that a file with
+// exactly these bytes (by SHA-256) has been verified, and then skips the schema
+// validation and the manifest checks, which take about half a second for a registry
+// of 22000 rules. The stamp proves nothing about any other content: change one byte
+// and the file is verified again. An empty stampDir verifies every time. A stamp that
+// cannot be read or written is ignored.
+func LoadRegistryCached(path, stampDir string) (*Registry, error) {
+	b, err := os.ReadFile(path) //nolint:gosec // user-supplied path
+	if err != nil {
+		return nil, err
+	}
+	if stampDir == "" {
+		return ParseRegistry(b)
+	}
+	sum := sha256.Sum256(b)
+	stamp := filepath.Join(stampDir, hex.EncodeToString(sum[:])+"."+verifyRev)
+	if _, err := os.Stat(stamp); err == nil { //nolint:gosec // the name is a hash inside the user's own directory
+		if reg, err := decodeRegistry(b); err == nil {
+			return reg, nil
+		}
+		// A stamp for a file that no longer decodes: verify again to get the error.
+	}
+	reg, err := ParseRegistry(b)
+	if err != nil {
+		return nil, err
+	}
+	if os.MkdirAll(stampDir, 0o750) == nil {
+		_ = os.WriteFile(stamp, []byte(reg.Ref.ContentSHA256+"\n"), 0o600) //nolint:gosec // the name is a hash inside the user's own directory
+	}
+	return reg, nil
+}
+
 // ParseRegistry is LoadRegistry on bytes.
 func ParseRegistry(b []byte) (*Registry, error) {
 	reg, err := export.Verify(b)
 	if err != nil {
 		return nil, fmt.Errorf("registry: %w", err)
 	}
+	return newRegistry(&reg), nil
+}
+
+// decodeRegistry reads an export that is already known to be verified.
+func decodeRegistry(b []byte) (*Registry, error) {
+	var reg domain.Registry
+	dec := json.NewDecoder(bytes.NewReader(b))
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(&reg); err != nil {
+		return nil, fmt.Errorf("registry: %w", err)
+	}
+	if reg.Manifest == nil {
+		return nil, fmt.Errorf("registry: no manifest")
+	}
+	return newRegistry(&reg), nil
+}
+
+func newRegistry(reg *domain.Registry) *Registry {
 	ref := scan.RegistryRef{ContentSHA256: reg.Manifest.ContentSHA256, SchemaVersion: reg.SchemaVersion, Sources: []string{}}
 	for _, s := range reg.Manifest.Sources {
 		ref.Sources = append(ref.Sources, s.Slug)
@@ -54,7 +113,7 @@ func ParseRegistry(b []byte) (*Registry, error) {
 	if reg.Export != nil {
 		ref.Notice = reg.Export.Notice
 	}
-	return &Registry{Engine: engine.New(&reg), Ref: ref}, nil
+	return &Registry{Engine: engine.New(reg), Ref: ref}
 }
 
 // Options configure a scan.

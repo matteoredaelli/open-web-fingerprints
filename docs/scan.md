@@ -206,7 +206,8 @@ internal/scan/...   links, social, fetch, observe, engine (public later if neede
 - How much of `internal/matcher` to promote to a public package (or whether the
   scanner keeps importing it from inside the module).
 - Which words select pages for `--depth`; they are a judgement call, not measured on many sites.
-- Caching the loaded registry between runs (loading a 34 MB export takes most of a scan).
+- Loading is still decode + regex compilation on each run (about 0.3 s for 22000 rules);
+  an index that is not JSON would save the decode only. Not done: not worth it yet.
 - Same-name technologies are shown as one in a result (`same_name` lists the other IDs);
   the registry still keeps them apart until a reviewer merges them. Two different products
   with the same name would be shown as one: not seen in practice, not measured either.
