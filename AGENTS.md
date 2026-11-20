@@ -15,7 +15,9 @@ The scanner (`owfscan`: give it a URL, get a structured result with technologies
 links, linked domains and social profiles) is a **separate component** in this
 repository: its own binary (`cmd/owfscan`, no database) and public package
 (`scan/`). It reads a registry export and applies the rules. Go only, no Python
-layer. `internal/matcher` still exists only to test rules offline; the scanner
+layer. It makes only `GET`s, refuses non-public addresses (also after redirects)
+and does not run probes. It does not refuse unreviewed sources (it repeats the
+export's notice). `internal/matcher` still exists only to test rules offline; the scanner
 may reuse its code, but do not grow the matcher itself into a scanner. Design
 and plan: `docs/scan.md`.
 
@@ -153,4 +155,5 @@ Open, roughly in order:
 4. Separate repositories for the detection engine and the public site.
 
 Docs: `docs/domain-model.md`, `sources.md`, `dedup-design.md`, `validation.md`,
-`redistribution.md`.
+`redistribution.md`, `scan.md` (scanner design and decisions), `owfscan.md`
+(scanner user guide).

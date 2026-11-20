@@ -53,8 +53,26 @@ downloads one commit of one branch, only the directories the extractor uses
 access. Imported data is unreviewed: check `owf source info` for
 the license status before redistributing an export.
 
-See [docs/domain-model.md](docs/domain-model.md) and
-[docs/sources.md](docs/sources.md).
+See [docs/domain-model.md](docs/domain-model.md),
+[docs/sources.md](docs/sources.md), [docs/validation.md](docs/validation.md) and
+[docs/redistribution.md](docs/redistribution.md).
+
+## Scanning a site: `owfscan`
+
+A second program, `owfscan`, looks at a web site and returns its links, the domains
+they point to, the social profiles and the contact details it publishes (rules for
+technologies are the next step). It has no database and makes only GET requests.
+
+```sh
+make build
+bin/owfscan links  mr70.eu            # links and linked domains
+bin/owfscan social mr70.eu            # profiles, emails, telephone numbers
+bin/owfscan observe mr70.eu --no-html # what the rules read: headers, cookies, favicon hashes, DNS, TLS
+bin/owfscan extract --url https://example.org/ page.html   # the same on saved HTML, offline
+```
+
+Scan only sites you are allowed to scan. User guide: [docs/owfscan.md](docs/owfscan.md);
+design and decisions: [docs/scan.md](docs/scan.md).
 
 ## License
 

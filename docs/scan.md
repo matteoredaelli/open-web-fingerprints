@@ -18,6 +18,38 @@ owfscan links  https://www.example.org
 owfscan social https://www.example.org
 ```
 
+User guide: [owfscan.md](owfscan.md).
+
+## Decisions
+
+Taken with the maintainer, in the order they were made:
+
+1. **Go only.** The scanner is part of this repository and uses the registry's
+   code. No Python layer, no pydantic: the contract is the JSON Schema of the
+   result.
+2. **Licence:** GPL-3.0-or-later, like the rest of the repository.
+3. **Browser:** later. The first version evaluates only what a plain HTTP request
+   shows.
+4. **Social platforms:** all the well-known ones (37 in the table plus Mastodon),
+   email and telephone as contacts. The PyPI package `socials` is not a dependency.
+5. **Unreviewed sources are not refused.** `owf export` stops on a source whose
+   redistribution is unreviewed; the scanner does not, because it only reads the
+   data. The result repeats the export's notice (`registry.notice`) when the export
+   carries one, and a result is not meant to be published as registry data.
+6. **`technologies[].confidence`** is the highest confidence among the matching
+   rules that are not `broken`. Agreement between rules never raises it, and rules
+   of sources with a common ancestor are not independent evidence.
+7. **Rules with `health: unknown` are used.** Almost every rule is `unknown`;
+   ignoring them would leave the result empty. The health of each rule is shown in
+   its evidence, and `--min-health` (planned) will let a user ask for more.
+8. **Passive by default; no probes.** Active probes of the registry (all drafts with
+   a pending review) are not run. Later, only with `--active` and only approved ones.
+9. **Safe network defaults.** Public addresses only, also across redirects, no
+   environment proxy, bounded size, time and redirects (see
+   [owfscan.md](owfscan.md#what-the-scanner-does-to-the-network)).
+10. **Examples use local servers** and domains of the maintainer (`mr70.eu`);
+    tests never depend on a third-party site.
+
 ## Principles
 
 - **Passive by default.** The page asked for, its redirects, the favicon, DNS
@@ -34,7 +66,7 @@ owfscan social https://www.example.org
   rules does not raise confidence, and sources with a common ancestor are not
   independent.
 - **Redistribution travels along.** If the export contains unreviewed data, the
-  result repeats the notice.
+  result repeats the notice (it does not refuse to run: decision 5).
 - **Pure where possible.** Link and social extraction take HTML and return data,
   without network. Tests use local servers only; a live check on a domain you own
   is opt-in.
@@ -142,7 +174,7 @@ internal/scan/...   links, social, fetch, observe, engine (public later if neede
 
 ## Open points
 
-- The exact fields of `Technology.confidence` (now: highest confidence among the
-  matching rules that are not broken).
-- How much of `internal/matcher` to promote to a public package.
+- How much of `internal/matcher` to promote to a public package (or whether the
+  scanner keeps importing it from inside the module).
+- `--depth` (several pages) and its limits; `--min-health`.
 - Which platforms' patterns need live verification against real profile URLs.
