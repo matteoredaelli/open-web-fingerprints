@@ -16,8 +16,17 @@ import (
 
 const examplePath = "../examples/scan-result.json"
 
+var examples = []string{examplePath, "../examples/scan-result-homepage.json"}
+
 func TestExampleRoundTripsAndIsValid(t *testing.T) {
-	orig, err := os.ReadFile(examplePath)
+	for _, path := range examples {
+		t.Run(path, func(t *testing.T) { roundTrip(t, path) })
+	}
+}
+
+func roundTrip(t *testing.T, path string) {
+	t.Helper()
+	orig, err := os.ReadFile(path) //nolint:gosec // repository example
 	if err != nil {
 		t.Fatal(err)
 	}

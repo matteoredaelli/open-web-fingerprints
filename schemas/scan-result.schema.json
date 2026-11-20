@@ -15,6 +15,7 @@
     "links",
     "domains",
     "socials",
+    "contacts",
     "coverage",
     "registry",
     "warnings"
@@ -141,6 +142,33 @@
           },
           "ref": {
             "type": "string"
+          }
+        }
+      }
+    },
+    "contacts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "kind",
+          "value",
+          "found"
+        ],
+        "properties": {
+          "kind": {
+            "enum": [
+              "email",
+              "phone"
+            ]
+          },
+          "value": {
+            "type": "string",
+            "minLength": 1
+          },
+          "found": {
+            "$ref": "#/$defs/found"
           }
         }
       }
@@ -463,31 +491,7 @@
           "minLength": 1
         },
         "found": {
-          "type": "array",
-          "minItems": 1,
-          "items": {
-            "type": "object",
-            "additionalProperties": false,
-            "required": [
-              "page",
-              "via"
-            ],
-            "properties": {
-              "page": {
-                "type": "string",
-                "minLength": 1
-              },
-              "via": {
-                "enum": [
-                  "a",
-                  "meta",
-                  "jsonld",
-                  "rel-me",
-                  "link"
-                ]
-              }
-            }
-          }
+          "$ref": "#/$defs/found"
         }
       }
     },
@@ -517,6 +521,34 @@
           "additionalProperties": {
             "type": "integer",
             "minimum": 0
+          }
+        }
+      }
+    },
+    "found": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "page",
+          "via"
+        ],
+        "properties": {
+          "page": {
+            "type": "string",
+            "minLength": 1
+          },
+          "via": {
+            "enum": [
+              "a",
+              "meta",
+              "jsonld",
+              "rel-me",
+              "link",
+              "text"
+            ]
           }
         }
       }

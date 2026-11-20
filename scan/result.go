@@ -30,6 +30,7 @@ type Result struct {
 	Links         []Link       `json:"links"`
 	Domains       []Domain     `json:"domains"`
 	Socials       []Social     `json:"socials"`
+	Contacts      []Contact    `json:"contacts"`
 	Coverage      Coverage     `json:"coverage"`
 	Registry      RegistryRef  `json:"registry"`
 	Warnings      []Warning    `json:"warnings"`
@@ -141,10 +142,17 @@ type Social struct {
 	Found    []Find `json:"found"`
 }
 
+// Contact is an email address or a telephone number published on the target.
+type Contact struct {
+	Kind  string `json:"kind"`  // email, phone
+	Value string `json:"value"` // normalised: lower-case address, +E.164-like number when possible
+	Found []Find `json:"found"`
+}
+
 // Find says where a social profile (or other item) was seen.
 type Find struct {
 	Page string `json:"page"`
-	Via  string `json:"via"` // a, meta, jsonld, rel-me, link
+	Via  string `json:"via"` // a, meta, jsonld, rel-me, link, text
 }
 
 // Coverage says how much of the registry could be applied.

@@ -1,0 +1,629 @@
+{
+  "$schema": "../schemas/scan-result.schema.json",
+  "schema_version": "0.1.0",
+  "scanned_at": "2026-11-18T09:00:00Z",
+  "scanner": "owfscan (ILLUSTRATIVE EXAMPLE: invented site, not a real scan)",
+  "target": {
+    "input": "www.tyres.example",
+    "url": "https://www.tyres.example/",
+    "host": "www.tyres.example",
+    "registrable_domain": "tyres.example"
+  },
+  "pages": [
+    {
+      "url": "https://www.tyres.example",
+      "final_url": "https://www.tyres.example/",
+      "status": 200,
+      "content_type": "text/html; charset=utf-8",
+      "bytes": 182340,
+      "duration_ms": 640,
+      "redirects": [
+        {
+          "url": "https://www.tyres.example",
+          "status": 301
+        }
+      ],
+      "headers": {
+        "server": "nginx/1.25.3",
+        "x-powered-by": "PHP/8.2.1",
+        "cf-ray": "8a1b2c3d4e5f-FRA",
+        "set-cookie": "PHPSESSID=abc; path=/; secure"
+      }
+    }
+  ],
+  "host": {
+    "ips": [
+      "192.0.2.10",
+      "2001:db8::10"
+    ],
+    "dns": {
+      "NS": [
+        "ada.ns.cloudflare.com.",
+        "bob.ns.cloudflare.com."
+      ],
+      "MX": [
+        "10 mx.tyres.example."
+      ]
+    },
+    "tls": {
+      "version": "TLS 1.3",
+      "issuer": "Example CA",
+      "subject": "www.tyres.example",
+      "not_before": "2026-10-01T00:00:00Z",
+      "not_after": "2027-01-01T00:00:00Z",
+      "dns_names": [
+        "tyres.example",
+        "www.tyres.example"
+      ]
+    }
+  },
+  "technologies": [
+    {
+      "id": "tech_0192f0a0-0000-7000-8000-000000000001",
+      "slug": "nginx",
+      "name": "nginx",
+      "vendor": "F5",
+      "version": "1.25.3",
+      "categories": [
+        "Web servers"
+      ],
+      "confidence": 0.9,
+      "sources": [
+        "rapid7-recog"
+      ],
+      "evidence": [
+        {
+          "rule_id": "fp_0192f0a0-0000-7000-8000-000000000001",
+          "observation": "http_header",
+          "matched": "nginx/1.25.3",
+          "health": "ok",
+          "source": "rapid7-recog",
+          "page": "https://www.tyres.example/",
+          "target": "Server",
+          "version": "1.25.3"
+        }
+      ]
+    },
+    {
+      "id": "tech_0192f0a0-0000-7000-8000-000000000002",
+      "slug": "adobe-experience-manager",
+      "name": "Adobe Experience Manager",
+      "vendor": "Adobe",
+      "categories": [
+        "CMS"
+      ],
+      "confidence": 0.5,
+      "sources": [
+        "enthec-webappanalyzer",
+        "projectdiscovery-nuclei-templates"
+      ],
+      "evidence": [
+        {
+          "rule_id": "fp_0192f0a0-0000-7000-8000-000000000002",
+          "observation": "script_url",
+          "matched": "/etc.clientlibs/tyres/clientlib-site.min.js",
+          "health": "unknown",
+          "source": "enthec-webappanalyzer",
+          "page": "https://www.tyres.example/"
+        },
+        {
+          "rule_id": "fp_0192f0a0-0000-7000-8000-000000000003",
+          "observation": "html",
+          "matched": "<div class=\"cmp-teaser\">",
+          "health": "unknown",
+          "source": "enthec-webappanalyzer",
+          "page": "https://www.tyres.example/"
+        }
+      ]
+    },
+    {
+      "id": "tech_0192f0a0-0000-7000-8000-000000000003",
+      "slug": "cloudflare",
+      "name": "Cloudflare",
+      "vendor": "Cloudflare",
+      "categories": [
+        "CDN"
+      ],
+      "confidence": 0.5,
+      "sources": [
+        "enthec-webappanalyzer"
+      ],
+      "evidence": [
+        {
+          "rule_id": "fp_0192f0a0-0000-7000-8000-000000000004",
+          "observation": "http_header",
+          "matched": "8a1b2c3d4e5f-FRA",
+          "health": "unknown",
+          "source": "enthec-webappanalyzer",
+          "page": "https://www.tyres.example/",
+          "target": "cf-ray"
+        }
+      ]
+    },
+    {
+      "id": "tech_0192f0a0-0000-7000-8000-000000000004",
+      "slug": "google-tag-manager",
+      "name": "Google Tag Manager",
+      "vendor": "Google",
+      "categories": [
+        "Tag managers"
+      ],
+      "confidence": 0.5,
+      "sources": [
+        "enthec-webappanalyzer"
+      ],
+      "evidence": [
+        {
+          "rule_id": "fp_0192f0a0-0000-7000-8000-000000000005",
+          "observation": "script_url",
+          "matched": "https://www.googletagmanager.com/gtm.js?id=GTM-XXXXXXX",
+          "health": "unknown",
+          "source": "enthec-webappanalyzer",
+          "page": "https://www.tyres.example/"
+        }
+      ]
+    },
+    {
+      "id": "tech_0192f0a0-0000-7000-8000-000000000005",
+      "slug": "google-analytics",
+      "name": "Google Analytics",
+      "vendor": "Google",
+      "categories": [
+        "Analytics"
+      ],
+      "confidence": 0.5,
+      "sources": [
+        "enthec-webappanalyzer"
+      ],
+      "evidence": [
+        {
+          "rule_id": "fp_0192f0a0-0000-7000-8000-000000000006",
+          "observation": "cookie",
+          "matched": "GA1.2.123456789.1700000000",
+          "health": "ok",
+          "source": "enthec-webappanalyzer",
+          "page": "https://www.tyres.example/",
+          "target": "_ga"
+        }
+      ]
+    },
+    {
+      "id": "tech_0192f0a0-0000-7000-8000-000000000006",
+      "slug": "onetrust",
+      "name": "OneTrust",
+      "vendor": "OneTrust",
+      "categories": [
+        "Cookie compliance"
+      ],
+      "confidence": 0.5,
+      "sources": [
+        "enthec-webappanalyzer"
+      ],
+      "evidence": [
+        {
+          "rule_id": "fp_0192f0a0-0000-7000-8000-000000000007",
+          "observation": "script_url",
+          "matched": "https://cdn.cookielaw.org/scripttemplates/otSDKStub.js",
+          "health": "unknown",
+          "source": "enthec-webappanalyzer",
+          "page": "https://www.tyres.example/"
+        }
+      ]
+    },
+    {
+      "id": "tech_0192f0a0-0000-7000-8000-000000000007",
+      "slug": "jquery",
+      "name": "jQuery",
+      "vendor": "jQuery",
+      "version": "3.7.1",
+      "categories": [
+        "JavaScript libraries"
+      ],
+      "confidence": 0.5,
+      "sources": [
+        "enthec-webappanalyzer"
+      ],
+      "evidence": [
+        {
+          "rule_id": "fp_0192f0a0-0000-7000-8000-000000000008",
+          "observation": "script_url",
+          "matched": "/etc.clientlibs/tyres/jquery-3.7.1.min.js",
+          "health": "ok",
+          "source": "enthec-webappanalyzer",
+          "page": "https://www.tyres.example/",
+          "version": "3.7.1"
+        }
+      ]
+    },
+    {
+      "id": "tech_0192f0a0-0000-7000-8000-000000000008",
+      "slug": "php",
+      "name": "PHP",
+      "vendor": "PHP",
+      "version": "8.2.1",
+      "categories": [
+        "Programming languages"
+      ],
+      "confidence": 0.9,
+      "sources": [
+        "rapid7-recog"
+      ],
+      "evidence": [
+        {
+          "rule_id": "fp_0192f0a0-0000-7000-8000-000000000009",
+          "observation": "http_header",
+          "matched": "PHP/8.2.1",
+          "health": "ok",
+          "source": "rapid7-recog",
+          "page": "https://www.tyres.example/",
+          "target": "X-Powered-By",
+          "version": "8.2.1"
+        },
+        {
+          "rule_id": "fp_0192f0a0-0000-7000-8000-000000000010",
+          "observation": "set_cookie",
+          "matched": "PHPSESSID=abc; path=/; secure",
+          "health": "unknown",
+          "source": "rapid7-recog",
+          "page": "https://www.tyres.example/"
+        }
+      ]
+    }
+  ],
+  "links": [
+    {
+      "url": "https://www.tyres.example/en/tyres/",
+      "kind": "a",
+      "internal": true,
+      "domain": "tyres.example",
+      "found_in": "https://www.tyres.example/"
+    },
+    {
+      "url": "https://www.tyres.example/en/careers/",
+      "kind": "a",
+      "internal": true,
+      "domain": "tyres.example",
+      "found_in": "https://www.tyres.example/"
+    },
+    {
+      "url": "https://www.tyres.example/en/press/",
+      "kind": "a",
+      "internal": true,
+      "domain": "tyres.example",
+      "found_in": "https://www.tyres.example/"
+    },
+    {
+      "url": "https://www.tyres.example/etc.clientlibs/tyres/clientlib-site.min.css",
+      "kind": "link",
+      "internal": true,
+      "domain": "tyres.example",
+      "found_in": "https://www.tyres.example/",
+      "rel": "stylesheet"
+    },
+    {
+      "url": "https://www.googletagmanager.com/gtm.js?id=GTM-XXXXXXX",
+      "kind": "script",
+      "internal": false,
+      "domain": "googletagmanager.com",
+      "found_in": "https://www.tyres.example/"
+    },
+    {
+      "url": "https://cdn.cookielaw.org/scripttemplates/otSDKStub.js",
+      "kind": "script",
+      "internal": false,
+      "domain": "cookielaw.org",
+      "found_in": "https://www.tyres.example/"
+    },
+    {
+      "url": "https://shop.tyres-direct.example/",
+      "kind": "a",
+      "internal": false,
+      "domain": "tyres-direct.example",
+      "found_in": "https://www.tyres.example/"
+    },
+    {
+      "url": "https://www.linkedin.com/company/example-tyres",
+      "kind": "a",
+      "internal": false,
+      "domain": "linkedin.com",
+      "found_in": "https://www.tyres.example/"
+    },
+    {
+      "url": "https://www.facebook.com/exampletyres",
+      "kind": "a",
+      "internal": false,
+      "domain": "facebook.com",
+      "found_in": "https://www.tyres.example/"
+    },
+    {
+      "url": "https://www.instagram.com/exampletyres/",
+      "kind": "a",
+      "internal": false,
+      "domain": "instagram.com",
+      "found_in": "https://www.tyres.example/"
+    },
+    {
+      "url": "https://twitter.com/exampletyres",
+      "kind": "a",
+      "internal": false,
+      "domain": "twitter.com",
+      "found_in": "https://www.tyres.example/"
+    },
+    {
+      "url": "https://www.youtube.com/@exampletyres",
+      "kind": "a",
+      "internal": false,
+      "domain": "youtube.com",
+      "found_in": "https://www.tyres.example/"
+    },
+    {
+      "url": "https://www.tiktok.com/@exampletyres",
+      "kind": "a",
+      "internal": false,
+      "domain": "tiktok.com",
+      "found_in": "https://www.tyres.example/"
+    },
+    {
+      "url": "https://github.com/example-tyres",
+      "kind": "a",
+      "internal": false,
+      "domain": "github.com",
+      "found_in": "https://www.tyres.example/"
+    },
+    {
+      "url": "https://www.facebook.com/sharer/sharer.php?u=https%3A%2F%2Fwww.tyres.example%2F",
+      "kind": "a",
+      "internal": false,
+      "domain": "facebook.com",
+      "found_in": "https://www.tyres.example/"
+    }
+  ],
+  "domains": [
+    {
+      "domain": "tyres.example",
+      "internal": true,
+      "links": 4,
+      "examples": [
+        "https://www.tyres.example/en/tyres/",
+        "https://www.tyres.example/en/careers/"
+      ]
+    },
+    {
+      "domain": "facebook.com",
+      "internal": false,
+      "links": 2,
+      "examples": [
+        "https://www.facebook.com/exampletyres",
+        "https://www.facebook.com/sharer/sharer.php?u=https%3A%2F%2Fwww.tyres.example%2F"
+      ]
+    },
+    {
+      "domain": "cookielaw.org",
+      "internal": false,
+      "links": 1,
+      "examples": [
+        "https://cdn.cookielaw.org/scripttemplates/otSDKStub.js"
+      ]
+    },
+    {
+      "domain": "github.com",
+      "internal": false,
+      "links": 1,
+      "examples": [
+        "https://github.com/example-tyres"
+      ]
+    },
+    {
+      "domain": "googletagmanager.com",
+      "internal": false,
+      "links": 1,
+      "examples": [
+        "https://www.googletagmanager.com/gtm.js?id=GTM-XXXXXXX"
+      ]
+    },
+    {
+      "domain": "instagram.com",
+      "internal": false,
+      "links": 1,
+      "examples": [
+        "https://www.instagram.com/exampletyres/"
+      ]
+    },
+    {
+      "domain": "linkedin.com",
+      "internal": false,
+      "links": 1,
+      "examples": [
+        "https://www.linkedin.com/company/example-tyres"
+      ]
+    },
+    {
+      "domain": "tiktok.com",
+      "internal": false,
+      "links": 1,
+      "examples": [
+        "https://www.tiktok.com/@exampletyres"
+      ]
+    },
+    {
+      "domain": "twitter.com",
+      "internal": false,
+      "links": 1,
+      "examples": [
+        "https://twitter.com/exampletyres"
+      ]
+    },
+    {
+      "domain": "tyres-direct.example",
+      "internal": false,
+      "links": 1,
+      "examples": [
+        "https://shop.tyres-direct.example/"
+      ]
+    },
+    {
+      "domain": "youtube.com",
+      "internal": false,
+      "links": 1,
+      "examples": [
+        "https://www.youtube.com/@exampletyres"
+      ]
+    }
+  ],
+  "socials": [
+    {
+      "platform": "linkedin",
+      "kind": "company",
+      "handle": "example-tyres",
+      "url": "https://www.linkedin.com/company/example-tyres",
+      "found": [
+        {
+          "page": "https://www.tyres.example/",
+          "via": "a"
+        },
+        {
+          "page": "https://www.tyres.example/",
+          "via": "jsonld"
+        }
+      ]
+    },
+    {
+      "platform": "facebook",
+      "kind": "page",
+      "handle": "exampletyres",
+      "url": "https://www.facebook.com/exampletyres",
+      "found": [
+        {
+          "page": "https://www.tyres.example/",
+          "via": "a"
+        },
+        {
+          "page": "https://www.tyres.example/",
+          "via": "jsonld"
+        }
+      ]
+    },
+    {
+      "platform": "instagram",
+      "kind": "user",
+      "handle": "exampletyres",
+      "url": "https://www.instagram.com/exampletyres/",
+      "found": [
+        {
+          "page": "https://www.tyres.example/",
+          "via": "a"
+        }
+      ]
+    },
+    {
+      "platform": "x",
+      "kind": "user",
+      "handle": "exampletyres",
+      "url": "https://x.com/exampletyres",
+      "found": [
+        {
+          "page": "https://www.tyres.example/",
+          "via": "a"
+        },
+        {
+          "page": "https://www.tyres.example/",
+          "via": "meta"
+        }
+      ]
+    },
+    {
+      "platform": "youtube",
+      "kind": "channel",
+      "handle": "@exampletyres",
+      "url": "https://www.youtube.com/@exampletyres",
+      "found": [
+        {
+          "page": "https://www.tyres.example/",
+          "via": "a"
+        }
+      ]
+    },
+    {
+      "platform": "tiktok",
+      "kind": "user",
+      "handle": "exampletyres",
+      "url": "https://www.tiktok.com/@exampletyres",
+      "found": [
+        {
+          "page": "https://www.tyres.example/",
+          "via": "a"
+        }
+      ]
+    },
+    {
+      "platform": "github",
+      "kind": "organization",
+      "handle": "example-tyres",
+      "url": "https://github.com/example-tyres",
+      "found": [
+        {
+          "page": "https://www.tyres.example/",
+          "via": "a"
+        }
+      ]
+    }
+  ],
+  "contacts": [
+    {
+      "kind": "email",
+      "value": "press@tyres.example",
+      "found": [
+        {
+          "page": "https://www.tyres.example/",
+          "via": "a"
+        }
+      ]
+    },
+    {
+      "kind": "phone",
+      "value": "+39 02 0000 0000",
+      "found": [
+        {
+          "page": "https://www.tyres.example/",
+          "via": "a"
+        },
+        {
+          "page": "https://www.tyres.example/",
+          "via": "jsonld"
+        }
+      ]
+    }
+  ],
+  "coverage": {
+    "rules_total": 22006,
+    "rules_evaluated": 15900,
+    "rules_unsupported": 6106,
+    "skipped": {
+      "needs a browser": 5715,
+      "probe disabled": 2349,
+      "pattern needs a backtracking engine": 42
+    }
+  },
+  "registry": {
+    "content_sha256": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+    "schema_version": "0.2.0",
+    "sources": [
+      "enthec-webappanalyzer",
+      "projectdiscovery-nuclei-templates",
+      "rapid7-recog"
+    ],
+    "notice": "This export contains data from sources whose redistribution terms have not been reviewed. It is for internal use only: do not publish or redistribute it."
+  },
+  "warnings": [
+    {
+      "code": "js_rules_skipped",
+      "message": "rules on JavaScript globals were not evaluated: no browser",
+      "ref": "js_global"
+    },
+    {
+      "code": "share_url_ignored",
+      "message": "a sharing link is not a profile",
+      "ref": "https://www.facebook.com/sharer/sharer.php"
+    }
+  ]
+}

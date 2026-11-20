@@ -198,5 +198,17 @@
       "message": "rules on JavaScript globals were not evaluated: no browser",
       "ref": "js_global"
     }
+  ],
+  "contacts": [
+    {
+      "kind": "email",
+      "value": "info@example.org",
+      "found": [
+        {
+          "page": "https://www.example.org/",
+          "via": "a"
+        }
+      ]
+    }
   ]
 }
