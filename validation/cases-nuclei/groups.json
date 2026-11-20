@@ -2439,6 +2439,2548 @@
    "expect": {
     "match": false
    }
+  },
+  {
+   "id": "apache-allura-probe-positive",
+   "description": "A recorded answer to the probe that carries every marker.",
+   "group": [
+    {
+     "technology": "apache-allura",
+     "observation": "probe_response",
+     "target": "body",
+     "operator": "contains",
+     "pattern": "<title>All Neighborhoods</title>",
+     "probe_path": "/neighborhood"
+    },
+    {
+     "technology": "apache-allura",
+     "observation": "probe_response",
+     "target": "body",
+     "operator": "contains",
+     "pattern": ">Apache Allura</a>",
+     "probe_path": "/neighborhood"
+    },
+    {
+     "technology": "apache-allura",
+     "observation": "probe_response",
+     "target": "status",
+     "operator": "equals",
+     "pattern": "200",
+     "probe_path": "/neighborhood"
+    }
+   ],
+   "input": {
+    "probes": {
+     "/neighborhood": {
+      "status": 200,
+      "body": "<html><head><title>All Neighborhoods</title></head><body><a href=\"x\">Apache Allura</a></body></html>"
+     }
+    }
+   },
+   "expect": {
+    "match": true
+   }
+  },
+  {
+   "id": "apache-allura-probe-negative-other-page",
+   "description": "The probed path answers 200 with a different page.",
+   "group": [
+    {
+     "technology": "apache-allura",
+     "observation": "probe_response",
+     "target": "body",
+     "operator": "contains",
+     "pattern": "<title>All Neighborhoods</title>",
+     "probe_path": "/neighborhood"
+    },
+    {
+     "technology": "apache-allura",
+     "observation": "probe_response",
+     "target": "body",
+     "operator": "contains",
+     "pattern": ">Apache Allura</a>",
+     "probe_path": "/neighborhood"
+    },
+    {
+     "technology": "apache-allura",
+     "observation": "probe_response",
+     "target": "status",
+     "operator": "equals",
+     "pattern": "200",
+     "probe_path": "/neighborhood"
+    }
+   ],
+   "input": {
+    "probes": {
+     "/neighborhood": {
+      "status": 200,
+      "body": "<html><title>Home</title></html>"
+     }
+    }
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "apache-allura-probe-negative-status",
+   "description": "The group requires status 200: a 404 with the same body is not detected.",
+   "group": [
+    {
+     "technology": "apache-allura",
+     "observation": "probe_response",
+     "target": "body",
+     "operator": "contains",
+     "pattern": "<title>All Neighborhoods</title>",
+     "probe_path": "/neighborhood"
+    },
+    {
+     "technology": "apache-allura",
+     "observation": "probe_response",
+     "target": "body",
+     "operator": "contains",
+     "pattern": ">Apache Allura</a>",
+     "probe_path": "/neighborhood"
+    },
+    {
+     "technology": "apache-allura",
+     "observation": "probe_response",
+     "target": "status",
+     "operator": "equals",
+     "pattern": "200",
+     "probe_path": "/neighborhood"
+    }
+   ],
+   "input": {
+    "probes": {
+     "/neighborhood": {
+      "status": 404,
+      "body": "<html><head><title>All Neighborhoods</title></head><body><a href=\"x\">Apache Allura</a></body></html>"
+     }
+    }
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "apache-allura-probe-negative-partial",
+   "description": "All members are needed; one marker alone is not enough.",
+   "group": [
+    {
+     "technology": "apache-allura",
+     "observation": "probe_response",
+     "target": "body",
+     "operator": "contains",
+     "pattern": "<title>All Neighborhoods</title>",
+     "probe_path": "/neighborhood"
+    },
+    {
+     "technology": "apache-allura",
+     "observation": "probe_response",
+     "target": "body",
+     "operator": "contains",
+     "pattern": ">Apache Allura</a>",
+     "probe_path": "/neighborhood"
+    },
+    {
+     "technology": "apache-allura",
+     "observation": "probe_response",
+     "target": "status",
+     "operator": "equals",
+     "pattern": "200",
+     "probe_path": "/neighborhood"
+    }
+   ],
+   "input": {
+    "probes": {
+     "/neighborhood": {
+      "status": 200,
+      "body": "<title>All Neighborhoods</title>"
+     }
+    }
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "guacamole-probe-positive",
+   "description": "A recorded answer to the probe that carries every marker.",
+   "group": [
+    {
+     "technology": "apache-guacamole-login-page-and",
+     "observation": "probe_response",
+     "target": "body",
+     "operator": "contains",
+     "pattern": "Apache Guacamole",
+     "probe_path": "/translations/en.json"
+    },
+    {
+     "technology": "apache-guacamole-login-page-and",
+     "observation": "probe_response",
+     "target": "status",
+     "operator": "equals",
+     "pattern": "200",
+     "probe_path": "/translations/en.json"
+    }
+   ],
+   "input": {
+    "probes": {
+     "/translations/en.json": {
+      "status": 200,
+      "body": "{\"APP\":{\"NAME\":\"Apache Guacamole\"}}",
+      "headers": {
+       "Content-Type": "application/json"
+      }
+     }
+    }
+   },
+   "expect": {
+    "match": true
+   }
+  },
+  {
+   "id": "guacamole-probe-negative-other-page",
+   "description": "The probed path answers 200 with a different page.",
+   "group": [
+    {
+     "technology": "apache-guacamole-login-page-and",
+     "observation": "probe_response",
+     "target": "body",
+     "operator": "contains",
+     "pattern": "Apache Guacamole",
+     "probe_path": "/translations/en.json"
+    },
+    {
+     "technology": "apache-guacamole-login-page-and",
+     "observation": "probe_response",
+     "target": "status",
+     "operator": "equals",
+     "pattern": "200",
+     "probe_path": "/translations/en.json"
+    }
+   ],
+   "input": {
+    "probes": {
+     "/translations/en.json": {
+      "status": 200,
+      "body": "{\"APP\":{\"NAME\":\"Other\"}}",
+      "headers": {
+       "Content-Type": "application/json"
+      }
+     }
+    }
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "guacamole-probe-negative-status",
+   "description": "The group requires status 200: a 404 with the same body is not detected.",
+   "group": [
+    {
+     "technology": "apache-guacamole-login-page-and",
+     "observation": "probe_response",
+     "target": "body",
+     "operator": "contains",
+     "pattern": "Apache Guacamole",
+     "probe_path": "/translations/en.json"
+    },
+    {
+     "technology": "apache-guacamole-login-page-and",
+     "observation": "probe_response",
+     "target": "status",
+     "operator": "equals",
+     "pattern": "200",
+     "probe_path": "/translations/en.json"
+    }
+   ],
+   "input": {
+    "probes": {
+     "/translations/en.json": {
+      "status": 404,
+      "body": "{\"APP\":{\"NAME\":\"Apache Guacamole\"}}",
+      "headers": {
+       "Content-Type": "application/json"
+      }
+     }
+    }
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "hertzbeat-name-probe-positive",
+   "description": "A recorded answer to the probe that carries every marker.",
+   "group": [
+    {
+     "technology": "apache-hertzbeat",
+     "observation": "probe_response",
+     "target": "body",
+     "operator": "contains",
+     "pattern": "\"name\": \"HertzBeat\"",
+     "probe_path": "/assets/app-data.json"
+    },
+    {
+     "technology": "apache-hertzbeat",
+     "observation": "probe_response",
+     "target": "status",
+     "operator": "equals",
+     "pattern": "200",
+     "probe_path": "/assets/app-data.json"
+    }
+   ],
+   "input": {
+    "probes": {
+     "/assets/app-data.json": {
+      "status": 200,
+      "body": "{\"name\": \"HertzBeat\", \"version\": \"1.6\"}",
+      "headers": {
+       "Content-Type": "application/json"
+      }
+     }
+    }
+   },
+   "expect": {
+    "match": true
+   }
+  },
+  {
+   "id": "hertzbeat-name-probe-negative-other-page",
+   "description": "The probed path answers 200 with a different page.",
+   "group": [
+    {
+     "technology": "apache-hertzbeat",
+     "observation": "probe_response",
+     "target": "body",
+     "operator": "contains",
+     "pattern": "\"name\": \"HertzBeat\"",
+     "probe_path": "/assets/app-data.json"
+    },
+    {
+     "technology": "apache-hertzbeat",
+     "observation": "probe_response",
+     "target": "status",
+     "operator": "equals",
+     "pattern": "200",
+     "probe_path": "/assets/app-data.json"
+    }
+   ],
+   "input": {
+    "probes": {
+     "/assets/app-data.json": {
+      "status": 200,
+      "body": "{\"name\": \"Other\"}",
+      "headers": {
+       "Content-Type": "application/json"
+      }
+     }
+    }
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "hertzbeat-name-probe-negative-status",
+   "description": "The group requires status 200: a 404 with the same body is not detected.",
+   "group": [
+    {
+     "technology": "apache-hertzbeat",
+     "observation": "probe_response",
+     "target": "body",
+     "operator": "contains",
+     "pattern": "\"name\": \"HertzBeat\"",
+     "probe_path": "/assets/app-data.json"
+    },
+    {
+     "technology": "apache-hertzbeat",
+     "observation": "probe_response",
+     "target": "status",
+     "operator": "equals",
+     "pattern": "200",
+     "probe_path": "/assets/app-data.json"
+    }
+   ],
+   "input": {
+    "probes": {
+     "/assets/app-data.json": {
+      "status": 404,
+      "body": "{\"name\": \"HertzBeat\", \"version\": \"1.6\"}",
+      "headers": {
+       "Content-Type": "application/json"
+      }
+     }
+    }
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "hertzbeat-site-probe-positive",
+   "description": "A recorded answer to the probe that carries every marker.",
+   "group": [
+    {
+     "technology": "apache-hertzbeat",
+     "observation": "probe_response",
+     "target": "body",
+     "operator": "contains",
+     "pattern": "hertzbeat.apache.org",
+     "probe_path": "/assets/app-data.json"
+    },
+    {
+     "technology": "apache-hertzbeat",
+     "observation": "probe_response",
+     "target": "status",
+     "operator": "equals",
+     "pattern": "200",
+     "probe_path": "/assets/app-data.json"
+    }
+   ],
+   "input": {
+    "probes": {
+     "/assets/app-data.json": {
+      "status": 200,
+      "body": "{\"home\":\"https://hertzbeat.apache.org\"}",
+      "headers": {
+       "Content-Type": "application/json"
+      }
+     }
+    }
+   },
+   "expect": {
+    "match": true
+   }
+  },
+  {
+   "id": "hertzbeat-site-probe-negative-other-page",
+   "description": "The probed path answers 200 with a different page.",
+   "group": [
+    {
+     "technology": "apache-hertzbeat",
+     "observation": "probe_response",
+     "target": "body",
+     "operator": "contains",
+     "pattern": "hertzbeat.apache.org",
+     "probe_path": "/assets/app-data.json"
+    },
+    {
+     "technology": "apache-hertzbeat",
+     "observation": "probe_response",
+     "target": "status",
+     "operator": "equals",
+     "pattern": "200",
+     "probe_path": "/assets/app-data.json"
+    }
+   ],
+   "input": {
+    "probes": {
+     "/assets/app-data.json": {
+      "status": 200,
+      "body": "{\"home\":\"https://example.org\"}",
+      "headers": {
+       "Content-Type": "application/json"
+      }
+     }
+    }
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "hertzbeat-site-probe-negative-status",
+   "description": "The group requires status 200: a 404 with the same body is not detected.",
+   "group": [
+    {
+     "technology": "apache-hertzbeat",
+     "observation": "probe_response",
+     "target": "body",
+     "operator": "contains",
+     "pattern": "hertzbeat.apache.org",
+     "probe_path": "/assets/app-data.json"
+    },
+    {
+     "technology": "apache-hertzbeat",
+     "observation": "probe_response",
+     "target": "status",
+     "operator": "equals",
+     "pattern": "200",
+     "probe_path": "/assets/app-data.json"
+    }
+   ],
+   "input": {
+    "probes": {
+     "/assets/app-data.json": {
+      "status": 404,
+      "body": "{\"home\":\"https://hertzbeat.apache.org\"}",
+      "headers": {
+       "Content-Type": "application/json"
+      }
+     }
+    }
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "tika-probe-positive",
+   "description": "A recorded answer to the probe that carries every marker.",
+   "group": [
+    {
+     "technology": "apache-tika",
+     "observation": "probe_response",
+     "target": "body",
+     "operator": "contains",
+     "pattern": "Apache Tika",
+     "probe_path": "/tika"
+    },
+    {
+     "technology": "apache-tika",
+     "observation": "probe_response",
+     "target": "body",
+     "operator": "contains",
+     "pattern": "apache.tika",
+     "probe_path": "/tika"
+    },
+    {
+     "technology": "apache-tika",
+     "observation": "probe_response",
+     "target": "status",
+     "operator": "equals",
+     "pattern": "200",
+     "probe_path": "/tika"
+    }
+   ],
+   "input": {
+    "probes": {
+     "/tika": {
+      "status": 200,
+      "body": "<html>This is Tomcat running Apache Tika (org.apache.tika.server)</html>"
+     }
+    }
+   },
+   "expect": {
+    "match": true
+   }
+  },
+  {
+   "id": "tika-probe-negative-other-page",
+   "description": "The probed path answers 200 with a different page.",
+   "group": [
+    {
+     "technology": "apache-tika",
+     "observation": "probe_response",
+     "target": "body",
+     "operator": "contains",
+     "pattern": "Apache Tika",
+     "probe_path": "/tika"
+    },
+    {
+     "technology": "apache-tika",
+     "observation": "probe_response",
+     "target": "body",
+     "operator": "contains",
+     "pattern": "apache.tika",
+     "probe_path": "/tika"
+    },
+    {
+     "technology": "apache-tika",
+     "observation": "probe_response",
+     "target": "status",
+     "operator": "equals",
+     "pattern": "200",
+     "probe_path": "/tika"
+    }
+   ],
+   "input": {
+    "probes": {
+     "/tika": {
+      "status": 200,
+      "body": "<html>Tomcat</html>"
+     }
+    }
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "tika-probe-negative-status",
+   "description": "The group requires status 200: a 404 with the same body is not detected.",
+   "group": [
+    {
+     "technology": "apache-tika",
+     "observation": "probe_response",
+     "target": "body",
+     "operator": "contains",
+     "pattern": "Apache Tika",
+     "probe_path": "/tika"
+    },
+    {
+     "technology": "apache-tika",
+     "observation": "probe_response",
+     "target": "body",
+     "operator": "contains",
+     "pattern": "apache.tika",
+     "probe_path": "/tika"
+    },
+    {
+     "technology": "apache-tika",
+     "observation": "probe_response",
+     "target": "status",
+     "operator": "equals",
+     "pattern": "200",
+     "probe_path": "/tika"
+    }
+   ],
+   "input": {
+    "probes": {
+     "/tika": {
+      "status": 404,
+      "body": "<html>This is Tomcat running Apache Tika (org.apache.tika.server)</html>"
+     }
+    }
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "tika-probe-negative-partial",
+   "description": "All members are needed; one marker alone is not enough.",
+   "group": [
+    {
+     "technology": "apache-tika",
+     "observation": "probe_response",
+     "target": "body",
+     "operator": "contains",
+     "pattern": "Apache Tika",
+     "probe_path": "/tika"
+    },
+    {
+     "technology": "apache-tika",
+     "observation": "probe_response",
+     "target": "body",
+     "operator": "contains",
+     "pattern": "apache.tika",
+     "probe_path": "/tika"
+    },
+    {
+     "technology": "apache-tika",
+     "observation": "probe_response",
+     "target": "status",
+     "operator": "equals",
+     "pattern": "200",
+     "probe_path": "/tika"
+    }
+   ],
+   "input": {
+    "probes": {
+     "/tika": {
+      "status": 200,
+      "body": "Apache Tika"
+     }
+    }
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "syncope-title-probe-positive",
+   "description": "A recorded answer to the probe that carries every marker.",
+   "group": [
+    {
+     "technology": "apache-syncope",
+     "observation": "probe_response",
+     "target": "body",
+     "operator": "contains",
+     "pattern": "<title>Apache Syncope",
+     "probe_path": "/syncope-enduser/"
+    },
+    {
+     "technology": "apache-syncope",
+     "observation": "probe_response",
+     "target": "status",
+     "operator": "equals",
+     "pattern": "200",
+     "probe_path": "/syncope-enduser/"
+    }
+   ],
+   "input": {
+    "probes": {
+     "/syncope-enduser/": {
+      "status": 200,
+      "body": "<title>Apache Syncope Enduser</title>"
+     }
+    }
+   },
+   "expect": {
+    "match": true
+   }
+  },
+  {
+   "id": "syncope-title-probe-negative-other-page",
+   "description": "The probed path answers 200 with a different page.",
+   "group": [
+    {
+     "technology": "apache-syncope",
+     "observation": "probe_response",
+     "target": "body",
+     "operator": "contains",
+     "pattern": "<title>Apache Syncope",
+     "probe_path": "/syncope-enduser/"
+    },
+    {
+     "technology": "apache-syncope",
+     "observation": "probe_response",
+     "target": "status",
+     "operator": "equals",
+     "pattern": "200",
+     "probe_path": "/syncope-enduser/"
+    }
+   ],
+   "input": {
+    "probes": {
+     "/syncope-enduser/": {
+      "status": 200,
+      "body": "<title>Login</title>"
+     }
+    }
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "syncope-title-probe-negative-status",
+   "description": "The group requires status 200: a 404 with the same body is not detected.",
+   "group": [
+    {
+     "technology": "apache-syncope",
+     "observation": "probe_response",
+     "target": "body",
+     "operator": "contains",
+     "pattern": "<title>Apache Syncope",
+     "probe_path": "/syncope-enduser/"
+    },
+    {
+     "technology": "apache-syncope",
+     "observation": "probe_response",
+     "target": "status",
+     "operator": "equals",
+     "pattern": "200",
+     "probe_path": "/syncope-enduser/"
+    }
+   ],
+   "input": {
+    "probes": {
+     "/syncope-enduser/": {
+      "status": 404,
+      "body": "<title>Apache Syncope Enduser</title>"
+     }
+    }
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "sling-probe-positive",
+   "description": "A recorded answer to the probe that carries every marker.",
+   "group": [
+    {
+     "technology": "apache-sling",
+     "observation": "probe_response",
+     "target": "body",
+     "operator": "contains",
+     "pattern": "Apache Sling",
+     "probe_path": "/starter.html"
+    },
+    {
+     "technology": "apache-sling",
+     "observation": "probe_response",
+     "target": "body",
+     "operator": "contains",
+     "pattern": "sling.apache",
+     "probe_path": "/starter.html"
+    },
+    {
+     "technology": "apache-sling",
+     "observation": "probe_response",
+     "target": "status",
+     "operator": "equals",
+     "pattern": "200",
+     "probe_path": "/starter.html"
+    }
+   ],
+   "input": {
+    "probes": {
+     "/starter.html": {
+      "status": 200,
+      "body": "<a href=\"https://sling.apache.org\">Apache Sling</a>"
+     }
+    }
+   },
+   "expect": {
+    "match": true
+   }
+  },
+  {
+   "id": "sling-probe-negative-other-page",
+   "description": "The probed path answers 200 with a different page.",
+   "group": [
+    {
+     "technology": "apache-sling",
+     "observation": "probe_response",
+     "target": "body",
+     "operator": "contains",
+     "pattern": "Apache Sling",
+     "probe_path": "/starter.html"
+    },
+    {
+     "technology": "apache-sling",
+     "observation": "probe_response",
+     "target": "body",
+     "operator": "contains",
+     "pattern": "sling.apache",
+     "probe_path": "/starter.html"
+    },
+    {
+     "technology": "apache-sling",
+     "observation": "probe_response",
+     "target": "status",
+     "operator": "equals",
+     "pattern": "200",
+     "probe_path": "/starter.html"
+    }
+   ],
+   "input": {
+    "probes": {
+     "/starter.html": {
+      "status": 200,
+      "body": "<html>Starter</html>"
+     }
+    }
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "sling-probe-negative-status",
+   "description": "The group requires status 200: a 404 with the same body is not detected.",
+   "group": [
+    {
+     "technology": "apache-sling",
+     "observation": "probe_response",
+     "target": "body",
+     "operator": "contains",
+     "pattern": "Apache Sling",
+     "probe_path": "/starter.html"
+    },
+    {
+     "technology": "apache-sling",
+     "observation": "probe_response",
+     "target": "body",
+     "operator": "contains",
+     "pattern": "sling.apache",
+     "probe_path": "/starter.html"
+    },
+    {
+     "technology": "apache-sling",
+     "observation": "probe_response",
+     "target": "status",
+     "operator": "equals",
+     "pattern": "200",
+     "probe_path": "/starter.html"
+    }
+   ],
+   "input": {
+    "probes": {
+     "/starter.html": {
+      "status": 404,
+      "body": "<a href=\"https://sling.apache.org\">Apache Sling</a>"
+     }
+    }
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "sling-probe-negative-partial",
+   "description": "All members are needed; one marker alone is not enough.",
+   "group": [
+    {
+     "technology": "apache-sling",
+     "observation": "probe_response",
+     "target": "body",
+     "operator": "contains",
+     "pattern": "Apache Sling",
+     "probe_path": "/starter.html"
+    },
+    {
+     "technology": "apache-sling",
+     "observation": "probe_response",
+     "target": "body",
+     "operator": "contains",
+     "pattern": "sling.apache",
+     "probe_path": "/starter.html"
+    },
+    {
+     "technology": "apache-sling",
+     "observation": "probe_response",
+     "target": "status",
+     "operator": "equals",
+     "pattern": "200",
+     "probe_path": "/starter.html"
+    }
+   ],
+   "input": {
+    "probes": {
+     "/starter.html": {
+      "status": 200,
+      "body": "Apache Sling"
+     }
+    }
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "kyuubi-probe-positive",
+   "description": "A recorded answer to the probe that carries every marker.",
+   "group": [
+    {
+     "technology": "apache-kyuubi",
+     "observation": "probe_response",
+     "target": "body",
+     "operator": "contains",
+     "pattern": "<title>Apache Kyuubi Dashboard",
+     "probe_path": "/ui/"
+    },
+    {
+     "technology": "apache-kyuubi",
+     "observation": "probe_response",
+     "target": "status",
+     "operator": "equals",
+     "pattern": "200",
+     "probe_path": "/ui/"
+    }
+   ],
+   "input": {
+    "probes": {
+     "/ui/": {
+      "status": 200,
+      "body": "<title>Apache Kyuubi Dashboard</title>"
+     }
+    }
+   },
+   "expect": {
+    "match": true
+   }
+  },
+  {
+   "id": "kyuubi-probe-negative-other-page",
+   "description": "The probed path answers 200 with a different page.",
+   "group": [
+    {
+     "technology": "apache-kyuubi",
+     "observation": "probe_response",
+     "target": "body",
+     "operator": "contains",
+     "pattern": "<title>Apache Kyuubi Dashboard",
+     "probe_path": "/ui/"
+    },
+    {
+     "technology": "apache-kyuubi",
+     "observation": "probe_response",
+     "target": "status",
+     "operator": "equals",
+     "pattern": "200",
+     "probe_path": "/ui/"
+    }
+   ],
+   "input": {
+    "probes": {
+     "/ui/": {
+      "status": 200,
+      "body": "<title>Dashboard</title>"
+     }
+    }
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "kyuubi-probe-negative-status",
+   "description": "The group requires status 200: a 404 with the same body is not detected.",
+   "group": [
+    {
+     "technology": "apache-kyuubi",
+     "observation": "probe_response",
+     "target": "body",
+     "operator": "contains",
+     "pattern": "<title>Apache Kyuubi Dashboard",
+     "probe_path": "/ui/"
+    },
+    {
+     "technology": "apache-kyuubi",
+     "observation": "probe_response",
+     "target": "status",
+     "operator": "equals",
+     "pattern": "200",
+     "probe_path": "/ui/"
+    }
+   ],
+   "input": {
+    "probes": {
+     "/ui/": {
+      "status": 404,
+      "body": "<title>Apache Kyuubi Dashboard</title>"
+     }
+    }
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "gravitino-probe-positive",
+   "description": "A recorded answer to the probe that carries every marker.",
+   "group": [
+    {
+     "technology": "apache-gravitino",
+     "observation": "probe_response",
+     "target": "body",
+     "operator": "contains",
+     "pattern": "<title>Gravitino",
+     "probe_path": "/ui/metalakes"
+    },
+    {
+     "technology": "apache-gravitino",
+     "observation": "probe_response",
+     "target": "status",
+     "operator": "equals",
+     "pattern": "200",
+     "probe_path": "/ui/metalakes"
+    }
+   ],
+   "input": {
+    "probes": {
+     "/ui/metalakes": {
+      "status": 200,
+      "body": "<title>Gravitino</title>"
+     }
+    }
+   },
+   "expect": {
+    "match": true
+   }
+  },
+  {
+   "id": "gravitino-probe-negative-other-page",
+   "description": "The probed path answers 200 with a different page.",
+   "group": [
+    {
+     "technology": "apache-gravitino",
+     "observation": "probe_response",
+     "target": "body",
+     "operator": "contains",
+     "pattern": "<title>Gravitino",
+     "probe_path": "/ui/metalakes"
+    },
+    {
+     "technology": "apache-gravitino",
+     "observation": "probe_response",
+     "target": "status",
+     "operator": "equals",
+     "pattern": "200",
+     "probe_path": "/ui/metalakes"
+    }
+   ],
+   "input": {
+    "probes": {
+     "/ui/metalakes": {
+      "status": 200,
+      "body": "<title>Metalakes</title>"
+     }
+    }
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "gravitino-probe-negative-status",
+   "description": "The group requires status 200: a 404 with the same body is not detected.",
+   "group": [
+    {
+     "technology": "apache-gravitino",
+     "observation": "probe_response",
+     "target": "body",
+     "operator": "contains",
+     "pattern": "<title>Gravitino",
+     "probe_path": "/ui/metalakes"
+    },
+    {
+     "technology": "apache-gravitino",
+     "observation": "probe_response",
+     "target": "status",
+     "operator": "equals",
+     "pattern": "200",
+     "probe_path": "/ui/metalakes"
+    }
+   ],
+   "input": {
+    "probes": {
+     "/ui/metalakes": {
+      "status": 404,
+      "body": "<title>Gravitino</title>"
+     }
+    }
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "ozone-probe-positive",
+   "description": "A recorded answer to the probe that carries every marker.",
+   "group": [
+    {
+     "technology": "apache-ozone",
+     "observation": "probe_response",
+     "target": "body",
+     "operator": "contains",
+     "pattern": "Apache Ozone</title>",
+     "probe_path": "/static/"
+    },
+    {
+     "technology": "apache-ozone",
+     "observation": "probe_response",
+     "target": "status",
+     "operator": "equals",
+     "pattern": "200",
+     "probe_path": "/static/"
+    }
+   ],
+   "input": {
+    "probes": {
+     "/static/": {
+      "status": 200,
+      "body": "<title>Apache Ozone</title>"
+     }
+    }
+   },
+   "expect": {
+    "match": true
+   }
+  },
+  {
+   "id": "ozone-probe-negative-other-page",
+   "description": "The probed path answers 200 with a different page.",
+   "group": [
+    {
+     "technology": "apache-ozone",
+     "observation": "probe_response",
+     "target": "body",
+     "operator": "contains",
+     "pattern": "Apache Ozone</title>",
+     "probe_path": "/static/"
+    },
+    {
+     "technology": "apache-ozone",
+     "observation": "probe_response",
+     "target": "status",
+     "operator": "equals",
+     "pattern": "200",
+     "probe_path": "/static/"
+    }
+   ],
+   "input": {
+    "probes": {
+     "/static/": {
+      "status": 200,
+      "body": "<title>Static</title>"
+     }
+    }
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "ozone-probe-negative-status",
+   "description": "The group requires status 200: a 404 with the same body is not detected.",
+   "group": [
+    {
+     "technology": "apache-ozone",
+     "observation": "probe_response",
+     "target": "body",
+     "operator": "contains",
+     "pattern": "Apache Ozone</title>",
+     "probe_path": "/static/"
+    },
+    {
+     "technology": "apache-ozone",
+     "observation": "probe_response",
+     "target": "status",
+     "operator": "equals",
+     "pattern": "200",
+     "probe_path": "/static/"
+    }
+   ],
+   "input": {
+    "probes": {
+     "/static/": {
+      "status": 404,
+      "body": "<title>Apache Ozone</title>"
+     }
+    }
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "gitea-powered-probe-positive",
+   "description": "A recorded answer to the probe that carries every marker.",
+   "group": [
+    {
+     "technology": "gitea",
+     "observation": "probe_response",
+     "target": "body",
+     "operator": "contains",
+     "pattern": "Powered by Gitea",
+     "probe_path": "/user/login"
+    },
+    {
+     "technology": "gitea",
+     "observation": "probe_response",
+     "target": "status",
+     "operator": "equals",
+     "pattern": "200",
+     "probe_path": "/user/login"
+    }
+   ],
+   "input": {
+    "probes": {
+     "/user/login": {
+      "status": 200,
+      "body": "<footer>Powered by Gitea Version: 1.21</footer>"
+     }
+    }
+   },
+   "expect": {
+    "match": true
+   }
+  },
+  {
+   "id": "gitea-powered-probe-negative-other-page",
+   "description": "The probed path answers 200 with a different page.",
+   "group": [
+    {
+     "technology": "gitea",
+     "observation": "probe_response",
+     "target": "body",
+     "operator": "contains",
+     "pattern": "Powered by Gitea",
+     "probe_path": "/user/login"
+    },
+    {
+     "technology": "gitea",
+     "observation": "probe_response",
+     "target": "status",
+     "operator": "equals",
+     "pattern": "200",
+     "probe_path": "/user/login"
+    }
+   ],
+   "input": {
+    "probes": {
+     "/user/login": {
+      "status": 200,
+      "body": "<footer>Powered by GitLab</footer>"
+     }
+    }
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "gitea-powered-probe-negative-status",
+   "description": "The group requires status 200: a 404 with the same body is not detected.",
+   "group": [
+    {
+     "technology": "gitea",
+     "observation": "probe_response",
+     "target": "body",
+     "operator": "contains",
+     "pattern": "Powered by Gitea",
+     "probe_path": "/user/login"
+    },
+    {
+     "technology": "gitea",
+     "observation": "probe_response",
+     "target": "status",
+     "operator": "equals",
+     "pattern": "200",
+     "probe_path": "/user/login"
+    }
+   ],
+   "input": {
+    "probes": {
+     "/user/login": {
+      "status": 404,
+      "body": "<footer>Powered by Gitea Version: 1.21</footer>"
+     }
+    }
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "gitea-meta-probe-positive",
+   "description": "A recorded answer to the probe that carries every marker.",
+   "group": [
+    {
+     "technology": "gitea",
+     "observation": "probe_response",
+     "target": "body",
+     "operator": "contains",
+     "pattern": "content=\"Gitea",
+     "probe_path": "/user/login"
+    },
+    {
+     "technology": "gitea",
+     "observation": "probe_response",
+     "target": "status",
+     "operator": "equals",
+     "pattern": "200",
+     "probe_path": "/user/login"
+    }
+   ],
+   "input": {
+    "probes": {
+     "/user/login": {
+      "status": 200,
+      "body": "<meta name=\"description\" content=\"Gitea (Git with a cup of tea)\">"
+     }
+    }
+   },
+   "expect": {
+    "match": true
+   }
+  },
+  {
+   "id": "gitea-meta-probe-negative-other-page",
+   "description": "The probed path answers 200 with a different page.",
+   "group": [
+    {
+     "technology": "gitea",
+     "observation": "probe_response",
+     "target": "body",
+     "operator": "contains",
+     "pattern": "content=\"Gitea",
+     "probe_path": "/user/login"
+    },
+    {
+     "technology": "gitea",
+     "observation": "probe_response",
+     "target": "status",
+     "operator": "equals",
+     "pattern": "200",
+     "probe_path": "/user/login"
+    }
+   ],
+   "input": {
+    "probes": {
+     "/user/login": {
+      "status": 200,
+      "body": "<meta name=\"description\" content=\"Git hosting\">"
+     }
+    }
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "gitea-meta-probe-negative-status",
+   "description": "The group requires status 200: a 404 with the same body is not detected.",
+   "group": [
+    {
+     "technology": "gitea",
+     "observation": "probe_response",
+     "target": "body",
+     "operator": "contains",
+     "pattern": "content=\"Gitea",
+     "probe_path": "/user/login"
+    },
+    {
+     "technology": "gitea",
+     "observation": "probe_response",
+     "target": "status",
+     "operator": "equals",
+     "pattern": "200",
+     "probe_path": "/user/login"
+    }
+   ],
+   "input": {
+    "probes": {
+     "/user/login": {
+      "status": 404,
+      "body": "<meta name=\"description\" content=\"Gitea (Git with a cup of tea)\">"
+     }
+    }
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "harbor-probe-positive",
+   "description": "A recorded answer to the probe that carries every marker.",
+   "group": [
+    {
+     "technology": "harbor",
+     "observation": "probe_response",
+     "target": "body",
+     "operator": "contains",
+     "pattern": "\"auth_mode\"",
+     "probe_path": "/api/v2.0/systeminfo"
+    },
+    {
+     "technology": "harbor",
+     "observation": "probe_response",
+     "target": "body",
+     "operator": "contains",
+     "pattern": "\"harbor_version\"",
+     "probe_path": "/api/v2.0/systeminfo"
+    },
+    {
+     "technology": "harbor",
+     "observation": "probe_response",
+     "target": "status",
+     "operator": "equals",
+     "pattern": "200",
+     "probe_path": "/api/v2.0/systeminfo"
+    }
+   ],
+   "input": {
+    "probes": {
+     "/api/v2.0/systeminfo": {
+      "status": 200,
+      "body": "{\"auth_mode\":\"db_auth\",\"harbor_version\":\"v2.10.0\"}",
+      "headers": {
+       "Content-Type": "application/json"
+      }
+     }
+    }
+   },
+   "expect": {
+    "match": true
+   }
+  },
+  {
+   "id": "harbor-probe-negative-other-page",
+   "description": "The probed path answers 200 with a different page.",
+   "group": [
+    {
+     "technology": "harbor",
+     "observation": "probe_response",
+     "target": "body",
+     "operator": "contains",
+     "pattern": "\"auth_mode\"",
+     "probe_path": "/api/v2.0/systeminfo"
+    },
+    {
+     "technology": "harbor",
+     "observation": "probe_response",
+     "target": "body",
+     "operator": "contains",
+     "pattern": "\"harbor_version\"",
+     "probe_path": "/api/v2.0/systeminfo"
+    },
+    {
+     "technology": "harbor",
+     "observation": "probe_response",
+     "target": "status",
+     "operator": "equals",
+     "pattern": "200",
+     "probe_path": "/api/v2.0/systeminfo"
+    }
+   ],
+   "input": {
+    "probes": {
+     "/api/v2.0/systeminfo": {
+      "status": 200,
+      "body": "{\"auth_mode\":\"db_auth\"}",
+      "headers": {
+       "Content-Type": "application/json"
+      }
+     }
+    }
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "harbor-probe-negative-status",
+   "description": "The group requires status 200: a 404 with the same body is not detected.",
+   "group": [
+    {
+     "technology": "harbor",
+     "observation": "probe_response",
+     "target": "body",
+     "operator": "contains",
+     "pattern": "\"auth_mode\"",
+     "probe_path": "/api/v2.0/systeminfo"
+    },
+    {
+     "technology": "harbor",
+     "observation": "probe_response",
+     "target": "body",
+     "operator": "contains",
+     "pattern": "\"harbor_version\"",
+     "probe_path": "/api/v2.0/systeminfo"
+    },
+    {
+     "technology": "harbor",
+     "observation": "probe_response",
+     "target": "status",
+     "operator": "equals",
+     "pattern": "200",
+     "probe_path": "/api/v2.0/systeminfo"
+    }
+   ],
+   "input": {
+    "probes": {
+     "/api/v2.0/systeminfo": {
+      "status": 404,
+      "body": "{\"auth_mode\":\"db_auth\",\"harbor_version\":\"v2.10.0\"}",
+      "headers": {
+       "Content-Type": "application/json"
+      }
+     }
+    }
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "harbor-probe-negative-partial",
+   "description": "All members are needed; one marker alone is not enough.",
+   "group": [
+    {
+     "technology": "harbor",
+     "observation": "probe_response",
+     "target": "body",
+     "operator": "contains",
+     "pattern": "\"auth_mode\"",
+     "probe_path": "/api/v2.0/systeminfo"
+    },
+    {
+     "technology": "harbor",
+     "observation": "probe_response",
+     "target": "body",
+     "operator": "contains",
+     "pattern": "\"harbor_version\"",
+     "probe_path": "/api/v2.0/systeminfo"
+    },
+    {
+     "technology": "harbor",
+     "observation": "probe_response",
+     "target": "status",
+     "operator": "equals",
+     "pattern": "200",
+     "probe_path": "/api/v2.0/systeminfo"
+    }
+   ],
+   "input": {
+    "probes": {
+     "/api/v2.0/systeminfo": {
+      "status": 200,
+      "body": "{\"auth_mode\":\"db_auth\"}",
+      "headers": {
+       "Content-Type": "application/json"
+      }
+     }
+    }
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "jira-serverinfo-probe-positive",
+   "description": "A recorded answer to the probe that carries every marker.",
+   "group": [
+    {
+     "technology": "jira-rest-api-server-information",
+     "observation": "probe_response",
+     "target": "body",
+     "operator": "contains",
+     "pattern": "\"baseUrl\"",
+     "probe_path": "/rest/api/latest/serverInfo"
+    },
+    {
+     "technology": "jira-rest-api-server-information",
+     "observation": "probe_response",
+     "target": "body",
+     "operator": "contains",
+     "pattern": "\"deploymentType\"",
+     "probe_path": "/rest/api/latest/serverInfo"
+    },
+    {
+     "technology": "jira-rest-api-server-information",
+     "observation": "probe_response",
+     "target": "status",
+     "operator": "equals",
+     "pattern": "200",
+     "probe_path": "/rest/api/latest/serverInfo"
+    }
+   ],
+   "input": {
+    "probes": {
+     "/rest/api/latest/serverInfo": {
+      "status": 200,
+      "body": "{\"baseUrl\":\"https://jira.example.org\",\"version\":\"9.12.1\",\"deploymentType\":\"Server\"}",
+      "headers": {
+       "Content-Type": "application/json"
+      }
+     }
+    }
+   },
+   "expect": {
+    "match": true
+   }
+  },
+  {
+   "id": "jira-serverinfo-probe-negative-other-page",
+   "description": "The probed path answers 200 with a different page.",
+   "group": [
+    {
+     "technology": "jira-rest-api-server-information",
+     "observation": "probe_response",
+     "target": "body",
+     "operator": "contains",
+     "pattern": "\"baseUrl\"",
+     "probe_path": "/rest/api/latest/serverInfo"
+    },
+    {
+     "technology": "jira-rest-api-server-information",
+     "observation": "probe_response",
+     "target": "body",
+     "operator": "contains",
+     "pattern": "\"deploymentType\"",
+     "probe_path": "/rest/api/latest/serverInfo"
+    },
+    {
+     "technology": "jira-rest-api-server-information",
+     "observation": "probe_response",
+     "target": "status",
+     "operator": "equals",
+     "pattern": "200",
+     "probe_path": "/rest/api/latest/serverInfo"
+    }
+   ],
+   "input": {
+    "probes": {
+     "/rest/api/latest/serverInfo": {
+      "status": 200,
+      "body": "{\"baseUrl\":\"https://example.org\"}",
+      "headers": {
+       "Content-Type": "application/json"
+      }
+     }
+    }
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "jira-serverinfo-probe-negative-status",
+   "description": "The group requires status 200: a 404 with the same body is not detected.",
+   "group": [
+    {
+     "technology": "jira-rest-api-server-information",
+     "observation": "probe_response",
+     "target": "body",
+     "operator": "contains",
+     "pattern": "\"baseUrl\"",
+     "probe_path": "/rest/api/latest/serverInfo"
+    },
+    {
+     "technology": "jira-rest-api-server-information",
+     "observation": "probe_response",
+     "target": "body",
+     "operator": "contains",
+     "pattern": "\"deploymentType\"",
+     "probe_path": "/rest/api/latest/serverInfo"
+    },
+    {
+     "technology": "jira-rest-api-server-information",
+     "observation": "probe_response",
+     "target": "status",
+     "operator": "equals",
+     "pattern": "200",
+     "probe_path": "/rest/api/latest/serverInfo"
+    }
+   ],
+   "input": {
+    "probes": {
+     "/rest/api/latest/serverInfo": {
+      "status": 404,
+      "body": "{\"baseUrl\":\"https://jira.example.org\",\"version\":\"9.12.1\",\"deploymentType\":\"Server\"}",
+      "headers": {
+       "Content-Type": "application/json"
+      }
+     }
+    }
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "jira-serverinfo-probe-negative-partial",
+   "description": "All members are needed; one marker alone is not enough.",
+   "group": [
+    {
+     "technology": "jira-rest-api-server-information",
+     "observation": "probe_response",
+     "target": "body",
+     "operator": "contains",
+     "pattern": "\"baseUrl\"",
+     "probe_path": "/rest/api/latest/serverInfo"
+    },
+    {
+     "technology": "jira-rest-api-server-information",
+     "observation": "probe_response",
+     "target": "body",
+     "operator": "contains",
+     "pattern": "\"deploymentType\"",
+     "probe_path": "/rest/api/latest/serverInfo"
+    },
+    {
+     "technology": "jira-rest-api-server-information",
+     "observation": "probe_response",
+     "target": "status",
+     "operator": "equals",
+     "pattern": "200",
+     "probe_path": "/rest/api/latest/serverInfo"
+    }
+   ],
+   "input": {
+    "probes": {
+     "/rest/api/latest/serverInfo": {
+      "status": 200,
+      "body": "{\"baseUrl\":\"https://example.org\"}",
+      "headers": {
+       "Content-Type": "application/json"
+      }
+     }
+    }
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "nextcloud-probe-positive",
+   "description": "A recorded answer to the probe that carries every marker.",
+   "group": [
+    {
+     "technology": "nextcloud-server",
+     "observation": "probe_response",
+     "target": "body",
+     "operator": "contains",
+     "pattern": "var nc_lastLogin",
+     "probe_path": "/login"
+    },
+    {
+     "technology": "nextcloud-server",
+     "observation": "probe_response",
+     "target": "body",
+     "operator": "contains",
+     "pattern": "var nc_pageLoad",
+     "probe_path": "/login"
+    },
+    {
+     "technology": "nextcloud-server",
+     "observation": "probe_response",
+     "target": "status",
+     "operator": "equals",
+     "pattern": "200",
+     "probe_path": "/login"
+    }
+   ],
+   "input": {
+    "probes": {
+     "/login": {
+      "status": 200,
+      "body": "<script>var nc_lastLogin = 0; var nc_pageLoad = 1;</script>"
+     }
+    }
+   },
+   "expect": {
+    "match": true
+   }
+  },
+  {
+   "id": "nextcloud-probe-negative-other-page",
+   "description": "The probed path answers 200 with a different page.",
+   "group": [
+    {
+     "technology": "nextcloud-server",
+     "observation": "probe_response",
+     "target": "body",
+     "operator": "contains",
+     "pattern": "var nc_lastLogin",
+     "probe_path": "/login"
+    },
+    {
+     "technology": "nextcloud-server",
+     "observation": "probe_response",
+     "target": "body",
+     "operator": "contains",
+     "pattern": "var nc_pageLoad",
+     "probe_path": "/login"
+    },
+    {
+     "technology": "nextcloud-server",
+     "observation": "probe_response",
+     "target": "status",
+     "operator": "equals",
+     "pattern": "200",
+     "probe_path": "/login"
+    }
+   ],
+   "input": {
+    "probes": {
+     "/login": {
+      "status": 200,
+      "body": "<script>var app = 1;</script>"
+     }
+    }
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "nextcloud-probe-negative-status",
+   "description": "The group requires status 200: a 404 with the same body is not detected.",
+   "group": [
+    {
+     "technology": "nextcloud-server",
+     "observation": "probe_response",
+     "target": "body",
+     "operator": "contains",
+     "pattern": "var nc_lastLogin",
+     "probe_path": "/login"
+    },
+    {
+     "technology": "nextcloud-server",
+     "observation": "probe_response",
+     "target": "body",
+     "operator": "contains",
+     "pattern": "var nc_pageLoad",
+     "probe_path": "/login"
+    },
+    {
+     "technology": "nextcloud-server",
+     "observation": "probe_response",
+     "target": "status",
+     "operator": "equals",
+     "pattern": "200",
+     "probe_path": "/login"
+    }
+   ],
+   "input": {
+    "probes": {
+     "/login": {
+      "status": 404,
+      "body": "<script>var nc_lastLogin = 0; var nc_pageLoad = 1;</script>"
+     }
+    }
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "nextcloud-probe-negative-partial",
+   "description": "All members are needed; one marker alone is not enough.",
+   "group": [
+    {
+     "technology": "nextcloud-server",
+     "observation": "probe_response",
+     "target": "body",
+     "operator": "contains",
+     "pattern": "var nc_lastLogin",
+     "probe_path": "/login"
+    },
+    {
+     "technology": "nextcloud-server",
+     "observation": "probe_response",
+     "target": "body",
+     "operator": "contains",
+     "pattern": "var nc_pageLoad",
+     "probe_path": "/login"
+    },
+    {
+     "technology": "nextcloud-server",
+     "observation": "probe_response",
+     "target": "status",
+     "operator": "equals",
+     "pattern": "200",
+     "probe_path": "/login"
+    }
+   ],
+   "input": {
+    "probes": {
+     "/login": {
+      "status": 200,
+      "body": "var nc_lastLogin = 0;"
+     }
+    }
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "nifi-login-probe-positive",
+   "description": "A recorded answer to the probe that carries every marker.",
+   "group": [
+    {
+     "technology": "apache-nifi",
+     "observation": "probe_response",
+     "target": "body",
+     "operator": "regex",
+     "pattern": "(?-i)supportsLogin",
+     "probe_path": "/access/config"
+    },
+    {
+     "technology": "apache-nifi",
+     "observation": "probe_response",
+     "target": "status",
+     "operator": "equals",
+     "pattern": "200",
+     "probe_path": "/access/config"
+    }
+   ],
+   "input": {
+    "probes": {
+     "/access/config": {
+      "status": 200,
+      "body": "{\"config\":{\"supportsLogin\":true}}",
+      "headers": {
+       "Content-Type": "application/json"
+      }
+     }
+    }
+   },
+   "expect": {
+    "match": true
+   }
+  },
+  {
+   "id": "nifi-login-probe-negative-other-page",
+   "description": "The probed path answers 200 with a different page.",
+   "group": [
+    {
+     "technology": "apache-nifi",
+     "observation": "probe_response",
+     "target": "body",
+     "operator": "regex",
+     "pattern": "(?-i)supportsLogin",
+     "probe_path": "/access/config"
+    },
+    {
+     "technology": "apache-nifi",
+     "observation": "probe_response",
+     "target": "status",
+     "operator": "equals",
+     "pattern": "200",
+     "probe_path": "/access/config"
+    }
+   ],
+   "input": {
+    "probes": {
+     "/access/config": {
+      "status": 200,
+      "body": "{\"config\":{}}",
+      "headers": {
+       "Content-Type": "application/json"
+      }
+     }
+    }
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "nifi-login-probe-negative-status",
+   "description": "The group requires status 200: a 404 with the same body is not detected.",
+   "group": [
+    {
+     "technology": "apache-nifi",
+     "observation": "probe_response",
+     "target": "body",
+     "operator": "regex",
+     "pattern": "(?-i)supportsLogin",
+     "probe_path": "/access/config"
+    },
+    {
+     "technology": "apache-nifi",
+     "observation": "probe_response",
+     "target": "status",
+     "operator": "equals",
+     "pattern": "200",
+     "probe_path": "/access/config"
+    }
+   ],
+   "input": {
+    "probes": {
+     "/access/config": {
+      "status": 404,
+      "body": "{\"config\":{\"supportsLogin\":true}}",
+      "headers": {
+       "Content-Type": "application/json"
+      }
+     }
+    }
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "nifi-snapshots-probe-positive",
+   "description": "A recorded answer to the probe that carries every marker.",
+   "group": [
+    {
+     "technology": "apache-nifi",
+     "observation": "probe_response",
+     "target": "body",
+     "operator": "regex",
+     "pattern": "(?-i)(aggregate|node)Snapshots?",
+     "probe_path": "/access/config"
+    },
+    {
+     "technology": "apache-nifi",
+     "observation": "probe_response",
+     "target": "status",
+     "operator": "equals",
+     "pattern": "200",
+     "probe_path": "/access/config"
+    }
+   ],
+   "input": {
+    "probes": {
+     "/access/config": {
+      "status": 200,
+      "body": "{\"nodeSnapshots\":[]}",
+      "headers": {
+       "Content-Type": "application/json"
+      }
+     }
+    }
+   },
+   "expect": {
+    "match": true
+   }
+  },
+  {
+   "id": "nifi-snapshots-probe-negative-other-page",
+   "description": "The probed path answers 200 with a different page.",
+   "group": [
+    {
+     "technology": "apache-nifi",
+     "observation": "probe_response",
+     "target": "body",
+     "operator": "regex",
+     "pattern": "(?-i)(aggregate|node)Snapshots?",
+     "probe_path": "/access/config"
+    },
+    {
+     "technology": "apache-nifi",
+     "observation": "probe_response",
+     "target": "status",
+     "operator": "equals",
+     "pattern": "200",
+     "probe_path": "/access/config"
+    }
+   ],
+   "input": {
+    "probes": {
+     "/access/config": {
+      "status": 200,
+      "body": "{\"snapshots\":[]}",
+      "headers": {
+       "Content-Type": "application/json"
+      }
+     }
+    }
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "nifi-snapshots-probe-negative-status",
+   "description": "The group requires status 200: a 404 with the same body is not detected.",
+   "group": [
+    {
+     "technology": "apache-nifi",
+     "observation": "probe_response",
+     "target": "body",
+     "operator": "regex",
+     "pattern": "(?-i)(aggregate|node)Snapshots?",
+     "probe_path": "/access/config"
+    },
+    {
+     "technology": "apache-nifi",
+     "observation": "probe_response",
+     "target": "status",
+     "operator": "equals",
+     "pattern": "200",
+     "probe_path": "/access/config"
+    }
+   ],
+   "input": {
+    "probes": {
+     "/access/config": {
+      "status": 404,
+      "body": "{\"nodeSnapshots\":[]}",
+      "headers": {
+       "Content-Type": "application/json"
+      }
+     }
+    }
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "splunk-hec-probe-positive",
+   "description": "A recorded answer to the probe that carries every marker.",
+   "group": [
+    {
+     "technology": "splunk-hec",
+     "observation": "probe_response",
+     "target": "status",
+     "operator": "equals",
+     "pattern": "200",
+     "probe_path": "/services/collector/health"
+    },
+    {
+     "technology": "splunk-hec",
+     "observation": "probe_response",
+     "target": "body",
+     "operator": "contains",
+     "pattern": "text\":\"HEC is healthy\",\"code",
+     "probe_path": "/services/collector/health"
+    },
+    {
+     "technology": "splunk-hec",
+     "observation": "probe_response",
+     "target": "headers",
+     "operator": "contains",
+     "pattern": "application/json",
+     "probe_path": "/services/collector/health"
+    }
+   ],
+   "input": {
+    "probes": {
+     "/services/collector/health": {
+      "status": 200,
+      "body": "{\"text\":\"HEC is healthy\",\"code\":17}",
+      "headers": {
+       "Content-Type": "application/json"
+      }
+     }
+    }
+   },
+   "expect": {
+    "match": true
+   }
+  },
+  {
+   "id": "splunk-hec-probe-negative-other-page",
+   "description": "The probed path answers 200 with a different page.",
+   "group": [
+    {
+     "technology": "splunk-hec",
+     "observation": "probe_response",
+     "target": "status",
+     "operator": "equals",
+     "pattern": "200",
+     "probe_path": "/services/collector/health"
+    },
+    {
+     "technology": "splunk-hec",
+     "observation": "probe_response",
+     "target": "body",
+     "operator": "contains",
+     "pattern": "text\":\"HEC is healthy\",\"code",
+     "probe_path": "/services/collector/health"
+    },
+    {
+     "technology": "splunk-hec",
+     "observation": "probe_response",
+     "target": "headers",
+     "operator": "contains",
+     "pattern": "application/json",
+     "probe_path": "/services/collector/health"
+    }
+   ],
+   "input": {
+    "probes": {
+     "/services/collector/health": {
+      "status": 200,
+      "body": "{\"text\":\"ok\"}",
+      "headers": {
+       "Content-Type": "application/json"
+      }
+     }
+    }
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "splunk-hec-probe-negative-status",
+   "description": "The group requires status 200: a 404 with the same body is not detected.",
+   "group": [
+    {
+     "technology": "splunk-hec",
+     "observation": "probe_response",
+     "target": "status",
+     "operator": "equals",
+     "pattern": "200",
+     "probe_path": "/services/collector/health"
+    },
+    {
+     "technology": "splunk-hec",
+     "observation": "probe_response",
+     "target": "body",
+     "operator": "contains",
+     "pattern": "text\":\"HEC is healthy\",\"code",
+     "probe_path": "/services/collector/health"
+    },
+    {
+     "technology": "splunk-hec",
+     "observation": "probe_response",
+     "target": "headers",
+     "operator": "contains",
+     "pattern": "application/json",
+     "probe_path": "/services/collector/health"
+    }
+   ],
+   "input": {
+    "probes": {
+     "/services/collector/health": {
+      "status": 404,
+      "body": "{\"text\":\"HEC is healthy\",\"code\":17}",
+      "headers": {
+       "Content-Type": "application/json"
+      }
+     }
+    }
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "actuators-probe-positive",
+   "description": "A recorded answer to the probe that carries every marker.",
+   "group": [
+    {
+     "technology": "springboot-actuators",
+     "observation": "probe_response",
+     "target": "body",
+     "operator": "contains",
+     "pattern": "\"_links\":",
+     "probe_path": "/actuator"
+    },
+    {
+     "technology": "springboot-actuators",
+     "observation": "probe_response",
+     "target": "body",
+     "operator": "contains",
+     "pattern": "\"self\":",
+     "probe_path": "/actuator"
+    },
+    {
+     "technology": "springboot-actuators",
+     "observation": "probe_response",
+     "target": "body",
+     "operator": "contains",
+     "pattern": "\"health\"",
+     "probe_path": "/actuator"
+    }
+   ],
+   "input": {
+    "probes": {
+     "/actuator": {
+      "status": 200,
+      "body": "{\"_links\":{\"self\":{\"href\":\"/actuator\"},\"health\":{\"href\":\"/actuator/health\"}}}",
+      "headers": {
+       "Content-Type": "application/json"
+      }
+     }
+    }
+   },
+   "expect": {
+    "match": true
+   }
+  },
+  {
+   "id": "actuators-probe-negative-other-page",
+   "description": "The probed path answers 200 with a different page.",
+   "group": [
+    {
+     "technology": "springboot-actuators",
+     "observation": "probe_response",
+     "target": "body",
+     "operator": "contains",
+     "pattern": "\"_links\":",
+     "probe_path": "/actuator"
+    },
+    {
+     "technology": "springboot-actuators",
+     "observation": "probe_response",
+     "target": "body",
+     "operator": "contains",
+     "pattern": "\"self\":",
+     "probe_path": "/actuator"
+    },
+    {
+     "technology": "springboot-actuators",
+     "observation": "probe_response",
+     "target": "body",
+     "operator": "contains",
+     "pattern": "\"health\"",
+     "probe_path": "/actuator"
+    }
+   ],
+   "input": {
+    "probes": {
+     "/actuator": {
+      "status": 200,
+      "body": "{\"_links\":{\"next\":{\"href\":\"/p2\"}}}",
+      "headers": {
+       "Content-Type": "application/json"
+      }
+     }
+    }
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "jenkins-whoami-probe-positive",
+   "description": "A recorded answer to the probe that carries every marker.",
+   "group": [
+    {
+     "technology": "jenkins-2",
+     "observation": "probe_response",
+     "target": "headers",
+     "operator": "regex",
+     "pattern": "x-jenkins:",
+     "probe_path": "/whoAmI/"
+    },
+    {
+     "technology": "jenkins-2",
+     "observation": "probe_response",
+     "target": "body",
+     "operator": "contains",
+     "pattern": "Jenkins",
+     "probe_path": "/whoAmI/"
+    }
+   ],
+   "input": {
+    "probes": {
+     "/whoAmI/": {
+      "status": 200,
+      "body": "<title>Who Am I [Jenkins]</title>",
+      "headers": {
+       "X-Jenkins": "2.426.1"
+      }
+     }
+    }
+   },
+   "expect": {
+    "match": true
+   }
+  },
+  {
+   "id": "jenkins-whoami-probe-negative-other-page",
+   "description": "The probed path answers 200 with a different page.",
+   "group": [
+    {
+     "technology": "jenkins-2",
+     "observation": "probe_response",
+     "target": "headers",
+     "operator": "regex",
+     "pattern": "x-jenkins:",
+     "probe_path": "/whoAmI/"
+    },
+    {
+     "technology": "jenkins-2",
+     "observation": "probe_response",
+     "target": "body",
+     "operator": "contains",
+     "pattern": "Jenkins",
+     "probe_path": "/whoAmI/"
+    }
+   ],
+   "input": {
+    "probes": {
+     "/whoAmI/": {
+      "status": 200,
+      "body": "<title>Who</title>",
+      "headers": {
+       "X-Jenkins": "2.426.1"
+      }
+     }
+    }
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "magento-header-probe-positive",
+   "description": "A recorded answer to the probe that carries every marker.",
+   "group": [
+    {
+     "technology": "magento-2",
+     "observation": "probe_response",
+     "target": "headers",
+     "operator": "regex",
+     "pattern": "x-magento",
+     "probe_path": "/graphql?query=+{customerDownloadableProducts+{+items+{+date+download_url}}+}"
+    },
+    {
+     "technology": "magento-2",
+     "observation": "probe_response",
+     "target": "status",
+     "operator": "equals",
+     "pattern": "200",
+     "probe_path": "/graphql?query=+{customerDownloadableProducts+{+items+{+date+download_url}}+}"
+    }
+   ],
+   "input": {
+    "probes": {
+     "/graphql?query=+{customerDownloadableProducts+{+items+{+date+download_url}}+}": {
+      "status": 200,
+      "body": "{\"data\":null}",
+      "headers": {
+       "X-Magento-Cache-Debug": "HIT"
+      }
+     }
+    }
+   },
+   "expect": {
+    "match": true
+   }
+  },
+  {
+   "id": "magento-header-probe-negative-other-page",
+   "description": "The probed path answers 200 without an X-Magento header.",
+   "group": [
+    {
+     "technology": "magento-2",
+     "observation": "probe_response",
+     "target": "headers",
+     "operator": "regex",
+     "pattern": "x-magento",
+     "probe_path": "/graphql?query=+{customerDownloadableProducts+{+items+{+date+download_url}}+}"
+    },
+    {
+     "technology": "magento-2",
+     "observation": "probe_response",
+     "target": "status",
+     "operator": "equals",
+     "pattern": "200",
+     "probe_path": "/graphql?query=+{customerDownloadableProducts+{+items+{+date+download_url}}+}"
+    }
+   ],
+   "input": {
+    "probes": {
+     "/graphql?query=+{customerDownloadableProducts+{+items+{+date+download_url}}+}": {
+      "status": 200,
+      "body": "{\"data\":null}",
+      "headers": {
+       "X-Cache": "HIT"
+      }
+     }
+    }
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "magento-header-probe-negative-status",
+   "description": "The group requires status 200: a 404 with the same body is not detected.",
+   "group": [
+    {
+     "technology": "magento-2",
+     "observation": "probe_response",
+     "target": "headers",
+     "operator": "regex",
+     "pattern": "x-magento",
+     "probe_path": "/graphql?query=+{customerDownloadableProducts+{+items+{+date+download_url}}+}"
+    },
+    {
+     "technology": "magento-2",
+     "observation": "probe_response",
+     "target": "status",
+     "operator": "equals",
+     "pattern": "200",
+     "probe_path": "/graphql?query=+{customerDownloadableProducts+{+items+{+date+download_url}}+}"
+    }
+   ],
+   "input": {
+    "probes": {
+     "/graphql?query=+{customerDownloadableProducts+{+items+{+date+download_url}}+}": {
+      "status": 404,
+      "body": "{\"data\":null}",
+      "headers": {
+       "X-Magento-Cache-Debug": "HIT"
+      }
+     }
+    }
+   },
+   "expect": {
+    "match": false
+   }
   }
  ]
 }

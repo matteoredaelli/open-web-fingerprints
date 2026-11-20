@@ -102,5 +102,6 @@ func selects(s Selector, f domain.Fingerprint) bool {
 	return f.Observation == obs && f.Role == s.Role &&
 		(s.Target == "" || domain.NormalizeTarget(obs, f.Target) == domain.NormalizeTarget(obs, s.Target)) &&
 		(s.Operator == "" || string(f.Operator) == s.Operator) &&
-		(s.Pattern == "" || f.Pattern == s.Pattern)
+		(s.Pattern == "" || f.Pattern == s.Pattern) &&
+		(s.ProbePath == "" || (f.Probe != nil && f.Probe.Path == s.ProbePath))
 }

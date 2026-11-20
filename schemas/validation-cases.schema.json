@@ -224,6 +224,10 @@
         "pattern": {
           "type": "string"
         },
+        "probe_path": {
+          "type": "string",
+          "description": "The path the rule's probe requests; tells apart rules that differ only in it."
+        },
         "role": {
           "enum": [
             "version"

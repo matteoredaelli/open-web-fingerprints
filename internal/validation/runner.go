@@ -105,7 +105,8 @@ func resolve(s Selector, rules []domain.Fingerprint) (domain.Fingerprint, error)
 		if f.Observation != obs || f.Role != s.Role ||
 			(s.Target != "" && domain.NormalizeTarget(obs, f.Target) != domain.NormalizeTarget(obs, s.Target)) ||
 			(s.Operator != "" && string(f.Operator) != s.Operator) ||
-			(s.Pattern != "" && f.Pattern != s.Pattern) {
+			(s.Pattern != "" && f.Pattern != s.Pattern) ||
+			(s.ProbePath != "" && (f.Probe == nil || f.Probe.Path != s.ProbePath)) {
 			continue
 		}
 		found = append(found, f)

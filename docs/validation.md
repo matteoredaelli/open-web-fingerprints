@@ -76,7 +76,9 @@ members"). Listing only part of a group is refused, because it would test a
 weaker rule. The case matches if all members match, and the evidence (with its
 `fixture_ref`) is stored on **every** member of the group; a failure marks them
 all `broken`. A group needs its own positive and negative case to become `ok`.
-Probed members read the recorded answer to their path (`input.probes`).
+Probed members read the recorded answer to their path (`input.probes`). A nuclei
+template often repeats one matcher over several paths (Apache NiFi has seven groups with
+the same members), so a selector can add `probe_path` to say which one.
 
 ## Version rules
 
@@ -139,9 +141,10 @@ stale. The cases for the small fixture snapshot are in
 `validation/cases-nuclei/` is the same for nuclei groups, against a registry that holds
 **only** `projectdiscovery-nuclei-templates` at its own pinned revision
 (`CORPUS_NUCLEI_REVISION`); slugs there carry numeric suffixes where names collide
-(`jenkins-2`). It has **91 cases on about 40 groups** (web servers, the e-commerce and
-site-builder families, a few CMS and self-hosted tools), written by hand with realistic
-inputs, each with its reason. On that registry 76 of 5166 rules are `ok` after
+(`jenkins-2`). It has **158 cases on 57 groups**: web servers, the e-commerce and site-builder
+families, CMS and self-hosted tools, and 20 groups whose rules need a probe (tested
+against a recorded answer, nothing is requested). They are written by hand with realistic
+inputs, each with its reason. On that registry 126 of 5166 rules are `ok` after
 `fingerprint test --apply`.
 
 Rules that are weak by their own terms get **no positive case**, so they cannot become

@@ -163,3 +163,22 @@ func TestGroupCaseFileRules(t *testing.T) {
 		t.Errorf("a valid group case: %v", err)
 	}
 }
+
+func TestSelectorProbePath(t *testing.T) {
+	recs := nucleiRegistry(t)
+	mk := func(path string) validation.Loaded {
+		body := validation.Selector{Technology: "accellion", Observation: "probe_response", Target: "body", Pattern: "secured by accellion", ProbePath: path}
+		status := validation.Selector{Technology: "accellion", Observation: "probe_response", Target: "status", ProbePath: path}
+		return validation.Loaded{File: "g.json", Case: validation.Case{
+			ID: "p", Group: []validation.Selector{body, status},
+			Input:  matcher.Observation{Probes: map[string]matcher.ProbeResponse{"/cfadmin/": {Status: 200, Body: "secured by accellion"}}},
+			Expect: validation.Expect{Match: true},
+		}}
+	}
+	if r := validation.Run([]validation.Loaded{mk("/cfadmin/")}, recs)[0]; r.Status != validation.Pass {
+		t.Errorf("the right path selects the group: %s %q", r.Status, r.Message)
+	}
+	if r := validation.Run([]validation.Loaded{mk("/elsewhere/")}, recs)[0]; r.Status != validation.Error {
+		t.Errorf("a path no rule probes selects nothing: %s %q", r.Status, r.Message)
+	}
+}
