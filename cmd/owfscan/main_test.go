@@ -439,3 +439,26 @@ func TestRelatedCommand(t *testing.T) {
 		t.Errorf("a private target is refused:\n%s", out)
 	}
 }
+
+func TestRelatedTLDFlags(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { _, _ = w.Write([]byte("<p>x</p>")) }))
+	defer srv.Close()
+	reg := filepath.Join(t.TempDir(), "registry.json")
+	if err := os.WriteFile(reg, scantest.RegistryJSON(t), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	base := []string{"scan", "--registry", reg, "--allow-private", "--no-favicon"}
+	if out, err := run(t, "", append(base, "--no-dns", "--related-tlds", srv.URL)...); err == nil {
+		t.Errorf("--related-tlds needs --related:\n%s", out)
+	}
+	if out, err := run(t, "", append(base, "--no-dns", "--related", "--related-tlds", srv.URL)...); err == nil || !strings.Contains(err.Error(), "--no-dns") {
+		t.Errorf("--related-tlds cannot be used with --no-dns: %v\n%s", err, out)
+	}
+	if out, err := run(t, "", append(base, "--no-dns", "--related", "--related-tlds-list", "it,fr", srv.URL)...); err == nil {
+		t.Errorf("a list implies the option:\n%s", out)
+	}
+	// Without the option, --related alone runs and needs no DNS.
+	if out, err := run(t, "", append(base, "--no-dns", "--related", "--delay", "1ms", srv.URL)...); err != nil {
+		t.Errorf("--related alone: %v\n%s", err, out)
+	}
+}

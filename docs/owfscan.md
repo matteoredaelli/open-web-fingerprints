@@ -460,6 +460,33 @@ Results (read on 2026-11-20; a home page each, nothing else):
   `pirellihangarbicocca.org` are `probable` only because the home pages link to each other
   (no strong signal).
 
+### Other TLDs of the same name (`--related-tlds`)
+
+Off by default, because it means contacting names nobody pointed to. With `--related-tlds`
+the target's name is tried under ten other suffixes (`com org net eu fr it de es co.uk nl`,
+the target's own left out; `--related-tlds-list it,fr,...` replaces the list). Each name is
+looked up in DNS (also with `www.`); the ones that do not exist are not contacted. The others
+are read like any candidate (robots.txt, pause, `--related-max`) and compared. A name that
+exists carries only a **weak** signal (`name_variant`): anyone can register it. What decides is
+the rest: a certificate with the same organization, a shared token or identifier, or a home
+page that redirects to the target (`redirects_to_target`, strong). A name variant that merely
+links to the target stays a `candidate`. The default list is a judgement about where companies
+register their names, not a measure. It needs DNS (`--no-dns` refuses it).
+
+Results (read on 2026-11-20):
+
+- `michelin.com`: 9 names tried, 7 exist. `michelin.co.uk`, `.de`, `.es`, `.fr`, `.it` and
+  `.nl` are `probable`: the same certificate organization ("Manufacture Française des
+  Pneumatiques Michelin") and a link back to `michelin.com`. `michelin.eu` exists but did not
+  answer (timeout), so it stays a `candidate`.
+- `wikipedia.com` (which redirects to `www.wikipedia.org`): 24 candidates, 18 `probable`.
+  Eleven sister projects (`wikibooks.org`, `wikidata.org`, `wikimedia.org`, ...) through the
+  certificate and the links; `w.wiki` and `wmfusercontent.org` through the certificate alone;
+  `wikipedia.co.uk`, `.es`, `.eu` and `.com` because they redirect to the target.
+  `wikipedia.de` is a `candidate` (the name exists and links to the target, nothing stronger),
+  and `creativecommons.org` is a `candidate` (only linked). Six name variants were not read
+  because of the limit of 20 (`not_checked`).
+
 Limits: a signal that is only on a page other than the home page is missed; a site that
 builds its links with JavaScript needs `--browser` (the first page is then the rendered
 one); and a certificate that names no organization (most free certificates) gives no

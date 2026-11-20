@@ -194,9 +194,13 @@ const (
 type Related struct {
 	// Candidates is how many domains were found by any signal; Checked how many had their home
 	// page read (the rest hit the limit).
-	Candidates int             `json:"candidates"`
-	Checked    int             `json:"checked"`
-	Domains    []RelatedDomain `json:"domains"`
+	Candidates int `json:"candidates"`
+	Checked    int `json:"checked"`
+	// VariantsTried and VariantsResolved are set when the name was tried under other TLDs
+	// (--related-tlds): how many names were looked up and how many exist in DNS.
+	VariantsTried    int             `json:"variants_tried,omitempty"`
+	VariantsResolved int             `json:"variants_resolved,omitempty"`
+	Domains          []RelatedDomain `json:"domains"`
 }
 
 // Related levels and statuses.
@@ -208,14 +212,16 @@ const (
 // Evidence kinds of a related domain. The strong ones are things only the owner of both sites
 // would normally put in place.
 const (
-	RelEvLinkedFromHome   = "linked_from_home"  // the target's home page links to it (medium)
-	RelEvLinksBack        = "links_back"        // its home page links to the target (medium)
-	RelEvHreflangHome     = "hreflang_home"     // the target declares it as an alternate version (strong)
-	RelEvHreflangBack     = "hreflang_back"     // it declares the target as an alternate version (medium)
-	RelEvCertSAN          = "cert_san"          // the target's certificate lists it (strong)
-	RelEvCertOrg          = "cert_org"          // its certificate names the same organization (strong)
-	RelEvSiteVerification = "site_verification" // the same search-engine or social ownership token (strong)
-	RelEvAnalyticsID      = "analytics_id"      // the same Tag Manager or Analytics identifier (strong)
+	RelEvLinkedFromHome   = "linked_from_home"    // the target's home page links to it (medium)
+	RelEvLinksBack        = "links_back"          // its home page links to the target (medium)
+	RelEvHreflangHome     = "hreflang_home"       // the target declares it as an alternate version (strong)
+	RelEvHreflangBack     = "hreflang_back"       // it declares the target as an alternate version (medium)
+	RelEvCertSAN          = "cert_san"            // the target's certificate lists it (strong)
+	RelEvCertOrg          = "cert_org"            // its certificate names the same organization (strong)
+	RelEvSiteVerification = "site_verification"   // the same search-engine or social ownership token (strong)
+	RelEvAnalyticsID      = "analytics_id"        // the same Tag Manager or Analytics identifier (strong)
+	RelEvRedirect         = "redirects_to_target" // its home page redirects to the target (strong)
+	RelEvNameVariant      = "name_variant"        // the same name under another TLD exists in DNS (weak: anyone can register it)
 )
 
 // RelatedDomain is one domain and why it was listed.
@@ -233,7 +239,7 @@ type RelatedDomain struct {
 // RelatedEvidence is one thing that ties a domain to the target.
 type RelatedEvidence struct {
 	Kind     string `json:"kind"`
-	Strength string `json:"strength"` // strong or medium
+	Strength string `json:"strength"` // strong, medium or weak
 	Detail   string `json:"detail,omitempty"`
 }
 

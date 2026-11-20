@@ -136,6 +136,8 @@ type Options struct {
 	// RelatedMax bounds how many other sites are contacted (0: DefaultMaxRelated).
 	Related    bool
 	RelatedMax int
+	// RelatedTLDs also tries the target's name under these TLDs (needs Resolver).
+	RelatedTLDs []string
 	// Active sends the approved probes (see RunProbes); ActiveMax bounds the requests.
 	Active    bool
 	ActiveMax int
@@ -259,7 +261,7 @@ func Scan(ctx context.Context, opt Options, target string) (*scan.Result, error)
 			Home{Domain: res.Target.RegistrableDomain, Links: homeLinks})
 	}
 	if opt.Related {
-		res.Related = FindRelated(ctx, RelatedOptions{Fetch: opt.Fetch, Max: opt.RelatedMax, Delay: opt.Delay}, HomeInfo{
+		res.Related = FindRelated(ctx, RelatedOptions{Fetch: opt.Fetch, Max: opt.RelatedMax, Delay: opt.Delay, TLDs: opt.RelatedTLDs, Resolver: opt.Resolver}, HomeInfo{
 			Domain: res.Target.RegistrableDomain, URL: ob.Page.FinalURL, HTML: crawl.Main.HTML, Links: homeLinks(crawl, final), TLS: ob.Host.TLS,
 		})
 	}

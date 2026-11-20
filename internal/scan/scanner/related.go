@@ -12,6 +12,8 @@ import (
 	"time"
 
 	"github.com/matteoredaelli/open-web-fingerprints/internal/scan/fetch"
+	"github.com/matteoredaelli/open-web-fingerprints/internal/scan/observe"
+	"github.com/matteoredaelli/open-web-fingerprints/internal/scan/robots"
 	"github.com/matteoredaelli/open-web-fingerprints/internal/scan/web"
 	"github.com/matteoredaelli/open-web-fingerprints/scan"
 )
@@ -23,7 +25,16 @@ type RelatedOptions struct {
 	Max int
 	// Delay is the pause before each request to another site.
 	Delay time.Duration
+	// TLDs are other top-level domains to try the target's name under (michelin.com ->
+	// michelin.it, michelin.de ...). Empty: none; the names nobody pointed to are not contacted.
+	// Resolver looks them up; nil means no DNS, so the variants are skipped.
+	TLDs     []string
+	Resolver observe.Resolver
 }
+
+// DefaultRelatedTLDs is the list tried with --related-tlds: ten suffixes, the target's own
+// being left out. It is a judgement about where companies register their names, not a measure.
+var DefaultRelatedTLDs = []string{"com", "org", "net", "eu", "fr", "it", "de", "es", "co.uk", "nl"}
 
 // DefaultMaxRelated bounds how many other sites one scan contacts to look for related domains.
 const DefaultMaxRelated = 20
@@ -39,13 +50,14 @@ type HomeInfo struct {
 
 type relCand struct {
 	domain string
-	origin string // scheme://host to read the home page from
+	origin string   // scheme://host to read the home page from
+	alt    []string // other origins to try if the first cannot be reached
 	ev     []scan.RelatedEvidence
 }
 
 func strong(kind string) bool {
 	switch kind {
-	case scan.RelEvHreflangHome, scan.RelEvCertSAN, scan.RelEvCertOrg, scan.RelEvSiteVerification, scan.RelEvAnalyticsID:
+	case scan.RelEvHreflangHome, scan.RelEvCertSAN, scan.RelEvCertOrg, scan.RelEvSiteVerification, scan.RelEvAnalyticsID, scan.RelEvRedirect:
 		return true
 	}
 	return false
@@ -53,8 +65,11 @@ func strong(kind string) bool {
 
 func ev(kind, detail string) scan.RelatedEvidence {
 	s := "medium"
-	if strong(kind) {
+	switch {
+	case strong(kind):
 		s = "strong"
+	case kind == scan.RelEvNameVariant:
+		s = "weak"
 	}
 	return scan.RelatedEvidence{Kind: kind, Strength: s, Detail: detail}
 }
@@ -121,6 +136,29 @@ func FindRelated(ctx context.Context, opt RelatedOptions, home HomeInfo) *scan.R
 		}
 	}
 
+	var tried, resolved int
+	if len(opt.TLDs) > 0 && opt.Resolver != nil {
+		for _, v := range tldVariants(home.Domain, opt.TLDs) {
+			if ctx.Err() != nil {
+				break
+			}
+			tried++
+			if c, known := cands[v]; known {
+				// Already found some other way; the name variant is one more thing they have in common.
+				resolved++
+				c.ev = append(c.ev, ev(scan.RelEvNameVariant, v))
+				continue
+			}
+			if ips, err := opt.Resolver.LookupIP(ctx, v); err != nil || len(ips) == 0 {
+				if www, err := opt.Resolver.LookupIP(ctx, "www."+v); err != nil || len(www) == 0 {
+					continue
+				}
+			}
+			resolved++
+			cands[v] = &relCand{domain: v, origin: "https://" + v, alt: []string{"https://www." + v}, ev: []scan.RelatedEvidence{ev(scan.RelEvNameVariant, v)}}
+		}
+	}
+
 	list := make([]*relCand, 0, len(cands))
 	for _, c := range cands {
 		list = append(list, c)
@@ -134,7 +172,7 @@ func FindRelated(ctx context.Context, opt RelatedOptions, home HomeInfo) *scan.R
 		return list[i].domain < list[j].domain
 	})
 
-	out := &scan.Related{Candidates: len(list), Domains: []scan.RelatedDomain{}}
+	out := &scan.Related{Candidates: len(list), Domains: []scan.RelatedDomain{}, VariantsTried: tried, VariantsResolved: resolved}
 	f := fetch.New(opt.Fetch)
 	for i, c := range list {
 		d := scan.RelatedDomain{Domain: c.domain, Status: "checked", URL: c.origin + "/", Evidence: append([]scan.RelatedEvidence{}, c.ev...)}
@@ -145,11 +183,23 @@ func FindRelated(ctx context.Context, opt RelatedOptions, home HomeInfo) *scan.R
 			d.Status = "not_checked"
 		default:
 			out.Checked++
-			rules, _, ok, rerr := fetchRobotsErr(ctx, f, c.origin)
+			// The name as given, then its usual alternative (www.), until one answers.
+			var rules *robots.Rules
+			var ok bool
+			var rerr error
+			origin := c.origin
+			for _, o := range append([]string{c.origin}, c.alt...) {
+				rules, _, ok, rerr = fetchRobotsErr(ctx, f, o)
+				origin = o
+				if rerr == nil {
+					break
+				}
+			}
+			d.URL = origin + "/"
 			switch {
 			case rerr != nil:
 				d.Status, d.Detail = "unreachable", rerr.Error()
-			case !ok || !rules.Allowed(c.origin+"/"):
+			case !ok || !rules.Allowed(origin+"/"):
 				d.Status, d.Detail = "not_allowed", "robots.txt asks crawlers not to fetch the home page, or could not be read"
 			case !sleep(ctx, opt.Delay):
 				d.Status = "not_checked"
@@ -188,6 +238,11 @@ func compare(ctx context.Context, f *fetch.Fetcher, d *scan.RelatedDomain, targe
 		return
 	}
 	d.URL = resp.FinalURL
+	if fu, perr := url.Parse(resp.FinalURL); perr == nil && web.RegistrableDomain(fu.Hostname()) == target {
+		// A name that forwards to the target is the target's: nothing to compare.
+		d.Evidence = append(d.Evidence, ev(scan.RelEvRedirect, resp.FinalURL))
+		return
+	}
 	if resp.TLS != nil && myOrg != "" && strings.EqualFold(web.CertOrganization(resp.TLS.Subject), myOrg) {
 		d.Evidence = append(d.Evidence, ev(scan.RelEvCertOrg, myOrg))
 	}
@@ -257,4 +312,26 @@ func has(es []scan.RelatedEvidence, kind string) bool {
 		}
 	}
 	return false
+}
+
+// tldVariants returns the target's name under the given suffixes, without the target itself.
+func tldVariants(domain string, tlds []string) []string {
+	label, _, ok := strings.Cut(domain, ".")
+	if !ok || label == "" {
+		return nil
+	}
+	seen := map[string]bool{domain: true}
+	var out []string
+	for _, t := range tlds {
+		t = strings.ToLower(strings.Trim(strings.TrimSpace(t), "."))
+		if t == "" || strings.ContainsAny(t, " /:@") {
+			continue
+		}
+		v := label + "." + t
+		if !seen[v] {
+			seen[v] = true
+			out = append(out, v)
+		}
+	}
+	return out
 }

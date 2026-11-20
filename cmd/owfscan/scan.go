@@ -37,6 +37,7 @@ func newScanCmd() *cobra.Command {
 	n := &netFlags{}
 	var registry, minHealth, verifyCache string
 	var friends, related, useBrowser, active bool
+	var tf tldFlags
 	var activeMax, relatedMax int
 	var chrome string
 	var browserTimeout time.Duration
@@ -69,13 +70,19 @@ func newScanCmd() *cobra.Command {
 				Registry: reg, NoFavicon: noFavicon, MinHealth: minHealth, Version: version(),
 				Depth: n.depth, MaxPages: n.maxPages, Delay: n.delay, IgnoreRobots: n.ignoreRobots,
 				Friends: friends, FriendsMax: friendsMax,
-				Related: related, RelatedMax: relatedMax,
+				Related: related, RelatedMax: relatedMax, RelatedTLDs: tf.tlds(),
 				Active: active, ActiveMax: activeMax,
 				Browser: useBrowser, BrowserPath: chrome, BrowserTimeout: browserTimeout,
 				Fetch: fetch.Options{Timeout: n.timeout, AllowPrivate: n.allowPrivate, Insecure: n.insecure, CacheDir: n.cacheDir, MaxAge: n.maxAge},
 			}
 			if !noDNS {
 				opt.Resolver = observe.SystemResolver{}
+			}
+			if len(tf.tlds()) > 0 && !related {
+				return fmt.Errorf("--related-tlds needs --related")
+			}
+			if len(tf.tlds()) > 0 && noDNS {
+				return fmt.Errorf("--related-tlds looks names up in DNS: it cannot be used with --no-dns")
 			}
 			res, err := scanner.Scan(cmd.Context(), opt, args[0])
 			if err != nil {
@@ -95,6 +102,7 @@ func newScanCmd() *cobra.Command {
 	n.addCrawl(c)
 	c.Flags().BoolVar(&friends, "friends", false, "also look for friend domains: linked from the home page and linking back to it (contacts other sites; see `owfscan friends --help`)")
 	c.Flags().BoolVar(&related, "related", false, "also look for domains that may belong to the same owner, with the evidence (contacts other sites; see `owfscan related --help`)")
+	tf.add(c)
 	c.Flags().IntVar(&relatedMax, "related-max", scanner.DefaultMaxRelated, "most candidate domains to read with --related")
 	c.Flags().BoolVar(&active, "active", false, "also send the probes a reviewer approved (GET to fixed paths of the site, robots.txt honoured; see `owf probe --help`)")
 	c.Flags().IntVar(&activeMax, "active-max", scanner.DefaultActiveMax, "most probe requests to send with --active")

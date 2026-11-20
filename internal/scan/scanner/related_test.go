@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"net/netip"
 	"strings"
 	"testing"
 	"time"
@@ -198,5 +199,89 @@ func TestScanWithRelated(t *testing.T) {
 	opt.Related = false
 	if res, err = Scan(context.Background(), opt, "https://www.alpha.example/"); err != nil || res.Related != nil {
 		t.Errorf("not asked for, not there: %v %+v", err, res.Related)
+	}
+}
+
+// fakeDNS knows a fixed set of names.
+type fakeDNS map[string]bool
+
+func (f fakeDNS) LookupIP(_ context.Context, host string) ([]netip.Addr, error) {
+	if f[host] {
+		return []netip.Addr{netip.MustParseAddr("203.0.113.7")}, nil
+	}
+	return nil, fmt.Errorf("no such host")
+}
+func (fakeDNS) LookupCNAME(context.Context, string) (string, error) { return "", nil }
+func (fakeDNS) LookupNS(context.Context, string) ([]string, error)  { return nil, nil }
+func (fakeDNS) LookupMX(context.Context, string) ([]string, error)  { return nil, nil }
+func (fakeDNS) LookupTXT(context.Context, string) ([]string, error) { return nil, nil }
+
+func TestTLDVariants(t *testing.T) {
+	got := tldVariants("alpha.example", []string{"it", ".DE", "example", " fr ", "co.uk", "it", "", "a/b", "x y"})
+	if strings.Join(got, ",") != "alpha.it,alpha.de,alpha.fr,alpha.co.uk" {
+		t.Errorf("the target's own name and junk are left out, duplicates once: %v", got)
+	}
+	if tldVariants("localhost", []string{"it"}) != nil {
+		t.Error("a name without a suffix has no variants")
+	}
+}
+
+func TestFindRelatedTriesOtherTLDs(t *testing.T) {
+	vw := relatedWeb()
+	vw.sites["alpha.it"] = page(`<a href="https://www.alpha.example/">alpha</a>`)
+	vw.sites["www.alpha.de"] = page(`<p>a different company</p>`) // only www answers
+	vw.sites["alpha.fr"] = func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/robots.txt" {
+			http.NotFound(w, r)
+			return
+		}
+		http.Redirect(w, r, "https://www.alpha.example/fr/", http.StatusFound)
+	}
+	vw.sites["www.alpha.example"] = page(`<p>home</p>`)
+	dns := fakeDNS{"alpha.it": true, "alpha.de": false, "www.alpha.de": true, "alpha.fr": true}
+	home := HomeInfo{Domain: "alpha.example", URL: "https://www.alpha.example/", HTML: []byte("<p>x</p>")}
+
+	// Without the option nothing is looked up or contacted.
+	got := FindRelated(context.Background(), RelatedOptions{Fetch: fetch.Options{Transport: vw, Timeout: time.Second}, Delay: time.Millisecond, Resolver: dns}, home)
+	if got.VariantsTried != 0 || len(got.Domains) != 0 || len(vw.hits["alpha.it"]) != 0 {
+		t.Fatalf("off by default: %+v", got)
+	}
+
+	got = FindRelated(context.Background(), RelatedOptions{Fetch: fetch.Options{Transport: vw, Timeout: time.Second}, Delay: time.Millisecond,
+		TLDs: []string{"it", "de", "fr", "es", "example"}, Resolver: dns}, home)
+	if got.VariantsTried != 4 || got.VariantsResolved != 3 {
+		t.Errorf("tried %d resolved %d (es does not exist, example is the target's own)", got.VariantsTried, got.VariantsResolved)
+	}
+	by := map[string]scan.RelatedDomain{}
+	for _, d := range got.Domains {
+		by[d.Domain] = d
+	}
+	kinds := func(d string) string {
+		var k []string
+		for _, e := range by[d].Evidence {
+			k = append(k, e.Kind+"/"+e.Strength)
+		}
+		return strings.Join(k, ",")
+	}
+	if by["alpha.it"].Level != "candidate" || kinds("alpha.it") != "name_variant/weak,links_back/medium" {
+		t.Errorf("a name that exists and links to the target, with nothing stronger, stays a candidate: %s %s", by["alpha.it"].Level, kinds("alpha.it"))
+	}
+	if by["alpha.fr"].Level != "probable" || kinds("alpha.fr") != "name_variant/weak,redirects_to_target/strong" {
+		t.Errorf("a name that forwards to the target: %s %s", by["alpha.fr"].Level, kinds("alpha.fr"))
+	}
+	// Only www. answers: the second origin is tried. It has nothing in common but the name.
+	if d := by["alpha.de"]; d.Level != "candidate" || d.Status != "checked" || kinds("alpha.de") != "name_variant/weak" {
+		t.Errorf("de: %+v", d)
+	}
+	if _, ok := by["alpha.es"]; ok {
+		t.Error("a name that does not exist is not listed")
+	}
+	if len(vw.hits["alpha.es"]) != 0 {
+		t.Error("a name that does not exist is not contacted")
+	}
+	// Without a resolver the variants are skipped, not guessed.
+	got = FindRelated(context.Background(), RelatedOptions{Fetch: fetch.Options{Transport: vw, Timeout: time.Second}, TLDs: []string{"it"}}, home)
+	if got.VariantsTried != 0 {
+		t.Errorf("no DNS, no variants: %+v", got)
 	}
 }

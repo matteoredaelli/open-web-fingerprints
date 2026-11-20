@@ -428,13 +428,16 @@
                         "cert_san",
                         "cert_org",
                         "site_verification",
-                        "analytics_id"
+                        "analytics_id",
+                        "redirects_to_target",
+                        "name_variant"
                       ]
                     },
                     "strength": {
                       "enum": [
                         "strong",
-                        "medium"
+                        "medium",
+                        "weak"
                       ]
                     },
                     "detail": {
@@ -445,6 +448,14 @@
               }
             }
           }
+        },
+        "variants_tried": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "variants_resolved": {
+          "type": "integer",
+          "minimum": 0
         }
       }
     }
