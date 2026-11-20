@@ -30,7 +30,7 @@ count, and whether OpenTechalyzer's fingerprints really are independent of the W
 
 ## Assessment and order
 
-1. **Retire.js.** Cleanest licence (Apache-2.0 can be combined into a GPL-3.0 work) and a
+1. **Retire.js** (measured: see below; the value is smaller than I expected). Cleanest licence (Apache-2.0 can be combined into a GPL-3.0 work) and a
    JSON file. It gives **versions of JavaScript libraries** from file names and contents, which the
    Wappalyzer sources do less well. Import only the `extractors` of each library; **skip
    `vulnerabilities` entirely** (out of scope). The `§§version§§` placeholder becomes
@@ -86,3 +86,35 @@ technologies that others already have under a different name, so expect more
 For each source I start with a measurement, not an extractor: fetch a pinned revision, count the
 rules that map to the model, count the technologies that already exist under the same name or
 slug, and write the number in `sources.md`. If the new data is mostly duplicate, the source waits.
+
+## Measurements
+
+### Retire.js (2026-11-20, `RetireJS/retire.js` @ `8d814f3c023a909b26be6a35a45b54163c2d95fe`, `repository/jsrepository.json`)
+
+Measured against the registry of this repository (four sources, 9694 technologies).
+
+- **76 libraries** (the file also has a `retire-example` entry and one named `dont check`, both
+  to be skipped) and **405 extractor patterns**: `filecontent` 207, `uri` 78, `func` 48, `filename`
+  43, `hashes` 17, `filecontentreplace` 8.
+- **What the scanner could use today.** Only `uri` and `filename` (122 patterns, 119 with a
+  `§§version§§` placeholder) match something the scanner already has: the URL of a script. The 32
+  `func` extractors that are plain property paths (`jQuery.mobile.version`) would be `js_global`
+  rules, usable with `--browser`. The other 17 `func`, the 207 + 8 `filecontent`/`filecontentreplace`
+  patterns and the 17 `hashes` need **the content of the script file**, which the scanner does not
+  fetch: 280 of the 405 patterns (69%) cannot be applied until it does. Two of them need
+  look-behind or a back-reference and would be skipped as not RE2.
+- **Overlap.** 56 of the 76 libraries already have a technology (by name, slug or package name, with
+  a handful of aliases I wrote by hand); 44 of those already have `script_url` rules and 23 already
+  read a version from one. 20 libraries have none, among them `DOMPurify`, `ua-parser-js`,
+  `markdown-it`, `c3`, `bootstrap-select`, `jquery-validation`, `protobufjs`, `pdfobject`; the
+  matching is by name, so a few may exist under a name I did not try.
+- **Value.** Small for the scanner as it is: about 120 URL rules, about 20 new libraries, versions
+  for roughly 30 libraries that have a `script_url` rule without one, and 32 version paths for the
+  browser. Most of the file's weight (the content and hash patterns) is unusable until the
+  scanner can fetch scripts, which is a scanner feature of its own (more requests to the site,
+  so it would need the same limits as a crawl). The 70 libraries' vulnerability lists, the part
+  Retire.js is known for, are out of scope and would be dropped.
+- **Recommendation.** Retire.js is worth importing only together with that scanner feature, or
+  as a small import (URL rules, `func` paths, new libraries) if cheap. It is not the best next
+  source on this evidence; OpenTechalyzer (588 fingerprints, independent database) should be
+  measured next. The licence (Apache-2.0) is not the obstacle.
