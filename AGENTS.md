@@ -46,7 +46,9 @@ and plan: `docs/scan.md`.
   `owf source review --note`. A repository licence is not proof of the licence of
   its data. The tool records legal decisions; it does not make them.
 - **Reviewer decisions survive refreshes**: record status, validation, probe
-  review, curated vendors, source decisions, resolved conflicts.
+  review, curated vendors, source decisions, resolved conflicts, rule corrections
+  (`owf fingerprint correct`: kept with the source's value and a reason; the importer
+  never corrects a rule by itself).
 - **A source cannot overwrite another's content.** The source of a record's first
   provenance entry owns its content; others only add provenance.
 - **Do not drop information silently.** Keep the upstream fragment in `raw`,
@@ -117,7 +119,7 @@ before claiming value. Prefer sources with different data and clear licences.
 ## CLI
 
 `init`, `source list|info|refresh|review`, `import`, `technology list|show`,
-`vendor list|show|set`, `fingerprint list|validate|test|lint`,
+`vendor list|show|set`, `fingerprint list|validate|test|lint|correct`,
 `conflict list|show|resolve`, `export`, `verify`, `stats`. `owfscan`:
 `scan`, `extract`, `links`, `social`, `observe`. `refresh` fetches one commit
 with `git` (sparse, pinned by SHA) and imports it; `--dry-run` first.

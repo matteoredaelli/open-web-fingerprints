@@ -558,6 +558,9 @@
         "validation": {
           "$ref": "#/$defs/validation"
         },
+        "correction": {
+          "$ref": "#/$defs/correction"
+        },
         "provenance": {
           "type": "array",
           "minItems": 1,
@@ -714,6 +717,19 @@
             "rejected"
           ]
         }
+      }
+    },
+    "correction": {
+      "type": "object",
+      "description": "A reviewer's change to a rule the source got wrong. The field holds the corrected value; original is what the source gave.",
+      "additionalProperties": false,
+      "required": ["field", "original", "value", "reason", "at"],
+      "properties": {
+        "field": {"enum": ["target", "pattern"]},
+        "original": {"type": "string"},
+        "value": {"type": "string", "minLength": 1},
+        "reason": {"type": "string", "minLength": 1},
+        "at": {"type": "string", "format": "date-time"}
       }
     },
     "validation": {

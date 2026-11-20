@@ -208,8 +208,8 @@ Import rules:
 - Records the source no longer provides are never deleted. Their provenance
   entry becomes `removed_upstream` and they are listed as removed. If they
   come back they show up as modified and return to `present`.
-- Reviewer decisions survive re-imports: `status`, `validation`, and a
-  probe's `safety_review`.
+- Reviewer decisions survive re-imports: `status`, `validation`, a
+  probe's `safety_review`, and a rule's `correction` (see `validation.md`).
 - Provenance of other sources is kept untouched. Unchanged records keep the
   revision where they last changed.
 

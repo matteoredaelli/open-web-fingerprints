@@ -550,3 +550,71 @@ func TestExportManifestAndVerify(t *testing.T) {
 		t.Errorf("verify must repeat the notice:\n%s", out)
 	}
 }
+
+func TestFingerprintCorrectThroughTheCLI(t *testing.T) {
+	db := filepath.Join(t.TempDir(), "owf.db")
+	mustRun(t, db, "init")
+	imp := []string{"import", "enthec-webappanalyzer", "--snapshot", fixture, "--revision", "x"}
+	mustRun(t, db, imp...)
+
+	var fps []struct {
+		ID, Target string
+	}
+	if err := json.Unmarshal([]byte(mustRun(t, db, "fingerprint", "list", "--observation", "cookie", "--json")), &fps); err != nil {
+		t.Fatal(err)
+	}
+	var id string
+	for _, f := range fps {
+		if f.Target == "NEXT_LOCALE" {
+			id = f.ID
+		}
+	}
+	if id == "" {
+		t.Fatal("fixture has no NEXT_LOCALE cookie rule")
+	}
+
+	for name, args := range map[string][]string{
+		"no reason":       {"fingerprint", "correct", id, "--value", "next_locale"},
+		"unknown field":   {"fingerprint", "correct", id, "--field", "confidence", "--value", "1", "--reason", "r"},
+		"unknown rule":    {"fingerprint", "correct", "fp_nope", "--value", "x", "--reason", "r"},
+		"revert + value":  {"fingerprint", "correct", id, "--revert", "--value", "x"},
+		"nothing to undo": {"fingerprint", "correct", id, "--revert"},
+	} {
+		if out, err := run(t, db, args...); err == nil {
+			t.Errorf("%s: expected an error\n%s", name, out)
+		}
+	}
+
+	out := mustRun(t, db, "fingerprint", "correct", id, "--value", "NEXT_LOCALE_X", "--reason", "test of the mechanism")
+	if !strings.Contains(out, `"NEXT_LOCALE" -> "NEXT_LOCALE_X"`) {
+		t.Errorf("correct output: %s", out)
+	}
+	if out := mustRun(t, db, "fingerprint", "list", "--observation", "cookie"); !strings.Contains(out, "NEXT_LOCALE_X") || !strings.Contains(out, "(corrected target)") {
+		t.Errorf("the list marks a corrected rule:\n%s", out)
+	}
+	// A refresh with the same snapshot changes nothing and keeps the correction.
+	if out := mustRun(t, db, imp...); !strings.Contains(out, "no changes") {
+		t.Errorf("re-import: %s", out)
+	}
+	// The export carries the correction, satisfies the schema and verifies.
+	file := filepath.Join(t.TempDir(), "registry.json")
+	mustRun(t, db, "export", "--include-unreviewed", "-o", file)
+	doc, err := os.ReadFile(file)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(doc), `"original": "NEXT_LOCALE"`) || !strings.Contains(string(doc), "test of the mechanism") {
+		t.Error("the export must carry the correction with its reason")
+	}
+	if out := mustRun(t, db, "verify", file); !strings.Contains(out, "ok") {
+		t.Errorf("verify: %s", out)
+	}
+
+	out = mustRun(t, db, "fingerprint", "correct", id, "--revert")
+	if !strings.Contains(out, "back to the source's value") {
+		t.Errorf("revert: %s", out)
+	}
+	if out := mustRun(t, db, "fingerprint", "list", "--observation", "cookie"); strings.Contains(out, "corrected") || strings.Contains(out, "NEXT_LOCALE_X") {
+		t.Errorf("after revert:\n%s", out)
+	}
+}

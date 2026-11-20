@@ -271,6 +271,7 @@ var (
 					dst.Probe = &p
 				}
 			}
+			keepCorrection(dst, old)
 			if multiSource(prov) {
 				dst.Confidence = domain.LowestExplicitConfidence(prov, dst.Confidence)
 			}
@@ -304,4 +305,32 @@ func diffRecords(sid domain.SourceID, stored, fresh domain.Records) (repository.
 		Fingerprints: d.Fingerprints.Removed, Relationships: d.Relationships.Removed,
 	}
 	return cs, d
+}
+
+// keepCorrection carries a reviewer's correction over to a freshly imported rule. It
+// applies only if the source still gives the value the reviewer corrected. (Today a
+// changed value is a different rule with a different ID, so this guard is for the day
+// identity stops including the content.)
+func keepCorrection(dst *domain.Fingerprint, old domain.Fingerprint) {
+	c := old.Correction
+	if c == nil {
+		return
+	}
+	field := fieldOf(dst, c.Field)
+	if field == nil || *field != c.Original {
+		return
+	}
+	*field = c.Value
+	dst.Correction = c
+}
+
+// fieldOf returns a pointer to a correctable field of a rule.
+func fieldOf(f *domain.Fingerprint, name string) *string {
+	switch name {
+	case "target":
+		return &f.Target
+	case "pattern":
+		return &f.Pattern
+	}
+	return nil
 }

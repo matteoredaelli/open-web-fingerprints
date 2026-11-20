@@ -214,14 +214,33 @@ type Fingerprint struct {
 	// Role is empty for a rule that detects the technology. RoleVersion marks a
 	// rule that only reads a version: it never detects by itself, and applies
 	// when a detection rule of the same technology matched on the same request.
-	Role       string          `json:"role,omitempty"`
-	Confidence float64         `json:"confidence"`
-	Probe      *Probe          `json:"probe,omitempty"`
-	Status     Status          `json:"status"`
-	Validation *Validation     `json:"validation,omitempty"`
+	Role       string      `json:"role,omitempty"`
+	Confidence float64     `json:"confidence"`
+	Probe      *Probe      `json:"probe,omitempty"`
+	Status     Status      `json:"status"`
+	Validation *Validation `json:"validation,omitempty"`
+	// Correction records a reviewer's change to one field of the rule, with the value
+	// the source gave. The upstream value also stays in Raw.
+	Correction *Correction     `json:"correction,omitempty"`
 	Provenance []Provenance    `json:"provenance"`
 	Raw        json.RawMessage `json:"raw,omitempty"`
 }
+
+// Correction is a reviewed change to a rule that the source got wrong. The importer
+// never makes one by itself; a reviewer does, with a reason, and it survives
+// refreshes. A rule's identity includes its content, so if the source changes the
+// value that was corrected, that is a new rule: it starts without a correction,
+// and the corrected one stays as removed upstream with the reviewer's record.
+type Correction struct {
+	Field    string    `json:"field"` // CorrectableFields
+	Original string    `json:"original"`
+	Value    string    `json:"value"`
+	Reason   string    `json:"reason"`
+	At       time.Time `json:"at"`
+}
+
+// CorrectableFields are the rule fields a reviewer may correct.
+var CorrectableFields = []string{"target", "pattern"}
 
 // Probe is an active, non-destructive request.
 type Probe struct {

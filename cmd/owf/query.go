@@ -183,7 +183,11 @@ func printFingerprints(cmd *cobra.Command, fps []domain.Fingerprint) {
 		if len(pat) > 48 {
 			pat = pat[:45] + "..."
 		}
-		fmt.Fprintf(w, "  %s\t%s\t%s\t%s\t%.2f\t%s\n", f.Observation, f.Target, f.Operator, pat, f.Confidence, f.Status)
+		status := string(f.Status)
+		if f.Correction != nil {
+			status += " (corrected " + f.Correction.Field + ")"
+		}
+		fmt.Fprintf(w, "  %s\t%s\t%s\t%s\t%.2f\t%s\n", f.Observation, f.Target, f.Operator, pat, f.Confidence, status)
 	}
 	_ = w.Flush()
 }
@@ -401,7 +405,7 @@ func newFingerprintCmd(o *options) *cobra.Command {
 			return nil
 		},
 	}
-	c.AddCommand(list, validate, newFingerprintTestCmd(o), newFingerprintLintCmd(o))
+	c.AddCommand(list, validate, newFingerprintTestCmd(o), newFingerprintLintCmd(o), newFingerprintCorrectCmd(o))
 	return c
 }
 

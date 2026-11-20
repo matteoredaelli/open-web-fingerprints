@@ -193,8 +193,30 @@ of false positives on the web, and `ok` should not be read as "reliable".
   (`inert_cookie_name`) and the scanner skips them and counts them in the coverage
   (`cookie name is a pattern (inert upstream too)`). Five of them only escape a dot
   (`connect\.sid`, `ASP\.NET_SessionId`, `\.ASPXAUTH`, `sails\.sid`) and would work
-  if written without the backslash: that is a correction to propose upstream or to make
-  as a reviewed edit of the registry, not something the importer does silently.
+  if written without the backslash. The importer does not fix them (it stays faithful to
+  the source); a reviewer does, with `owf fingerprint correct` (below). The HTTP Archive
+  fork already writes `ASP.NET_SessionId` correctly, which is evidence for the others.
+
+  Corrected on the author's registry on 2026-11-20 (4 rules; 13 inert rules remain, the
+  ones that are genuinely patterns). On a local server that sets `connect.sid` and
+  `ASP.NET_SessionId`, a scan before the correction found ASP.NET (one rule) and not
+  Express; after it, Express is found and ASP.NET gains the Enthec rule. This is still
+  a correction to propose upstream.
+
+## Corrections
+
+`owf fingerprint correct <fp-id> --field target|pattern --value V --reason R` is a
+reviewer decision for a rule the source got wrong. The record keeps the value the source
+gave (`correction.original`), the new value, the reason and the time, and the upstream
+fragment stays in `raw`. The rule's test evidence is cleared and its health goes back to
+`unknown`, because it was gathered on the old rule. `--revert` puts the source's value
+back. Corrections survive refreshes. A rule's identity includes its content, so if the
+source itself changes the value you corrected, that is a new rule without a correction,
+and the corrected one stays as `removed_upstream` with your record. One correction per
+rule (a second one on the same field replaces the new value and keeps the source's
+original); a regular expression is checked before it is stored. The export carries
+`correction` on the rule (schema: `correction`), so a consumer can tell a corrected rule
+from what the source published.
 - **`swiper(?:\.min)?\.js`** (Swiper) does not match `swiper-bundle.min.js`, the
   usual file name of the library.
 - **Fixed versions on `exists` rules** (`_gat` gives version `UA`) were lost by the

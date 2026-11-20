@@ -35,6 +35,7 @@ owf vendor list --uncurated                  # vendor names that are still guess
 owf vendor set php --name "The PHP Group" --website https://www.php.net
 owf fingerprint list --technology nginx
 owf fingerprint validate
+owf fingerprint correct fp_... --field target --value connect.sid --reason "..."   # a reviewed fix of a rule the source got wrong
 owf conflict list --state open               # candidates from other sources
 owf conflict resolve --all --websites same_domain --merge --dry-run
 owf fingerprint test validation/cases --apply   # store test evidence (see docs/validation.md)
