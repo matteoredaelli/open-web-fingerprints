@@ -3,13 +3,30 @@
 
 // Package scan defines the result of scanning a web site: what was fetched,
 // which technologies were recognised and on what evidence, the links found,
-// the domains they point to and the social profiles. It is the public contract
-// of the scanner; its JSON form is described by schemas/scan-result.schema.json.
+// the domains they point to, the social profiles, the contact details and,
+// when asked for, the "friend" domains. It is the public contract of the
+// scanner (the owfscan command of github.com/matteoredaelli/open-web-fingerprints);
+// its JSON form is described by the scan-result schema, which the schemas package
+// embeds and can validate against.
 //
-// The types are plain data. They say what was observed, never more than that:
-// a technology comes with the rules that matched, the health of each rule and
-// the sources the rules come from, and Coverage says how many rules could not
-// be evaluated.
+// The types are plain data, with no behaviour and no dependencies besides the
+// standard library. They say what was observed, never more than that: a technology
+// comes with the rules that matched, the health of each rule (most are "unknown":
+// they have no tests) and the sources the rules come from, and Coverage says how
+// many rules could not be evaluated and why. A missing technology therefore does not
+// mean the site does not use it.
+//
+// # Reading a result
+//
+// Decode the JSON into a Result and check SchemaVersion. Slices are never null in
+// the JSON the scanner writes, and optional parts (Host, Friends) are nil when they
+// were not collected.
+//
+// # Stability
+//
+// SchemaVersion is 0.1.0: the format is a draft. Fields may be added in any release
+// before 1.0; consumers should ignore fields they do not know, which encoding/json
+// does by default.
 package scan
 
 import "time"

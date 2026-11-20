@@ -79,6 +79,26 @@ bin/owfscan extract --url https://example.org/ page.html   # the same on saved H
 Scan only sites you are allowed to scan. User guide: [docs/owfscan.md](docs/owfscan.md);
 design and decisions: [docs/scan.md](docs/scan.md).
 
+## As a Go module
+
+The module is `github.com/matteoredaelli/open-web-fingerprints`. Two packages are meant to
+be imported (everything under `internal/` is not):
+
+- [`scan`](scan): the Go types of a scan result (`owfscan scan --json`);
+- [`schemas`](schemas): the embedded JSON Schemas and functions that validate a registry
+  export, a scan result or a file of validation cases.
+
+```go
+import (
+	"github.com/matteoredaelli/open-web-fingerprints/scan"
+	"github.com/matteoredaelli/open-web-fingerprints/schemas"
+)
+```
+
+The programs install with `go install github.com/matteoredaelli/open-web-fingerprints/cmd/owf@latest`
+(and `.../cmd/owfscan@latest`). There is no tagged release yet: the formats are drafts (0.x)
+and may change.
+
 ## License
 
 GPL-3.0-or-later (see [LICENSE](LICENSE)). Third-party fingerprint data keeps

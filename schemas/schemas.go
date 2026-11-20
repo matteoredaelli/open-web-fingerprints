@@ -1,8 +1,24 @@
 // Copyright 2026 Matteo Redaelli
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-// Package schemas embeds the public JSON Schema of the registry export and
-// offers a validation helper. It does not depend on any domain type.
+// Package schemas embeds the public JSON Schemas of the open-web-fingerprints project
+// and validates documents against them. It does not depend on any domain type, so a
+// program can check a file without importing the rest of the project.
+//
+// There are three schemas:
+//
+//   - the registry export written by `owf export` (RegistrySchema, ValidateRegistry);
+//   - the result of a scan written by `owfscan scan --json` (ScanResultSchema,
+//     ValidateScanResult), whose Go types are in the scan package;
+//   - the files of validation cases that test fingerprints (CasesSchema,
+//     ValidateCases).
+//
+// Every Validate function returns nil when the document satisfies the schema and an
+// error that names the first places where it does not. The Schema functions return a
+// copy of the raw schema, for tools that want to compile it themselves.
+//
+// The schemas are drafts (versions 0.x) and change between releases. A document is
+// valid only for the version of the schema in the module that validates it.
 package schemas
 
 import (
