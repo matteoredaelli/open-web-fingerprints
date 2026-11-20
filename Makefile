@@ -6,8 +6,9 @@ BIN := bin/owf
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN{FS=":.*?## "}{printf "  %-10s %s\n",$$1,$$2}'
 
-build: ## Build the owf CLI
+build: ## Build the owf and owfscan CLIs
 	go build -o $(BIN) ./cmd/owf
+	go build -o bin/owfscan ./cmd/owfscan
 
 test: ## Run tests
 	go test -race -cover ./...

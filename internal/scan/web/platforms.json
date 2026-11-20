@@ -1,0 +1,1138 @@
+[
+ {
+  "platform": "linkedin",
+  "hosts": [
+   "linkedin.com"
+  ],
+  "rules": [
+   {
+    "kind": "company",
+    "path": "^/company/([^/]+)/?$",
+    "url": "https://www.linkedin.com/company/{h}"
+   },
+   {
+    "kind": "user",
+    "path": "^/in/([^/]+)/?$",
+    "url": "https://www.linkedin.com/in/{h}"
+   },
+   {
+    "kind": "user",
+    "path": "^/pub/([^/]+)/",
+    "url": "https://www.linkedin.com/pub/{h}"
+   },
+   {
+    "kind": "school",
+    "path": "^/school/([^/]+)/?$",
+    "url": "https://www.linkedin.com/school/{h}"
+   },
+   {
+    "kind": "showcase",
+    "path": "^/showcase/([^/]+)/?$",
+    "url": "https://www.linkedin.com/showcase/{h}"
+   }
+  ]
+ },
+ {
+  "platform": "github",
+  "hosts": [
+   "github.com"
+  ],
+  "rules": [
+   {
+    "kind": "account",
+    "path": "^/([A-Za-z0-9](?:[A-Za-z0-9-]{0,38}))/?$",
+    "url": "https://github.com/{h}",
+    "reserved": [
+     "features",
+     "about",
+     "pricing",
+     "login",
+     "join",
+     "sponsors",
+     "topics",
+     "marketplace",
+     "explore",
+     "settings",
+     "enterprise",
+     "contact",
+     "security",
+     "readme",
+     "apps",
+     "collections",
+     "trending",
+     "notifications",
+     "pulls",
+     "issues",
+     "new",
+     "site",
+     "customer-stories",
+     "solutions",
+     "resources",
+     "premium-support",
+     "team",
+     "orgs",
+     "users",
+     "search",
+     "signup",
+     "codespaces",
+     "copilot",
+     "actions",
+     "discussions",
+     "education",
+     "events",
+     "github-copilot",
+     "why-github",
+     "partners",
+     "stars",
+     "watching"
+    ]
+   }
+  ]
+ },
+ {
+  "platform": "gitlab",
+  "hosts": [
+   "gitlab.com"
+  ],
+  "rules": [
+   {
+    "kind": "group",
+    "path": "^/groups/([A-Za-z0-9_.-]+)/?$",
+    "url": "https://gitlab.com/{h}"
+   },
+   {
+    "kind": "account",
+    "path": "^/([A-Za-z0-9_.-]+)/?$",
+    "url": "https://gitlab.com/{h}",
+    "reserved": [
+     "explore",
+     "users",
+     "help",
+     "dashboard",
+     "groups",
+     "projects",
+     "-",
+     "api",
+     "admin",
+     "search",
+     "public",
+     "snippets",
+     "uploads",
+     "assets",
+     "jobs",
+     "profile",
+     "sign_in",
+     "users",
+     "pricing",
+     "install",
+     "blog",
+     "about",
+     "topics",
+     "gitlab-org"
+    ]
+   }
+  ]
+ },
+ {
+  "platform": "bitbucket",
+  "hosts": [
+   "bitbucket.org"
+  ],
+  "rules": [
+   {
+    "kind": "account",
+    "path": "^/([A-Za-z0-9_-]+)/?$",
+    "url": "https://bitbucket.org/{h}",
+    "reserved": [
+     "product",
+     "account",
+     "dashboard",
+     "repo",
+     "features",
+     "support",
+     "blog",
+     "site",
+     "workspace",
+     "plans",
+     "platform",
+     "login",
+     "signup",
+     "atlassian-account",
+     "gateway"
+    ]
+   }
+  ]
+ },
+ {
+  "platform": "facebook",
+  "hosts": [
+   "facebook.com",
+   "fb.com",
+   "fb.me"
+  ],
+  "rules": [
+   {
+    "kind": "profile",
+    "path": "^/profile\\.php$",
+    "url": "https://www.facebook.com/profile.php?id={h}",
+    "query": "id",
+    "queryre": "^[0-9]{5,}$"
+   },
+   {
+    "kind": "group",
+    "path": "^/groups/([A-Za-z0-9.\\-]+)/?$",
+    "url": "https://www.facebook.com/groups/{h}"
+   },
+   {
+    "kind": "page",
+    "path": "^/pg/([A-Za-z0-9.\\-]+)(?:/.*)?$",
+    "url": "https://www.facebook.com/{h}"
+   },
+   {
+    "kind": "page",
+    "path": "^/pages/[^/]+/([0-9]+)/?$",
+    "url": "https://www.facebook.com/{h}"
+   },
+   {
+    "kind": "page",
+    "path": "^/([A-Za-z0-9.\\-]{5,})/?$",
+    "url": "https://www.facebook.com/{h}",
+    "reserved": [
+     "sharer",
+     "sharer.php",
+     "share",
+     "share.php",
+     "dialog",
+     "plugins",
+     "tr",
+     "login",
+     "login.php",
+     "policies",
+     "privacy",
+     "help",
+     "events",
+     "watch",
+     "marketplace",
+     "gaming",
+     "groups",
+     "pages",
+     "people",
+     "public",
+     "hashtag",
+     "recover",
+     "legal",
+     "ads",
+     "business",
+     "careers",
+     "about",
+     "messages",
+     "stories",
+     "reel",
+     "reels",
+     "photo",
+     "photo.php",
+     "video",
+     "videos",
+     "permalink.php",
+     "story.php",
+     "l.php",
+     "flx",
+     "home.php",
+     "settings",
+     "notifications",
+     "friends",
+     "bookmarks",
+     "places",
+     "fundraisers",
+     "offers",
+     "jobs",
+     "directory",
+     "terms",
+     "cookies",
+     "tr",
+     "profile.php"
+    ]
+   }
+  ]
+ },
+ {
+  "platform": "instagram",
+  "hosts": [
+   "instagram.com",
+   "instagr.am"
+  ],
+  "rules": [
+   {
+    "kind": "user",
+    "path": "^/([A-Za-z0-9._]{1,30})/?$",
+    "url": "https://www.instagram.com/{h}/",
+    "reserved": [
+     "p",
+     "reel",
+     "reels",
+     "explore",
+     "accounts",
+     "stories",
+     "direct",
+     "tv",
+     "about",
+     "legal",
+     "developer",
+     "web",
+     "challenge",
+     "directory",
+     "privacy",
+     "terms",
+     "api",
+     "emails",
+     "oauth",
+     "download",
+     "lite"
+    ]
+   }
+  ]
+ },
+ {
+  "platform": "x",
+  "hosts": [
+   "twitter.com",
+   "x.com"
+  ],
+  "rules": [
+   {
+    "kind": "user",
+    "path": "^/([A-Za-z0-9_]{1,15})/?$",
+    "url": "https://x.com/{h}",
+    "reserved": [
+     "intent",
+     "share",
+     "home",
+     "i",
+     "search",
+     "hashtag",
+     "settings",
+     "login",
+     "signup",
+     "explore",
+     "notifications",
+     "messages",
+     "compose",
+     "privacy",
+     "tos",
+     "about",
+     "download",
+     "who_to_follow",
+     "oauth",
+     "widgets.js",
+     "account",
+     "tweet",
+     "status",
+     "en",
+     "jobs",
+     "cashtag",
+     "topics",
+     "lists"
+    ]
+   }
+  ]
+ },
+ {
+  "platform": "tiktok",
+  "hosts": [
+   "tiktok.com"
+  ],
+  "rules": [
+   {
+    "kind": "user",
+    "path": "^/@([A-Za-z0-9._]{2,24})/?$",
+    "url": "https://www.tiktok.com/@{h}"
+   }
+  ]
+ },
+ {
+  "platform": "threads",
+  "hosts": [
+   "threads.net",
+   "threads.com"
+  ],
+  "rules": [
+   {
+    "kind": "user",
+    "path": "^/@([A-Za-z0-9._]+)/?$",
+    "url": "https://www.threads.net/@{h}"
+   }
+  ]
+ },
+ {
+  "platform": "bluesky",
+  "hosts": [
+   "bsky.app"
+  ],
+  "rules": [
+   {
+    "kind": "user",
+    "path": "^/profile/([A-Za-z0-9.:_-]+)/?$",
+    "url": "https://bsky.app/profile/{h}"
+   }
+  ]
+ },
+ {
+  "platform": "snapchat",
+  "hosts": [
+   "snapchat.com"
+  ],
+  "rules": [
+   {
+    "kind": "user",
+    "path": "^/add/([A-Za-z0-9._-]{3,15})/?$",
+    "url": "https://www.snapchat.com/add/{h}"
+   },
+   {
+    "kind": "user",
+    "path": "^/@([A-Za-z0-9._-]{3,15})/?$",
+    "url": "https://www.snapchat.com/add/{h}"
+   }
+  ]
+ },
+ {
+  "platform": "reddit",
+  "hosts": [
+   "reddit.com"
+  ],
+  "rules": [
+   {
+    "kind": "subreddit",
+    "path": "^/r/([A-Za-z0-9_]{2,21})(?:/.*)?$",
+    "url": "https://www.reddit.com/r/{h}"
+   },
+   {
+    "kind": "user",
+    "path": "^/(?:u|user)/([A-Za-z0-9_-]{3,20})(?:/.*)?$",
+    "url": "https://www.reddit.com/user/{h}"
+   }
+  ]
+ },
+ {
+  "platform": "pinterest",
+  "hosts": [
+   "pinterest.com",
+   "pinterest.it",
+   "pinterest.co.uk",
+   "pinterest.fr",
+   "pinterest.de",
+   "pinterest.es"
+  ],
+  "rules": [
+   {
+    "kind": "user",
+    "path": "^/([A-Za-z0-9_]{3,30})/?$",
+    "url": "https://www.pinterest.com/{h}/",
+    "reserved": [
+     "pin",
+     "ideas",
+     "search",
+     "categories",
+     "today",
+     "login",
+     "business",
+     "about",
+     "topics",
+     "explore",
+     "settings",
+     "pinterest",
+     "news_hub",
+     "_",
+     "oauth",
+     "video"
+    ]
+   }
+  ]
+ },
+ {
+  "platform": "tumblr",
+  "hosts": [
+   "tumblr.com"
+  ],
+  "rules": [],
+  "subdomain": true,
+  "subdomain_kind": "blog",
+  "subdomain_url": "https://{h}.tumblr.com",
+  "subdomain_reserved": [
+   "www",
+   "api",
+   "assets",
+   "media",
+   "static",
+   "at",
+   "help",
+   "engineering",
+   "staff",
+   "tumblr",
+   "support"
+  ]
+ },
+ {
+  "platform": "weibo",
+  "hosts": [
+   "weibo.com"
+  ],
+  "rules": [
+   {
+    "kind": "user",
+    "path": "^/u/([0-9]+)/?$",
+    "url": "https://weibo.com/u/{h}"
+   },
+   {
+    "kind": "user",
+    "path": "^/([A-Za-z0-9_-]{3,})/?$",
+    "url": "https://weibo.com/{h}",
+    "reserved": [
+     "login",
+     "signup",
+     "u",
+     "n",
+     "p",
+     "ttarticle",
+     "home",
+     "hot",
+     "search",
+     "sinaurl",
+     "newlogin",
+     "signin",
+     "aj",
+     "ajax",
+     "pub",
+     "tv"
+    ]
+   }
+  ]
+ },
+ {
+  "platform": "vk",
+  "hosts": [
+   "vk.com",
+   "vk.ru"
+  ],
+  "rules": [
+   {
+    "kind": "page",
+    "path": "^/([A-Za-z0-9_.]{3,32})/?$",
+    "url": "https://vk.com/{h}",
+    "reserved": [
+     "share.php",
+     "away.php",
+     "login",
+     "feed",
+     "im",
+     "search",
+     "video",
+     "music",
+     "apps",
+     "friends",
+     "groups",
+     "settings",
+     "wall",
+     "dev",
+     "about",
+     "help",
+     "terms",
+     "legal",
+     "join",
+     "restore",
+     "edit",
+     "market"
+    ]
+   }
+  ]
+ },
+ {
+  "platform": "youtube",
+  "hosts": [
+   "youtube.com",
+   "youtu.be"
+  ],
+  "rules": [
+   {
+    "kind": "channel",
+    "path": "^/channel/(UC[A-Za-z0-9_-]{22})/?$",
+    "url": "https://www.youtube.com/channel/{h}",
+    "keep_case": true
+   },
+   {
+    "kind": "channel",
+    "path": "^/@([A-Za-z0-9._%-]{3,})/?$",
+    "url": "https://www.youtube.com/@{h}",
+    "prefix": "@"
+   },
+   {
+    "kind": "channel",
+    "path": "^/c/([A-Za-z0-9._%-]+)/?$",
+    "url": "https://www.youtube.com/c/{h}"
+   },
+   {
+    "kind": "user",
+    "path": "^/user/([A-Za-z0-9._%-]+)/?$",
+    "url": "https://www.youtube.com/user/{h}"
+   }
+  ]
+ },
+ {
+  "platform": "vimeo",
+  "hosts": [
+   "vimeo.com"
+  ],
+  "rules": [
+   {
+    "kind": "user",
+    "path": "^/([A-Za-z][A-Za-z0-9_-]*)/?$",
+    "url": "https://vimeo.com/{h}",
+    "reserved": [
+     "channels",
+     "groups",
+     "categories",
+     "features",
+     "upload",
+     "search",
+     "watch",
+     "about",
+     "blog",
+     "log_in",
+     "join",
+     "pricing",
+     "solutions",
+     "enterprise",
+     "stock",
+     "ott",
+     "create",
+     "help",
+     "jobs",
+     "upgrade",
+     "settings",
+     "terms",
+     "privacy",
+     "staffpicks",
+     "everywhere",
+     "live",
+     "business",
+     "manage",
+     "home",
+     "couch",
+     "tools",
+     "video",
+     "api"
+    ]
+   }
+  ]
+ },
+ {
+  "platform": "twitch",
+  "hosts": [
+   "twitch.tv"
+  ],
+  "rules": [
+   {
+    "kind": "channel",
+    "path": "^/([A-Za-z0-9_]{4,25})/?$",
+    "url": "https://www.twitch.tv/{h}",
+    "reserved": [
+     "directory",
+     "videos",
+     "downloads",
+     "jobs",
+     "settings",
+     "p",
+     "store",
+     "turbo",
+     "subscriptions",
+     "wallet",
+     "friends",
+     "inventory",
+     "drops",
+     "search",
+     "login",
+     "signup",
+     "team",
+     "about",
+     "privacy",
+     "legal",
+     "moderator",
+     "dashboard",
+     "prime",
+     "broadcast",
+     "embed",
+     "popout",
+     "payments",
+     "messages",
+     "annual-recap"
+    ]
+   }
+  ]
+ },
+ {
+  "platform": "soundcloud",
+  "hosts": [
+   "soundcloud.com"
+  ],
+  "rules": [
+   {
+    "kind": "user",
+    "path": "^/([A-Za-z0-9_-]{3,})/?$",
+    "url": "https://soundcloud.com/{h}",
+    "reserved": [
+     "discover",
+     "stream",
+     "upload",
+     "you",
+     "search",
+     "charts",
+     "pages",
+     "terms-of-use",
+     "jobs",
+     "mobile",
+     "popular",
+     "tags",
+     "imprint",
+     "settings",
+     "logout",
+     "login",
+     "signin",
+     "stations",
+     "feed",
+     "messages",
+     "notifications"
+    ]
+   }
+  ]
+ },
+ {
+  "platform": "spotify",
+  "hosts": [
+   "spotify.com"
+  ],
+  "rules": [
+   {
+    "kind": "artist",
+    "path": "^/artist/([A-Za-z0-9]{10,})/?$",
+    "url": "https://open.spotify.com/artist/{h}",
+    "keep_case": true
+   },
+   {
+    "kind": "show",
+    "path": "^/show/([A-Za-z0-9]{10,})/?$",
+    "url": "https://open.spotify.com/show/{h}",
+    "keep_case": true
+   },
+   {
+    "kind": "user",
+    "path": "^/user/([A-Za-z0-9._-]+)/?$",
+    "url": "https://open.spotify.com/user/{h}",
+    "keep_case": true
+   }
+  ]
+ },
+ {
+  "platform": "flickr",
+  "hosts": [
+   "flickr.com"
+  ],
+  "rules": [
+   {
+    "kind": "user",
+    "path": "^/(?:photos|people)/([A-Za-z0-9@_-]+)/?$",
+    "url": "https://www.flickr.com/photos/{h}",
+    "reserved": [
+     "tags",
+     "explore",
+     "friends",
+     "organize",
+     "upload",
+     "search",
+     "groups",
+     "places",
+     "cameras",
+     "map"
+    ]
+   }
+  ]
+ },
+ {
+  "platform": "telegram",
+  "hosts": [
+   "t.me",
+   "telegram.me",
+   "telegram.dog"
+  ],
+  "rules": [
+   {
+    "kind": "invite",
+    "path": "^/\\+([A-Za-z0-9_-]{8,})/?$",
+    "url": "https://t.me/+{h}",
+    "keep_case": true
+   },
+   {
+    "kind": "invite",
+    "path": "^/joinchat/([A-Za-z0-9_-]{8,})/?$",
+    "url": "https://t.me/joinchat/{h}",
+    "keep_case": true
+   },
+   {
+    "kind": "account",
+    "path": "^/([A-Za-z][A-Za-z0-9_]{4,31})/?$",
+    "url": "https://t.me/{h}",
+    "reserved": [
+     "joinchat",
+     "share",
+     "addstickers",
+     "s",
+     "login",
+     "iv",
+     "proxy",
+     "socks",
+     "setlanguage",
+     "c",
+     "addemoji",
+     "boost",
+     "contact",
+     "bg",
+     "invoice",
+     "addlist",
+     "addtheme"
+    ]
+   }
+  ]
+ },
+ {
+  "platform": "whatsapp",
+  "hosts": [
+   "wa.me",
+   "whatsapp.com"
+  ],
+  "rules": [
+   {
+    "kind": "number",
+    "path": "^/([0-9]{6,15})/?$",
+    "url": "https://wa.me/{h}",
+    "hosts": [
+     "wa.me"
+    ]
+   },
+   {
+    "kind": "invite",
+    "path": "^/([A-Za-z0-9]{10,})/?$",
+    "url": "https://chat.whatsapp.com/{h}",
+    "hosts": [
+     "chat.whatsapp.com"
+    ],
+    "keep_case": true
+   },
+   {
+    "kind": "channel",
+    "path": "^/channel/([A-Za-z0-9]{10,})/?$",
+    "url": "https://www.whatsapp.com/channel/{h}",
+    "hosts": [
+     "whatsapp.com"
+    ],
+    "keep_case": true
+   },
+   {
+    "kind": "number",
+    "path": "^/send/?$",
+    "url": "https://wa.me/{h}",
+    "hosts": [
+     "api.whatsapp.com"
+    ],
+    "query": "phone",
+    "queryre": "^[0-9]{6,15}$"
+   }
+  ]
+ },
+ {
+  "platform": "discord",
+  "hosts": [
+   "discord.gg",
+   "discord.com",
+   "discordapp.com"
+  ],
+  "rules": [
+   {
+    "kind": "invite",
+    "path": "^/invite/([A-Za-z0-9-]{2,32})/?$",
+    "url": "https://discord.gg/{h}",
+    "keep_case": true
+   },
+   {
+    "kind": "invite",
+    "path": "^/([A-Za-z0-9-]{2,32})/?$",
+    "url": "https://discord.gg/{h}",
+    "hosts": [
+     "discord.gg"
+    ],
+    "keep_case": true,
+    "reserved": [
+     "invite"
+    ]
+   }
+  ]
+ },
+ {
+  "platform": "behance",
+  "hosts": [
+   "behance.net"
+  ],
+  "rules": [
+   {
+    "kind": "user",
+    "path": "^/([A-Za-z0-9_-]{3,})/?$",
+    "url": "https://www.behance.net/{h}",
+    "reserved": [
+     "gallery",
+     "search",
+     "joblist",
+     "galleries",
+     "collection",
+     "assets",
+     "hire",
+     "about",
+     "blog",
+     "portfolio",
+     "live",
+     "features",
+     "services",
+     "logout",
+     "login",
+     "signup",
+     "onboarding",
+     "for_you",
+     "creatives",
+     "adobeprojects",
+     "careers",
+     "misc",
+     "moodboard"
+    ]
+   }
+  ]
+ },
+ {
+  "platform": "dribbble",
+  "hosts": [
+   "dribbble.com"
+  ],
+  "rules": [
+   {
+    "kind": "user",
+    "path": "^/([A-Za-z0-9_-]+)/?$",
+    "url": "https://dribbble.com/{h}",
+    "reserved": [
+     "shots",
+     "designers",
+     "jobs",
+     "tags",
+     "search",
+     "stories",
+     "signup",
+     "session",
+     "pro",
+     "hiring",
+     "about",
+     "learn",
+     "courses",
+     "resources",
+     "teams",
+     "following",
+     "client",
+     "contact",
+     "terms",
+     "privacy",
+     "support",
+     "playbook",
+     "customers",
+     "freelance-designers"
+    ]
+   }
+  ]
+ },
+ {
+  "platform": "medium",
+  "hosts": [
+   "medium.com"
+  ],
+  "rules": [
+   {
+    "kind": "user",
+    "path": "^/@([A-Za-z0-9_.]+)/?$",
+    "url": "https://medium.com/@{h}"
+   }
+  ],
+  "subdomain": true,
+  "subdomain_kind": "publication",
+  "subdomain_url": "https://{h}.medium.com",
+  "subdomain_reserved": [
+   "www",
+   "help",
+   "policy",
+   "blog",
+   "support",
+   "miro",
+   "api",
+   "cdn-images-1"
+  ]
+ },
+ {
+  "platform": "stackoverflow",
+  "hosts": [
+   "stackoverflow.com"
+  ],
+  "rules": [
+   {
+    "kind": "user",
+    "path": "^/users/([0-9]+)(?:/[^/]*)?/?$",
+    "url": "https://stackoverflow.com/users/{h}"
+   }
+  ]
+ },
+ {
+  "platform": "dockerhub",
+  "hosts": [
+   "hub.docker.com"
+  ],
+  "rules": [
+   {
+    "kind": "user",
+    "path": "^/u/([A-Za-z0-9_.-]+)/?$",
+    "url": "https://hub.docker.com/u/{h}"
+   },
+   {
+    "kind": "organization",
+    "path": "^/orgs/([A-Za-z0-9_.-]+)/?$",
+    "url": "https://hub.docker.com/u/{h}"
+   }
+  ]
+ },
+ {
+  "platform": "npm",
+  "hosts": [
+   "npmjs.com"
+  ],
+  "rules": [
+   {
+    "kind": "user",
+    "path": "^/~([A-Za-z0-9_.-]+)/?$",
+    "url": "https://www.npmjs.com/~{h}"
+   },
+   {
+    "kind": "organization",
+    "path": "^/org/([A-Za-z0-9_.-]+)/?$",
+    "url": "https://www.npmjs.com/org/{h}"
+   }
+  ]
+ },
+ {
+  "platform": "pypi",
+  "hosts": [
+   "pypi.org"
+  ],
+  "rules": [
+   {
+    "kind": "user",
+    "path": "^/user/([A-Za-z0-9_.-]+)/?$",
+    "url": "https://pypi.org/user/{h}"
+   }
+  ]
+ },
+ {
+  "platform": "crunchbase",
+  "hosts": [
+   "crunchbase.com"
+  ],
+  "rules": [
+   {
+    "kind": "company",
+    "path": "^/organization/([A-Za-z0-9_-]+)/?$",
+    "url": "https://www.crunchbase.com/organization/{h}"
+   },
+   {
+    "kind": "person",
+    "path": "^/person/([A-Za-z0-9_-]+)/?$",
+    "url": "https://www.crunchbase.com/person/{h}"
+   }
+  ]
+ },
+ {
+  "platform": "xing",
+  "hosts": [
+   "xing.com"
+  ],
+  "rules": [
+   {
+    "kind": "company",
+    "path": "^/(?:pages|companies)/([A-Za-z0-9_.-]+)/?$",
+    "url": "https://www.xing.com/pages/{h}"
+   },
+   {
+    "kind": "user",
+    "path": "^/profile/([A-Za-z0-9_.-]+)/?$",
+    "url": "https://www.xing.com/profile/{h}"
+   }
+  ]
+ },
+ {
+  "platform": "okru",
+  "hosts": [
+   "ok.ru"
+  ],
+  "rules": [
+   {
+    "kind": "group",
+    "path": "^/group/([0-9]+)/?$",
+    "url": "https://ok.ru/group/{h}"
+   },
+   {
+    "kind": "user",
+    "path": "^/profile/([0-9]+)/?$",
+    "url": "https://ok.ru/profile/{h}"
+   }
+  ]
+ },
+ {
+  "platform": "googleplay",
+  "hosts": [
+   "play.google.com"
+  ],
+  "rules": [
+   {
+    "kind": "app",
+    "path": "^/store/apps/details/?$",
+    "url": "https://play.google.com/store/apps/details?id={h}",
+    "query": "id",
+    "queryre": "^[A-Za-z][A-Za-z0-9_.]*$",
+    "keep_case": true
+   },
+   {
+    "kind": "developer",
+    "path": "^/store/apps/dev(?:eloper)?/?$",
+    "url": "https://play.google.com/store/apps/dev?id={h}",
+    "query": "id",
+    "queryre": "^[0-9]+$"
+   }
+  ]
+ },
+ {
+  "platform": "appstore",
+  "hosts": [
+   "apps.apple.com",
+   "itunes.apple.com"
+  ],
+  "rules": [
+   {
+    "kind": "developer",
+    "path": "^/(?:[a-z]{2}/)?developer/(?:[^/]+/)?id([0-9]+)",
+    "url": "https://apps.apple.com/developer/id{h}"
+   },
+   {
+    "kind": "app",
+    "path": "^/(?:[a-z]{2}/)?app/(?:[^/]+/)?id([0-9]+)",
+    "url": "https://apps.apple.com/app/id{h}"
+   }
+  ]
+ }
+]

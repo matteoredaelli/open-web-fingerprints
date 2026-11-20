@@ -557,7 +557,7 @@
     },
     {
       "platform": "github",
-      "kind": "organization",
+      "kind": "account",
       "handle": "example-tyres",
       "url": "https://github.com/example-tyres",
       "found": [
@@ -581,7 +581,7 @@
     },
     {
       "kind": "phone",
-      "value": "+39 02 0000 0000",
+      "value": "+390200000000",
       "found": [
         {
           "page": "https://www.tyres.example/",
@@ -619,11 +619,6 @@
       "code": "js_rules_skipped",
       "message": "rules on JavaScript globals were not evaluated: no browser",
       "ref": "js_global"
-    },
-    {
-      "code": "share_url_ignored",
-      "message": "a sharing link is not a profile",
-      "ref": "https://www.facebook.com/sharer/sharer.php"
     }
   ]
 }

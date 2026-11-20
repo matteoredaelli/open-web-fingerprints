@@ -1,7 +1,9 @@
 # owfscan: scanning a site
 
-Status: **plan; only the result contract exists** (`scan/result.go`,
-`schemas/scan-result.schema.json`, `examples/scan-result.json`). Go only.
+Status: **phase 1 done** (links, domains, social profiles, contacts from HTML);
+fetching, the rule engine and the `scan` command are still to do. Go only.
+Contract: `scan/result.go`, `schemas/scan-result.schema.json`, examples in
+`examples/`. Try it: `owfscan extract --url https://site.example/ page.html`.
 
 Given a URL (usually the root of a domain), `owfscan` returns a structured
 result: what was fetched, the technologies recognised and the evidence for each,
@@ -43,7 +45,8 @@ owfscan social https://www.example.org
 `pages` (status, redirects, headers, timing, from cache or not), `host` (IPs,
 DNS, TLS), `technologies` (ID, name, vendor, version, categories, evidence),
 `links` (URL, kind, rel, internal, domain, page), `domains` (registrable domain,
-count, examples), `socials` (platform, kind, handle, canonical URL, where found),
+count, examples), `socials` (platform, kind, handle, canonical URL, where found), `contacts`
+(email, phone, where found),
 `coverage`, `registry` (hash and sources of the export), `warnings`.
 
 ## Layout
@@ -71,6 +74,36 @@ internal/scan/...   links, social, fetch, observe, engine (public later if neede
    kind. Share and intent URLs are not profiles. The PyPI package `socials`
    (GPL-3.0-or-later, 7 platforms, no TikTok) is a reference for a comparison test
    only.
+   *Done.* `internal/scan/web`: 37 platforms and 66 profile rules as data
+   (`platforms.json`), `Extract(pages, target)`, and `owfscan extract`. Facts worth
+   knowing:
+   - Rules are an allow-list of profile shapes, so share links, intents, posts
+     and product pages are not profiles (`linkedin.com/shareArticle`,
+     `github.com/features`, `instagram.com/p/...`, 61 tested non-profile URLs).
+     Single-segment platforms also have reserved names.
+   - GitHub, GitLab, Bitbucket and Telegram say `account`: a URL does not tell a
+     user from an organisation. Mastodon (any host) is recognised only on links
+     the page marks `rel="me"`. Handles are lower-cased except where the platform
+     is case-sensitive; profile URLs are written in canonical form.
+   - Links: `a`, `area`, `link`, `script`, `iframe`, `form`, `img`, `source` and
+     `srcset`; `<base>` honoured; fragments, credentials and default ports
+     dropped; `javascript:`, `data:` and bare fragments ignored. A URL found by
+     two kinds of element is two links; the same URL on two pages says where.
+   - Contacts: `mailto:` (several addresses, parameters dropped), `tel:`
+     (digits and a leading `+`; `00` read as `+`; numbers without a prefix keep
+     their national form because the country is unknown), JSON-LD and visible
+     text for email. File names such as `logo@2x.png` and obfuscated addresses
+     (`name [at] host`) are not addresses. Phone numbers in plain text are not
+     read: too noisy.
+   - Not seen without running the page: links, handles and widgets added by
+     JavaScript.
+   - Compared once with the PyPI package `socials` 0.3.0 on our own URL set (so
+     biased towards us): on the six platforms it supports it recognised 12 of 20
+     profile URLs (missed `linkedin.com/school`, `showcase`, `m.facebook.com`,
+     Facebook groups and `/pg/`, `x.com`, YouTube `@handle` and `channel/UC…`) and
+     accepted 7 of 38 non-profile URLs (`github.com/features`, `/login`,
+     `/sponsors`, `twitter.com/home`, `facebook.com/login`,
+     `instagram.com/explore`). It is not a dependency.
 2. **Fetch and observe.** `net/http` with redirect chain, cookies, size and time
    limits; favicon (md5, mmh3); DNS and TLS of the host; on-disk response cache so
    a scan can be re-evaluated offline. Page to `matcher.Observation`.
