@@ -43,11 +43,18 @@ hooks: ## Install git hooks (lefthook)
 # CORPUS_REVISION=<sha> to see whether newer upstream rules made a case stale.
 CORPUS_REVISION ?= 9e52f10a9533c8f7f8d0703c843f7295d56c95a3
 CORPUS_DB := .corpus.db
-validate-corpus: build ## Fetch Enthec and run validation/cases (needs git and network)
+# The nuclei cases are written against this nuclei-templates commit, in a registry
+# that holds only that source (slugs get numeric suffixes when sources collide).
+CORPUS_NUCLEI_REVISION ?= 7fba833dacc1ea8f737fed34d01cc404a17e3424
+validate-corpus: build ## Fetch Enthec and nuclei and run validation/cases* (needs git and network)
 	rm -f $(CORPUS_DB)
 	$(BIN) --db $(CORPUS_DB) init
 	$(BIN) --db $(CORPUS_DB) source refresh enthec-webappanalyzer --revision $(CORPUS_REVISION)
 	$(BIN) --db $(CORPUS_DB) fingerprint test validation/cases
+	rm -f $(CORPUS_DB) $(CORPUS_DB)-shm $(CORPUS_DB)-wal
+	$(BIN) --db $(CORPUS_DB) init
+	$(BIN) --db $(CORPUS_DB) source refresh projectdiscovery-nuclei-templates --revision $(CORPUS_NUCLEI_REVISION)
+	$(BIN) --db $(CORPUS_DB) fingerprint test validation/cases-nuclei
 	rm -f $(CORPUS_DB) $(CORPUS_DB)-shm $(CORPUS_DB)-wal
 
 clean: ## Remove build artifacts

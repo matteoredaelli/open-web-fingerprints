@@ -399,3 +399,29 @@ func TestMergeCombinesPages(t *testing.T) {
 		t.Errorf("conflict=%v beta=%+v", conflict, beta)
 	}
 }
+
+func TestCollapseSameName(t *testing.T) {
+	a := techRec("tech_a", "PHP", "p", 0.5, "", "fp_1")
+	b := techRec("tech_b", "php", "p", 0.9, "8.2", "fp_2", "fp_1")
+	b.Sources = []string{"beta"}
+	b.Categories = []string{"languages"}
+	c := techRec("tech_c", "Other", "p", 0.5, "", "fp_3")
+	got := CollapseSameName([]scan.Technology{a, c, b}, 0)
+	if len(got) != 2 || got[0].Name != "Other" {
+		t.Fatalf("%+v", got)
+	}
+	php := got[1]
+	if php.ID != "tech_b" || php.Confidence != 0.9 || php.Version != "8.2" || len(php.SameName) != 1 || php.SameName[0] != "tech_a" {
+		t.Errorf("the most confident record is shown: %+v", php)
+	}
+	if len(php.Evidence) != 2 || strings.Join(php.Sources, ",") != "alpha,beta" || len(php.Categories) != 1 {
+		t.Errorf("evidence is the union, a rule found twice counts once: %+v", php)
+	}
+	again := CollapseSameName(got, 0)
+	if len(again) != 2 || len(again[1].SameName) != 1 || len(again[1].Evidence) != 2 {
+		t.Errorf("collapsing again changes nothing: %+v", again)
+	}
+	if got := CollapseSameName(nil, 0); got == nil || len(got) != 0 {
+		t.Error("an empty list stays an empty list")
+	}
+}

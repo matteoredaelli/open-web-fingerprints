@@ -136,6 +136,17 @@ separate job. `CORPUS_REVISION=<sha>` shows whether newer upstream rules made a 
 stale. The cases for the small fixture snapshot are in
 `internal/validation/testdata/cases` and run in every `go test`.
 
+`validation/cases-nuclei/` is the same for nuclei groups, against a registry that holds
+**only** `projectdiscovery-nuclei-templates` at its own pinned revision
+(`CORPUS_NUCLEI_REVISION`); slugs there carry numeric suffixes where names collide
+(`jenkins-2`). It has 20 cases on 8 groups (Metatag CMS, Apache, nginx, Magento, Wix,
+Django, Docusaurus, Jenkins), written by hand with realistic inputs, every case with a
+reason. They include rules that are right by their own terms but weak: **Metatag CMS**
+matches any page that declares a generator (a Hugo site included), and the case says so
+rather than pretending the rule is wrong. The corpus does not generate cases from the
+rule's own pattern for hundreds of groups: evidence that only repeats the pattern says
+nothing about it.
+
 Current state: **236 cases, all pass; 115 rules of 61 technologies are `ok`**, out of
 15836 Enthec rules (0.7%).
 

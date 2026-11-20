@@ -89,6 +89,11 @@ type Technology struct {
 	Vendor     string   `json:"vendor,omitempty"`
 	Version    string   `json:"version,omitempty"`
 	Categories []string `json:"categories,omitempty"`
+	// SameName lists the IDs of other registry records with the same name that were
+	// also detected and are shown here as one. The registry keeps them apart until a
+	// reviewer merges them (often the same product imported from two sources); this is
+	// presentation only, and the evidence of all of them is listed below.
+	SameName []string `json:"same_name,omitempty"`
 	// Confidence is the highest confidence among the matching rules that are not
 	// known to be broken. Agreement between rules does not raise it: rules that
 	// share an ancestor are not independent evidence.

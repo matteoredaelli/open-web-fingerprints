@@ -161,16 +161,7 @@ func (e *Engine) Run(in Input, opt Options) Output {
 			out.Technologies = append(out.Technologies, tech)
 		}
 	}
-	sort.SliceStable(out.Technologies, func(i, j int) bool {
-		a, b := out.Technologies[i], out.Technologies[j]
-		if la, lb := strings.ToLower(a.Name), strings.ToLower(b.Name); la != lb {
-			return la < lb
-		}
-		return a.Slug < b.Slug
-	})
-	if out.Technologies == nil {
-		out.Technologies = []scan.Technology{}
-	}
+	out.Technologies = CollapseSameName(out.Technologies, opt.MaxEvidence)
 	unsupported := 0
 	for _, n := range r.skipped {
 		unsupported += n
@@ -525,16 +516,7 @@ func Merge(outs []Output, maxEvidence int) Output {
 		}
 		merged.Technologies = append(merged.Technologies, *t)
 	}
-	sort.SliceStable(merged.Technologies, func(i, j int) bool {
-		a, b := merged.Technologies[i], merged.Technologies[j]
-		if la, lb := strings.ToLower(a.Name), strings.ToLower(b.Name); la != lb {
-			return la < lb
-		}
-		return a.Slug < b.Slug
-	})
-	if merged.Technologies == nil {
-		merged.Technologies = []scan.Technology{}
-	}
+	merged.Technologies = CollapseSameName(merged.Technologies, maxEvidence)
 	return merged
 }
 
@@ -550,5 +532,95 @@ func unionStrings(a, b []string) []string {
 		}
 	}
 	sort.Strings(out)
+	return out
+}
+
+// CollapseSameName shows technologies that have the same name (ignoring case) as one.
+// The registry often holds the same product twice, imported from different sources,
+// until a reviewer merges the records; a scan result should not list "PHP" twice.
+// The record with the highest confidence (then the most evidence, then the lowest ID)
+// is the one shown; the others' IDs go in SameName, their evidence, sources,
+// categories and (if the shown one has none) vendor and version are added to it. The
+// result is sorted by name. Calling it again changes nothing.
+func CollapseSameName(techs []scan.Technology, maxEvidence int) []scan.Technology {
+	if maxEvidence <= 0 {
+		maxEvidence = 50
+	}
+	groups := map[string][]scan.Technology{}
+	var keys []string
+	for _, t := range techs {
+		k := strings.ToLower(strings.TrimSpace(t.Name))
+		if _, ok := groups[k]; !ok {
+			keys = append(keys, k)
+		}
+		groups[k] = append(groups[k], t)
+	}
+	out := make([]scan.Technology, 0, len(keys))
+	for _, k := range keys {
+		g := groups[k]
+		sort.SliceStable(g, func(i, j int) bool {
+			a, b := g[i], g[j]
+			if a.Confidence != b.Confidence {
+				return a.Confidence > b.Confidence
+			}
+			if len(a.Evidence) != len(b.Evidence) {
+				return len(a.Evidence) > len(b.Evidence)
+			}
+			return a.ID < b.ID
+		})
+		t := g[0]
+		t.Evidence = append([]scan.Evidence(nil), t.Evidence...)
+		same := append([]string(nil), t.SameName...)
+		seenRule := map[string]bool{}
+		for _, ev := range t.Evidence {
+			seenRule[ev.RuleID+"\x00"+ev.Page] = true
+		}
+		for _, o := range g[1:] {
+			same = append(same, o.ID)
+			same = append(same, o.SameName...)
+			t.Sources = unionStrings(t.Sources, o.Sources)
+			t.Categories = unionStrings(t.Categories, o.Categories)
+			if t.Vendor == "" {
+				t.Vendor = o.Vendor
+			}
+			if t.Version == "" {
+				t.Version = o.Version
+			}
+			for _, ev := range o.Evidence {
+				if kk := ev.RuleID + "\x00" + ev.Page; !seenRule[kk] {
+					seenRule[kk] = true
+					t.Evidence = append(t.Evidence, ev)
+				}
+			}
+		}
+		sort.SliceStable(t.Evidence, func(i, j int) bool {
+			a, b := t.Evidence[i], t.Evidence[j]
+			if a.Page != b.Page {
+				return a.Page < b.Page
+			}
+			return a.RuleID < b.RuleID
+		})
+		if len(t.Evidence) > maxEvidence {
+			t.Evidence = t.Evidence[:maxEvidence]
+		}
+		if len(same) > 0 {
+			same = unionStrings(same, nil)
+			filtered := same[:0]
+			for _, id := range same {
+				if id != t.ID {
+					filtered = append(filtered, id)
+				}
+			}
+			t.SameName = filtered
+		}
+		out = append(out, t)
+	}
+	sort.SliceStable(out, func(i, j int) bool {
+		a, b := out[i], out[j]
+		if la, lb := strings.ToLower(a.Name), strings.ToLower(b.Name); la != lb {
+			return la < lb
+		}
+		return a.Slug < b.Slug
+	})
 	return out
 }

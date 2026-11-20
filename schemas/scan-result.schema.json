@@ -329,6 +329,14 @@
             "type": "string"
           }
         },
+        "same_name": {
+          "type": "array",
+          "description": "IDs of other registry records with the same name, detected too and shown here as one. The registry keeps them apart until a reviewer merges them; this is presentation only.",
+          "items": {
+            "type": "string",
+            "pattern": "^tech_[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+          }
+        },
         "confidence": {
           "type": "number",
           "minimum": 0,

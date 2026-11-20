@@ -207,6 +207,8 @@ internal/scan/...   links, social, fetch, observe, engine (public later if neede
   scanner keeps importing it from inside the module).
 - Which words select pages for `--depth`; they are a judgement call, not measured on many sites.
 - Caching the loaded registry between runs (loading a 34 MB export takes most of a scan).
-- Matching technologies of different sources that have the same name (two `PHP`).
+- Same-name technologies are shown as one in a result (`same_name` lists the other IDs);
+  the registry still keeps them apart until a reviewer merges them. Two different products
+  with the same name would be shown as one: not seen in practice, not measured either.
 - Rules that are true for any site of a kind (`Metatag CMS`): flag them in the registry with tests rather than in the scanner.
 - Which platforms' patterns need live verification against real profile URLs.

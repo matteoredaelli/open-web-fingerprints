@@ -1,0 +1,566 @@
+{
+ "schema_version": "0.1.0",
+ "cases": [
+  {
+   "id": "metatag-cms-positive",
+   "description": "Upstream's rule matches ANY page that declares a generator, whatever the product: a Hugo site is reported as 'Metatag CMS'. Documents the rule's real behaviour; it does not say the page uses a CMS called Metatag.",
+   "group": [
+    {
+     "technology": "metatag-cms",
+     "observation": "response_headers",
+     "operator": "contains",
+     "pattern": "text/html"
+    },
+    {
+     "technology": "metatag-cms",
+     "observation": "html",
+     "operator": "regex",
+     "pattern": "(?-i)(?i)<meta\\s+?name=\"?generator\"?\\s+?content=\"[^\"]+?\""
+    }
+   ],
+   "input": {
+    "status": 200,
+    "headers": {
+     "Content-Type": "text/html; charset=utf-8"
+    },
+    "html": "<html><head><meta name=\"generator\" content=\"Hugo 0.119.0\"></head></html>"
+   },
+   "expect": {
+    "match": true
+   }
+  },
+  {
+   "id": "metatag-cms-negative-no-generator",
+   "description": "Without a generator meta tag the group does not hold.",
+   "group": [
+    {
+     "technology": "metatag-cms",
+     "observation": "response_headers",
+     "operator": "contains",
+     "pattern": "text/html"
+    },
+    {
+     "technology": "metatag-cms",
+     "observation": "html",
+     "operator": "regex",
+     "pattern": "(?-i)(?i)<meta\\s+?name=\"?generator\"?\\s+?content=\"[^\"]+?\""
+    }
+   ],
+   "input": {
+    "status": 200,
+    "headers": {
+     "Content-Type": "text/html"
+    },
+    "html": "<html><head><title>Plain</title></head></html>"
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "metatag-cms-negative-not-html",
+   "description": "Both members are needed: the content type must be html.",
+   "group": [
+    {
+     "technology": "metatag-cms",
+     "observation": "response_headers",
+     "operator": "contains",
+     "pattern": "text/html"
+    },
+    {
+     "technology": "metatag-cms",
+     "observation": "html",
+     "operator": "regex",
+     "pattern": "(?-i)(?i)<meta\\s+?name=\"?generator\"?\\s+?content=\"[^\"]+?\""
+    }
+   ],
+   "input": {
+    "status": 200,
+    "headers": {
+     "Content-Type": "application/json"
+    },
+    "html": "<meta name=\"generator\" content=\"X\">"
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "apache-positive",
+   "description": "Server header names Apache.",
+   "group": [
+    {
+     "technology": "apache",
+     "observation": "response_headers",
+     "operator": "regex",
+     "pattern": "(?-i)Apache+"
+    },
+    {
+     "technology": "apache",
+     "observation": "http_status",
+     "operator": "equals",
+     "pattern": "200"
+    }
+   ],
+   "input": {
+    "status": 200,
+    "headers": {
+     "Server": "Apache/2.4.58 (Ubuntu)"
+    }
+   },
+   "expect": {
+    "match": true
+   }
+  },
+  {
+   "id": "apache-negative-other-server",
+   "description": "Another server.",
+   "group": [
+    {
+     "technology": "apache",
+     "observation": "response_headers",
+     "operator": "regex",
+     "pattern": "(?-i)Apache+"
+    },
+    {
+     "technology": "apache",
+     "observation": "http_status",
+     "operator": "equals",
+     "pattern": "200"
+    }
+   ],
+   "input": {
+    "status": 200,
+    "headers": {
+     "Server": "nginx/1.25"
+    }
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "apache-negative-status",
+   "description": "The group requires status 200: an Apache error page is not detected by this group.",
+   "group": [
+    {
+     "technology": "apache",
+     "observation": "response_headers",
+     "operator": "regex",
+     "pattern": "(?-i)Apache+"
+    },
+    {
+     "technology": "apache",
+     "observation": "http_status",
+     "operator": "equals",
+     "pattern": "200"
+    }
+   ],
+   "input": {
+    "status": 404,
+    "headers": {
+     "Server": "Apache/2.4.58"
+    }
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "nginx-positive",
+   "description": "Server header with a version.",
+   "group": [
+    {
+     "technology": "nginx",
+     "observation": "response_headers",
+     "operator": "regex",
+     "pattern": "(?-i)nginx/[0-9.]+"
+    },
+    {
+     "technology": "nginx",
+     "observation": "http_status",
+     "operator": "equals",
+     "pattern": "200"
+    }
+   ],
+   "input": {
+    "status": 200,
+    "headers": {
+     "Server": "nginx/1.25.3"
+    }
+   },
+   "expect": {
+    "match": true
+   }
+  },
+  {
+   "id": "nginx-negative-no-version",
+   "description": "The rule needs a version after the slash; a bare 'nginx' is not matched by this group.",
+   "group": [
+    {
+     "technology": "nginx",
+     "observation": "response_headers",
+     "operator": "regex",
+     "pattern": "(?-i)nginx/[0-9.]+"
+    },
+    {
+     "technology": "nginx",
+     "observation": "http_status",
+     "operator": "equals",
+     "pattern": "200"
+    }
+   ],
+   "input": {
+    "status": 200,
+    "headers": {
+     "Server": "nginx"
+    }
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "nginx-negative-status",
+   "description": "Status must be 200.",
+   "group": [
+    {
+     "technology": "nginx",
+     "observation": "response_headers",
+     "operator": "regex",
+     "pattern": "(?-i)nginx/[0-9.]+"
+    },
+    {
+     "technology": "nginx",
+     "observation": "http_status",
+     "operator": "equals",
+     "pattern": "200"
+    }
+   ],
+   "input": {
+    "status": 301,
+    "headers": {
+     "Server": "nginx/1.25.3"
+    }
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "magento-positive",
+   "description": "An X-Magento header.",
+   "group": [
+    {
+     "technology": "magento-2",
+     "observation": "response_headers",
+     "operator": "regex",
+     "pattern": "x-magento"
+    },
+    {
+     "technology": "magento-2",
+     "observation": "http_status",
+     "operator": "equals",
+     "pattern": "200"
+    }
+   ],
+   "input": {
+    "status": 200,
+    "headers": {
+     "X-Magento-Cache-Debug": "HIT"
+    }
+   },
+   "expect": {
+    "match": true
+   }
+  },
+  {
+   "id": "magento-negative",
+   "description": "Other cache header.",
+   "group": [
+    {
+     "technology": "magento-2",
+     "observation": "response_headers",
+     "operator": "regex",
+     "pattern": "x-magento"
+    },
+    {
+     "technology": "magento-2",
+     "observation": "http_status",
+     "operator": "equals",
+     "pattern": "200"
+    }
+   ],
+   "input": {
+    "status": 200,
+    "headers": {
+     "X-Cache": "HIT"
+    }
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "wix-positive",
+   "description": "The raw response (headers and body) holds the Wix header.",
+   "group": [
+    {
+     "technology": "wix",
+     "observation": "http_response",
+     "operator": "regex",
+     "pattern": "X-Wix-Request-Id"
+    },
+    {
+     "technology": "wix",
+     "observation": "http_status",
+     "operator": "equals",
+     "pattern": "200"
+    }
+   ],
+   "input": {
+    "status": 200,
+    "headers": {
+     "X-Wix-Request-Id": "1700000000.123"
+    },
+    "html": "<html></html>"
+   },
+   "expect": {
+    "match": true
+   }
+  },
+  {
+   "id": "wix-negative",
+   "description": "A page that only mentions wix.",
+   "group": [
+    {
+     "technology": "wix",
+     "observation": "http_response",
+     "operator": "regex",
+     "pattern": "X-Wix-Request-Id"
+    },
+    {
+     "technology": "wix",
+     "observation": "http_status",
+     "operator": "equals",
+     "pattern": "200"
+    }
+   ],
+   "input": {
+    "status": 200,
+    "headers": {
+     "X-Request-Id": "1"
+    },
+    "html": "<html>wix is mentioned</html>"
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "django-positive",
+   "description": "Page footer.",
+   "group": [
+    {
+     "technology": "django",
+     "observation": "html",
+     "operator": "regex",
+     "pattern": "Powered by Django"
+    },
+    {
+     "technology": "django",
+     "observation": "http_status",
+     "operator": "equals",
+     "pattern": "200"
+    }
+   ],
+   "input": {
+    "status": 200,
+    "html": "<footer>Powered by Django</footer>"
+   },
+   "expect": {
+    "match": true
+   }
+  },
+  {
+   "id": "django-negative",
+   "description": "Another framework.",
+   "group": [
+    {
+     "technology": "django",
+     "observation": "html",
+     "operator": "regex",
+     "pattern": "Powered by Django"
+    },
+    {
+     "technology": "django",
+     "observation": "http_status",
+     "operator": "equals",
+     "pattern": "200"
+    }
+   ],
+   "input": {
+    "status": 200,
+    "html": "<footer>Powered by Flask</footer>"
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "django-negative-status",
+   "description": "The groups for 403 and 404 are separate; a 500 matches none.",
+   "group": [
+    {
+     "technology": "django",
+     "observation": "html",
+     "operator": "regex",
+     "pattern": "Powered by Django"
+    },
+    {
+     "technology": "django",
+     "observation": "http_status",
+     "operator": "equals",
+     "pattern": "200"
+    }
+   ],
+   "input": {
+    "status": 500,
+    "html": "<footer>Powered by Django</footer>"
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "docusaurus-positive",
+   "description": "A Docusaurus v3 page.",
+   "group": [
+    {
+     "technology": "docusaurus",
+     "observation": "html",
+     "operator": "regex",
+     "pattern": "(?-i)<meta name=\"generator\" content=\"Docusaurus v[0-9]+\\.[0-9]+"
+    },
+    {
+     "technology": "docusaurus",
+     "observation": "html",
+     "operator": "contains",
+     "pattern": "name=\"docusaurus_locale\""
+    },
+    {
+     "technology": "docusaurus",
+     "observation": "html",
+     "operator": "contains",
+     "pattern": "name=\"docusaurus_tag\""
+    },
+    {
+     "technology": "docusaurus",
+     "observation": "http_status",
+     "operator": "equals",
+     "pattern": "200"
+    }
+   ],
+   "input": {
+    "status": 200,
+    "html": "<html><head><meta name=\"generator\" content=\"Docusaurus v3.1.0\"><meta data-rh=\"true\" name=\"docusaurus_locale\" content=\"en\"><meta data-rh=\"true\" name=\"docusaurus_tag\" content=\"default\"></head></html>"
+   },
+   "expect": {
+    "match": true
+   }
+  },
+  {
+   "id": "docusaurus-negative-generator-only",
+   "description": "All four members are needed.",
+   "group": [
+    {
+     "technology": "docusaurus",
+     "observation": "html",
+     "operator": "regex",
+     "pattern": "(?-i)<meta name=\"generator\" content=\"Docusaurus v[0-9]+\\.[0-9]+"
+    },
+    {
+     "technology": "docusaurus",
+     "observation": "html",
+     "operator": "contains",
+     "pattern": "name=\"docusaurus_locale\""
+    },
+    {
+     "technology": "docusaurus",
+     "observation": "html",
+     "operator": "contains",
+     "pattern": "name=\"docusaurus_tag\""
+    },
+    {
+     "technology": "docusaurus",
+     "observation": "http_status",
+     "operator": "equals",
+     "pattern": "200"
+    }
+   ],
+   "input": {
+    "status": 200,
+    "html": "<meta name=\"generator\" content=\"Docusaurus v3.1.0\">"
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "jenkins-positive",
+   "description": "Header and page agree.",
+   "group": [
+    {
+     "technology": "jenkins-2",
+     "observation": "response_headers",
+     "operator": "regex",
+     "pattern": "x-jenkins:"
+    },
+    {
+     "technology": "jenkins-2",
+     "observation": "html",
+     "operator": "contains",
+     "pattern": "Jenkins"
+    }
+   ],
+   "input": {
+    "status": 200,
+    "headers": {
+     "X-Jenkins": "2.426.1"
+    },
+    "html": "<title>Sign in [Jenkins]</title>"
+   },
+   "expect": {
+    "match": true
+   }
+  },
+  {
+   "id": "jenkins-negative-header-only",
+   "description": "Both members are needed.",
+   "group": [
+    {
+     "technology": "jenkins-2",
+     "observation": "response_headers",
+     "operator": "regex",
+     "pattern": "x-jenkins:"
+    },
+    {
+     "technology": "jenkins-2",
+     "observation": "html",
+     "operator": "contains",
+     "pattern": "Jenkins"
+    }
+   ],
+   "input": {
+    "status": 200,
+    "headers": {
+     "X-Jenkins": "2.426.1"
+    },
+    "html": "<title>Other</title>"
+   },
+   "expect": {
+    "match": false
+   }
+  }
+ ]
+}
