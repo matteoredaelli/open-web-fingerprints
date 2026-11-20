@@ -59,8 +59,9 @@ type Input struct {
 	// Page is the URL the observation comes from.
 	Page string
 	// DNSLooked, HasTLS, FaviconTried and RobotsFetched tell which observations
-	// were made.
-	DNSLooked, HasTLS, FaviconTried, RobotsFetched bool
+	// were made. HasBrowser says the page was run in a browser, so the global
+	// variables (Observation.JS) and the XHR calls (Observation.XHR) are known.
+	DNSLooked, HasTLS, FaviconTried, RobotsFetched, HasBrowser bool
 }
 
 // Output is the outcome of a run.
@@ -123,6 +124,21 @@ func New(reg *domain.Registry) *Engine {
 		}
 	}
 	return e
+}
+
+// JSGlobals lists the global variables the registry's rules look for, as dotted paths,
+// sorted. A browser run reads exactly these.
+func (e *Engine) JSGlobals() []string {
+	seen := map[string]bool{}
+	var out []string
+	for _, f := range e.reg.Fingerprints {
+		if f.Observation == domain.ObsJSGlobal && f.Target != "" && f.Status != domain.StatusDeprecated && !seen[f.Target] {
+			seen[f.Target] = true
+			out = append(out, f.Target)
+		}
+	}
+	sort.Strings(out)
+	return out
 }
 
 // Rules returns the number of rules of the registry.
@@ -203,7 +219,9 @@ func (r *run) reason(f domain.Fingerprint) string {
 	}
 	switch f.Observation {
 	case domain.ObsJSGlobal, domain.ObsXHR:
-		return ReasonBrowser
+		if !r.in.HasBrowser {
+			return ReasonBrowser
+		}
 	case domain.ObsRobots:
 		if !r.in.RobotsFetched {
 			return ReasonRobots

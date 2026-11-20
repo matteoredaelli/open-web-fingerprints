@@ -63,6 +63,9 @@ type Options struct {
 	Transport http.RoundTripper
 }
 
+// DefaultUserAgent identifies the scanner.
+const DefaultUserAgent = "owfscan (+https://github.com/matteoredaelli/open-web-fingerprints)"
+
 // Response is what was fetched.
 type Response struct {
 	URL         string
@@ -106,7 +109,7 @@ func New(opt Options) *Fetcher {
 		opt.MaxAge = DefaultMaxAge
 	}
 	if opt.UserAgent == "" {
-		opt.UserAgent = "owfscan (+https://github.com/matteoredaelli/open-web-fingerprints)"
+		opt.UserAgent = DefaultUserAgent
 	}
 	if opt.Now == nil {
 		opt.Now = time.Now

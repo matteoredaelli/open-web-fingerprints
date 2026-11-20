@@ -238,6 +238,39 @@
           }
         }
       }
+    },
+    "browser": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Present only when the first page was also run in a headless browser. Then the page's global variables and XHR calls are known, and the first page's HTML, links, socials and contacts are those of the document after its scripts ran.",
+      "required": [
+        "requests",
+        "blocked",
+        "globals_found"
+      ],
+      "properties": {
+        "version": {
+          "type": "string"
+        },
+        "requests": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Requests the page made through the scanner's proxy."
+        },
+        "blocked": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Connections the proxy refused (non-public addresses)."
+        },
+        "timed_out": {
+          "type": "boolean"
+        },
+        "globals_found": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "How many of the global variables looked for exist on the page."
+        }
+      }
     }
   },
   "$defs": {

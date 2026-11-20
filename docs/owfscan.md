@@ -376,6 +376,51 @@ it is evaluated. Without `--depth` it is not fetched.
 On `mr70.eu` (my own site), `--depth 1` read the home page and `/contact/` in about 3 s
 and added the contact email address that the home page does not have.
 
+## Running the page in a browser (`--browser`)
+
+About a quarter of the registry's rules (js_global, XHR) cannot be answered from the HTML:
+they look at JavaScript variables and at the requests a page makes. `--browser` opens the
+**first page** in headless Chrome (installed separately; `--chrome PATH` or
+`OWFSCAN_CHROME` if it is not in the usual places) and reads, after the load and a 2 s
+pause for late scripts:
+
+- the global variables the rules look for (their dotted paths come from the registry, so
+  only those are read, as strings for strings, numbers and booleans);
+- the URLs of the `fetch`/XHR calls the page made;
+- the DOM after the scripts ran. This **replaces** the page source for the rules and for
+  the extraction of links, social profiles and contacts, so what scripts add is found
+  (and a rule on something that only exists in the source, such as a comment a script
+  removes, may stop matching).
+
+On `mr70.eu` with the registry of this repository: technologies 11 → 13 (Funding Choices,
+Priority Hints), rules evaluated 12739 → 18648 of 22418. `pirelli.com` 7 → 15 and
+`michelin.com` 9 → 16 (jQuery 3.2.1, Lodash, RequireJS 2.3.5; Didomi, Matomo, Kameleoon,
+Piano, Svelte). The coverage line then says what is still not read: `needs a browser 2`
+(rules on DOM properties, `::prop(...)`) and the rest as before.
+
+Running a site's JavaScript is not the same as reading its HTML, so the browser is held
+to the scanner's rules **by construction**:
+
+- All of its traffic goes through a proxy the scanner runs. The proxy refuses non-public
+  addresses when it connects (after DNS, so redirects and DNS rebinding do not help),
+  counts requests and stops at 300. The result says how many were made and how many were
+  refused.
+- Chrome is started with its own DNS, QUIC and WebRTC off, so nothing goes around the
+  proxy; downloads are denied, extensions, sync and background networking are off, and
+  the profile is a temporary directory that is removed afterwards.
+- Nothing is clicked, typed or submitted. The identifying User-Agent is used.
+- `--browser-timeout` (default 30 s) bounds the run; a page that is still loading gives
+  what it has, with a warning.
+- If Chrome cannot be started, `--browser` is an **error**, not a quiet fall back.
+
+Limits: only the first page is run (pages added by `--depth` are read as plain HTML);
+a run is **not deterministic** (two runs of `pirelli.com` differed by one library, a
+carousel that loads late); a hostile page can define a global to look like something else,
+as it can for any script-based detector; and shared global names give false positives
+(on `pirelli.com`, `Underscore.js` was reported with Lodash's `_.VERSION`, because both
+define `_`; the reference engines solve this with `excludes` between technologies, which
+the registry does not carry yet).
+
 ## Friend domains (`--friends`, `owfscan friends`)
 
 A **friend** is a domain that the target's home page links to and whose own home page

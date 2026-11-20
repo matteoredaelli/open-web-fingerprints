@@ -12,6 +12,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/url"
 	"os"
@@ -20,6 +21,7 @@ import (
 
 	"github.com/matteoredaelli/open-web-fingerprints/internal/domain"
 	"github.com/matteoredaelli/open-web-fingerprints/internal/export"
+	"github.com/matteoredaelli/open-web-fingerprints/internal/scan/browser"
 	"github.com/matteoredaelli/open-web-fingerprints/internal/scan/engine"
 	"github.com/matteoredaelli/open-web-fingerprints/internal/scan/fetch"
 	"github.com/matteoredaelli/open-web-fingerprints/internal/scan/observe"
@@ -129,9 +131,14 @@ type Options struct {
 	IgnoreRobots    bool
 	// Friends looks for friend domains (see FindFriends); FriendsMax bounds how many
 	// other sites are contacted (0: DefaultMaxFriends).
-	Friends    bool
-	FriendsMax int
-	MinHealth  string
+	Friends bool
+	// Browser also opens the first page in headless Chrome (see package browser).
+	// BrowserPath names the executable (empty: the usual places); BrowserTimeout bounds the run.
+	Browser        bool
+	BrowserPath    string
+	BrowserTimeout time.Duration
+	FriendsMax     int
+	MinHealth      string
 	// Version names the scanner in the result.
 	Version string
 	Now     func() time.Time
@@ -163,6 +170,32 @@ func Scan(ctx context.Context, opt Options, target string) (*scan.Result, error)
 		return nil, fmt.Errorf("scanner: %w", err)
 	}
 	ob.Observation.Robots = crawl.Robots
+	var browserInfo *scan.Browser
+	var browserWarn []scan.Warning
+	if opt.Browser {
+		ua := opt.Fetch.UserAgent
+		if ua == "" {
+			ua = fetch.DefaultUserAgent
+		}
+		br, err := browser.Run(ctx, browser.Options{
+			ChromePath: opt.BrowserPath, Timeout: opt.BrowserTimeout, AllowPrivate: opt.Fetch.AllowPrivate,
+			Paths: opt.Registry.Engine.JSGlobals(), UserAgent: ua,
+		}, ob.Page.FinalURL)
+		switch {
+		case errors.Is(err, browser.ErrNoChrome):
+			return nil, err
+		case err != nil:
+			browserWarn = append(browserWarn, scan.Warning{Code: "browser_failed", Message: err.Error(), Ref: ob.Page.FinalURL})
+		default:
+			ob.Observation.JS, ob.Observation.XHR = br.Globals, br.XHR
+			// The document after scripts ran replaces the source for the rules and the extraction.
+			ob.HTML, ob.Observation.HTML = []byte(br.DOM), br.DOM
+			browserInfo = &scan.Browser{Version: br.Version, Requests: br.Requests, Blocked: br.Blocked, TimedOut: br.TimedOut, Globals: len(br.Globals)}
+			if br.TimedOut {
+				browserWarn = append(browserWarn, scan.Warning{Code: "browser_timeout", Message: "the page had not settled in time; what had loaded was used", Ref: ob.Page.FinalURL})
+			}
+		}
+	}
 
 	var pages []web.Page
 	var outs []engine.Output
@@ -174,12 +207,13 @@ func Scan(ctx context.Context, opt Options, target string) (*scan.Result, error)
 		if i == 0 {
 			// Host-level observations belong to the first page.
 			in.DNSLooked, in.HasTLS, in.FaviconTried, in.RobotsFetched = ob.DNSLooked, ob.Host.TLS != nil, ob.FaviconTried, crawl.RobotsFetched
+			in.HasBrowser = browserInfo != nil
 		}
 		outs = append(outs, opt.Registry.Engine.Run(in, engine.Options{MinHealth: opt.MinHealth}))
 	}
 	ex := web.Extract(pages, final.Hostname())
 	out := engine.Merge(outs, 0)
-	ex.Warnings = append(append([]scan.Warning{}, crawl.Warnings...), ex.Warnings...)
+	ex.Warnings = append(append(append([]scan.Warning{}, crawl.Warnings...), browserWarn...), ex.Warnings...)
 
 	res := &scan.Result{
 		Schema: "https://github.com/matteoredaelli/open-web-fingerprints/schemas/scan-result.schema.json", SchemaVersion: scan.SchemaVersion,
@@ -190,6 +224,7 @@ func Scan(ctx context.Context, opt Options, target string) (*scan.Result, error)
 		Coverage: out.Coverage, Registry: opt.Registry.Ref,
 		Warnings: append(append([]scan.Warning{}, ex.Warnings...), out.Warnings...),
 	}
+	res.Browser = browserInfo
 	for _, p := range crawl.Pages {
 		res.Pages = append(res.Pages, p.Page)
 	}

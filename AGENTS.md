@@ -152,8 +152,8 @@ guard.
 
 Open, roughly in order:
 0. Scanner `owfscan` (docs/scan.md): links, domains, social profiles and contacts
-   `owfscan scan` works (fetch, observe, engine, links, social, contacts, `--depth`, friend domains). Next:
-   registry caching, a browser for JS rules, approved probes.
+   `owfscan scan` works (fetch, observe, engine, links, social, contacts, `--depth`, friend domains, `--browser`). Next:
+   approved probes, `excludes` between technologies, browser on more pages.
 1. More cases: 115 Enthec rules and 2 nuclei groups have test evidence (Recog has
    685 from upstream examples). Next: the remaining popular technologies, nuclei
    groups, and cookie rules whose names look like patterns.

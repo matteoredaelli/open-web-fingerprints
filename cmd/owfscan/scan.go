@@ -11,6 +11,7 @@ import (
 	"sort"
 	"strings"
 	"text/tabwriter"
+	"time"
 
 	"github.com/spf13/cobra"
 
@@ -35,7 +36,9 @@ func version() string {
 func newScanCmd() *cobra.Command {
 	n := &netFlags{}
 	var registry, minHealth, verifyCache string
-	var friends bool
+	var friends, useBrowser bool
+	var chrome string
+	var browserTimeout time.Duration
 	var friendsMax int
 	var noDNS, noFavicon, verbose bool
 	c := &cobra.Command{
@@ -65,6 +68,7 @@ func newScanCmd() *cobra.Command {
 				Registry: reg, NoFavicon: noFavicon, MinHealth: minHealth, Version: version(),
 				Depth: n.depth, MaxPages: n.maxPages, Delay: n.delay, IgnoreRobots: n.ignoreRobots,
 				Friends: friends, FriendsMax: friendsMax,
+				Browser: useBrowser, BrowserPath: chrome, BrowserTimeout: browserTimeout,
 				Fetch: fetch.Options{Timeout: n.timeout, AllowPrivate: n.allowPrivate, Insecure: n.insecure, CacheDir: n.cacheDir, MaxAge: n.maxAge},
 			}
 			if !noDNS {
@@ -87,6 +91,9 @@ func newScanCmd() *cobra.Command {
 	n.add(c)
 	n.addCrawl(c)
 	c.Flags().BoolVar(&friends, "friends", false, "also look for friend domains: linked from the home page and linking back to it (contacts other sites; see `owfscan friends --help`)")
+	c.Flags().BoolVar(&useBrowser, "browser", false, "also open the first page in headless Chrome, to see global variables, XHR calls and the DOM after scripts ran (runs the page's JavaScript; see docs/owfscan.md)")
+	c.Flags().StringVar(&chrome, "chrome", os.Getenv("OWFSCAN_CHROME"), "Chrome or Chromium executable for --browser (env OWFSCAN_CHROME; default: the usual places)")
+	c.Flags().DurationVar(&browserTimeout, "browser-timeout", 30*time.Second, "time allowed to the browser for the page")
 	c.Flags().IntVar(&friendsMax, "friends-max", scanner.DefaultMaxFriends, "most candidate domains to look at with --friends")
 	c.Flags().StringVar(&verifyCache, "verify-cache", "", "where to remember that a registry file was verified (default: the user cache directory; \"off\" verifies every time)")
 	c.Flags().StringVar(&registry, "registry", os.Getenv("OWFSCAN_REGISTRY"), "registry export to apply (env OWFSCAN_REGISTRY)")
@@ -173,6 +180,10 @@ func printScan(cmd *cobra.Command, r *scan.Result, verbose bool) {
 		fmt.Fprintf(w, "%s\t%s\n", c.Kind, c.Value)
 	}
 	_ = w.Flush()
+	if r.Browser != nil {
+		b := r.Browser
+		fmt.Fprintf(out, "\nBROWSER: %s, %d requests (%d refused), %d global variables found%s\n", b.Version, b.Requests, b.Blocked, b.Globals, map[bool]string{true: ", timed out"}[b.TimedOut])
+	}
 	if r.Friends != nil {
 		printFriends(cmd, r.Friends)
 	}

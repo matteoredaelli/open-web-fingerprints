@@ -8,6 +8,8 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
+	"github.com/matteoredaelli/open-web-fingerprints/internal/scan/browser"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -338,5 +340,73 @@ func TestLoadRegistryCached(t *testing.T) {
 	}
 	if _, err := LoadRegistryCached(filepath.Join(dir, "missing.json"), stamps); err == nil {
 		t.Error("a missing file is an error")
+	}
+}
+
+// The page builds what the rules look for with JavaScript: a global variable, a link added
+// after the load, and a script-inserted social profile.
+func jsSite() *httptest.Server {
+	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/" {
+			http.NotFound(w, r)
+			return
+		}
+		w.Header().Set("Content-Type", "text/html")
+		_, _ = w.Write([]byte(`<!doctype html><html><body><p>hello</p><script>
+		  window.AFRAME = {version: '1.4.2'};
+		  document.addEventListener('DOMContentLoaded', function () {
+		    var a = document.createElement('a'); a.href = 'https://github.com/jsmaker'; a.textContent = 'code';
+		    document.body.appendChild(a);
+		  });
+		</script></body></html>`))
+	}))
+}
+
+func TestScanWithBrowser(t *testing.T) {
+	if os.Getenv("OWF_NO_BROWSER_TESTS") != "" {
+		t.Skip("OWF_NO_BROWSER_TESTS is set")
+	}
+	srv := jsSite()
+	defer srv.Close()
+	opt := options(t)
+	opt.Fetch.AllowPrivate = true
+
+	plain, err := Scan(context.Background(), opt, srv.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if tech(plain, "A-Frame") != nil || len(plain.Socials) != 0 || plain.Browser != nil || plain.Coverage.Skipped["needs a browser"] == 0 {
+		t.Fatalf("without a browser the script's work is not seen: %v %+v", names(plain), plain.Socials)
+	}
+
+	opt.Browser, opt.BrowserTimeout = true, 30*time.Second
+	res, err := Scan(context.Background(), opt, srv.URL)
+	if errors.Is(err, browser.ErrNoChrome) {
+		t.Skipf("no Chrome: %v", err)
+	}
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := Validate(res); err != nil {
+		t.Fatalf("a browser result must satisfy the schema: %v", err)
+	}
+	a := tech(res, "A-Frame")
+	if a == nil || a.Version != "1.4.2" {
+		t.Fatalf("the global variable is read: %v", names(res))
+	}
+	if len(res.Socials) != 1 || res.Socials[0].Handle != "jsmaker" {
+		t.Errorf("links added by scripts are extracted: %+v", res.Socials)
+	}
+	if res.Browser == nil || res.Browser.Globals < 1 || res.Browser.Requests < 1 || res.Browser.Blocked != 0 {
+		t.Errorf("the browser section says what happened: %+v", res.Browser)
+	}
+	if res.Coverage.Skipped["needs a browser"] >= plain.Coverage.Skipped["needs a browser"] || res.Coverage.RulesEvaluated <= plain.Coverage.RulesEvaluated {
+		t.Errorf("coverage improves: %+v vs %+v", res.Coverage, plain.Coverage)
+	}
+
+	// A browser that is not there is an error, not a silent downgrade.
+	opt.BrowserPath = "/nonexistent/chrome"
+	if _, err := Scan(context.Background(), opt, srv.URL); !errors.Is(err, browser.ErrNoChrome) {
+		t.Errorf("--browser without Chrome must fail: %v", err)
 	}
 }

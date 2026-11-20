@@ -376,3 +376,16 @@ func TestFriendsCommand(t *testing.T) {
 		t.Errorf("a private target is refused:\n%s", out)
 	}
 }
+
+func TestBrowserFlagWithoutChromeFails(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { _, _ = w.Write([]byte("<p>x</p>")) }))
+	defer srv.Close()
+	reg := filepath.Join(t.TempDir(), "registry.json")
+	if err := os.WriteFile(reg, scantest.RegistryJSON(t), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	out, err := run(t, "", "scan", "--registry", reg, "--allow-private", "--no-dns", "--no-favicon", "--browser", "--chrome", "/nonexistent/chrome", srv.URL)
+	if err == nil || !strings.Contains(err.Error(), "Chrome") {
+		t.Errorf("a missing Chrome must be an error that says so: %v\n%s", err, out)
+	}
+}

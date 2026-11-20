@@ -425,3 +425,46 @@ func TestCollapseSameName(t *testing.T) {
 		t.Error("an empty list stays an empty list")
 	}
 }
+
+func TestJSGlobalsNeedTheBrowser(t *testing.T) {
+	f := rule("fp_1", "tech_1", domain.ObsJSGlobal, "AFRAME.version", domain.OpRegex, "^(.+)$")
+	f.VersionExtract = `\1`
+	gone := rule("fp_3", "tech_1", domain.ObsJSGlobal, "Old.thing", domain.OpExists, "")
+	gone.Status = domain.StatusDeprecated
+	e := New(reg([]domain.Technology{tech("tech_1", "A-Frame")},
+		f, rule("fp_2", "tech_1", domain.ObsXHR, "", domain.OpContains, "/aframe-api"), gone,
+		rule("fp_4", "tech_1", domain.ObsJSGlobal, "AFRAME.config", domain.OpExists, "")))
+	paths := e.JSGlobals()
+	if strings.Join(paths, ",") != "AFRAME.config,AFRAME.version" || !sortedStrings(paths) {
+		t.Fatalf("the paths the live rules look for, sorted, without deprecated rules: %v", paths)
+	}
+	obs := &matcher.Observation{URL: "https://x.example/", Status: 200, JS: map[string]string{"AFRAME.version": "1.4.2"}}
+	without := e.Run(Input{Observation: obs, Page: obs.URL}, Options{})
+	if byName(without, "A-Frame") != nil || without.Coverage.Skipped[ReasonBrowser] != 3 {
+		t.Errorf("without a browser the globals are not read and are counted as skipped: %+v", without.Coverage.Skipped)
+	}
+	with := e.Run(Input{Observation: obs, Page: obs.URL, HasBrowser: true}, Options{})
+	a := byName(with, "A-Frame")
+	if a == nil || a.Version != "1.4.2" || len(a.Evidence) != 1 {
+		t.Fatalf("with a browser it is found, on the rule that matched: %+v", with.Technologies)
+	}
+	if with.Coverage.Skipped[ReasonBrowser] != 0 {
+		t.Errorf("nothing waits for a browser any more: %+v", with.Coverage.Skipped)
+	}
+	// XHR calls too.
+	obs.XHR = []string{"https://x.example/aframe-api/v1"}
+	obs.JS = nil
+	got := e.Run(Input{Observation: obs, Page: obs.URL, HasBrowser: true}, Options{})
+	if byName(got, "A-Frame") == nil {
+		t.Errorf("an XHR call is a rule input: %+v", got.Technologies)
+	}
+}
+
+func sortedStrings(l []string) bool {
+	for i := 1; i < len(l); i++ {
+		if l[i-1] > l[i] {
+			return false
+		}
+	}
+	return true
+}

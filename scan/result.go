@@ -49,7 +49,9 @@ type Result struct {
 	Socials       []Social     `json:"socials"`
 	Contacts      []Contact    `json:"contacts"`
 	// Friends is present only when friend detection was asked for.
-	Friends  *Friends    `json:"friends,omitempty"`
+	Friends *Friends `json:"friends,omitempty"`
+	// Browser is present only when the first page was also run in a browser.
+	Browser  *Browser    `json:"browser,omitempty"`
 	Coverage Coverage    `json:"coverage"`
 	Registry RegistryRef `json:"registry"`
 	Warnings []Warning   `json:"warnings"`
@@ -155,6 +157,22 @@ type Domain struct {
 	Internal bool     `json:"internal"`
 	Links    int      `json:"links"`
 	Examples []string `json:"examples,omitempty"`
+}
+
+// Browser says that the first page was opened in a headless browser, and how that went.
+// With it the page's global variables and XHR calls are known (the rules that need them are
+// evaluated), and the first page's HTML, links, social profiles and contacts are those of the
+// document after its scripts ran.
+type Browser struct {
+	Version string `json:"version,omitempty"` // for example Chrome/158
+	// Requests is how many requests the page made through the scanner's proxy; Blocked is
+	// how many connections the proxy refused (non-public addresses).
+	Requests int `json:"requests"`
+	Blocked  int `json:"blocked"`
+	// TimedOut is true when the page had not settled in time: what had loaded was used.
+	TimedOut bool `json:"timed_out,omitempty"`
+	// Globals is how many of the global variables looked for were found.
+	Globals int `json:"globals_found"`
 }
 
 // Friends is the outcome of looking for "friend" domains: sites that the target's home
