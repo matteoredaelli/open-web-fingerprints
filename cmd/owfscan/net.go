@@ -16,6 +16,7 @@ import (
 
 	"github.com/matteoredaelli/open-web-fingerprints/internal/scan/fetch"
 	"github.com/matteoredaelli/open-web-fingerprints/internal/scan/observe"
+	"github.com/matteoredaelli/open-web-fingerprints/internal/scan/scanner"
 	"github.com/matteoredaelli/open-web-fingerprints/internal/scan/web"
 	"github.com/matteoredaelli/open-web-fingerprints/scan"
 )
@@ -28,6 +29,10 @@ type netFlags struct {
 	allowPrivate bool
 	insecure     bool
 	asJSON       bool
+	// Crawling: pages beyond the one asked for.
+	depth, maxPages int
+	delay           time.Duration
+	ignoreRobots    bool
 }
 
 func (n *netFlags) add(c *cobra.Command) {
@@ -39,6 +44,25 @@ func (n *netFlags) add(c *cobra.Command) {
 	c.Flags().BoolVar(&n.asJSON, "json", false, "output JSON")
 }
 
+// addCrawl adds the flags that make a command follow links to other pages.
+func (n *netFlags) addCrawl(c *cobra.Command) {
+	c.Flags().IntVar(&n.depth, "depth", 0, "follow links this many levels to pages likely to list contacts and profiles (contact, about, press, legal, ...); 0 reads only the page given")
+	c.Flags().IntVar(&n.maxPages, "max-pages", scanner.DefaultMaxPages, "most pages fetched in total, the first included")
+	c.Flags().DurationVar(&n.delay, "delay", scanner.DefaultDelay, "pause before each further page (a larger Crawl-delay in robots.txt wins)")
+	c.Flags().BoolVar(&n.ignoreRobots, "ignore-robots", false, "fetch pages that robots.txt asks crawlers to avoid (the page given is always fetched)")
+}
+
+func (n *netFlags) crawlOptions(dns, favicon bool) scanner.CrawlOptions {
+	o := scanner.CrawlOptions{
+		Fetch:     fetch.Options{Timeout: n.timeout, AllowPrivate: n.allowPrivate, Insecure: n.insecure, CacheDir: n.cacheDir, MaxAge: n.maxAge},
+		NoFavicon: !favicon, Depth: n.depth, MaxPages: n.maxPages, Delay: n.delay, IgnoreRobots: n.ignoreRobots,
+	}
+	if dns {
+		o.Resolver = observe.SystemResolver{}
+	}
+	return o
+}
+
 func (n *netFlags) fetcher() *fetch.Fetcher {
 	return fetch.New(fetch.Options{
 		Timeout: n.timeout, AllowPrivate: n.allowPrivate, Insecure: n.insecure,
@@ -46,8 +70,10 @@ func (n *netFlags) fetcher() *fetch.Fetcher {
 	})
 }
 
-const netNotice = "\nIt makes one request to the page (plus the favicon with `observe`) and follows its\n" +
-	"redirects. Private and local addresses are refused unless --allow-private is given.\n" +
+const netNotice = "\nIt makes one request to the page (plus the favicon with `observe` and `scan`) and\n" +
+	"follows its redirects. With --depth it also reads a few pages of the same site (contact,\n" +
+	"about, press, legal, ...), honouring robots.txt, pausing between requests and stopping at\n" +
+	"--max-pages. Private and local addresses are refused unless --allow-private is given.\n" +
 	"Scan only sites you are allowed to scan."
 
 func observeURL(ctx context.Context, n *netFlags, target string, dns, favicon bool) (*observe.Observed, error) {
@@ -58,15 +84,27 @@ func observeURL(ctx context.Context, n *netFlags, target string, dns, favicon bo
 	return observe.Observe(ctx, o, target)
 }
 
-func extractFrom(ob *observe.Observed) web.Extraction {
-	u, _ := url.Parse(ob.Page.FinalURL)
+// crawlFor reads the page (and, with --depth, the pages it leads to) and extracts
+// links, domains, social profiles and contacts from all of them.
+func crawlFor(cmd *cobra.Command, n *netFlags, target string) (*scanner.Crawled, web.Extraction, error) {
+	c, err := scanner.Crawl(cmd.Context(), n.crawlOptions(false, false), target)
+	if err != nil {
+		return nil, web.Extraction{}, err
+	}
+	var pages []web.Page
+	for _, p := range c.Pages {
+		if len(p.HTML) > 0 {
+			pages = append(pages, web.Page{URL: p.Page.FinalURL, Body: p.HTML})
+		}
+	}
+	u, _ := url.Parse(c.Main.Page.FinalURL)
 	host := ""
 	if u != nil {
 		host = u.Hostname()
 	}
-	ex := web.Extract([]web.Page{{URL: ob.Page.FinalURL, Body: ob.HTML}}, host)
-	ex.Warnings = append(append([]scan.Warning{}, ob.Warnings...), ex.Warnings...)
-	return ex
+	ex := web.Extract(pages, host)
+	ex.Warnings = append(append([]scan.Warning{}, c.Warnings...), ex.Warnings...)
+	return c, ex, nil
 }
 
 func newLinksCmd() *cobra.Command {
@@ -77,16 +115,16 @@ func newLinksCmd() *cobra.Command {
 		Long:  "links fetches a page and lists its links, with the registrable domains they\npoint to." + netNotice,
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ob, err := observeURL(cmd.Context(), n, args[0], false, false)
+			c, ex, err := crawlFor(cmd, n, args[0])
 			if err != nil {
 				return err
 			}
-			ex := extractFrom(ob)
+			final := c.Main.Page.FinalURL
 			if n.asJSON {
-				return printJSON(cmd, map[string]any{"target": ob.Page.FinalURL, "links": ex.Links, "domains": ex.Domains, "warnings": ex.Warnings})
+				return printJSON(cmd, map[string]any{"target": final, "pages": pageURLs(c), "links": ex.Links, "domains": ex.Domains, "warnings": ex.Warnings})
 			}
 			out := cmd.OutOrStdout()
-			fmt.Fprintf(out, "%s: %d links, %d domains\n\n", ob.Page.FinalURL, len(ex.Links), len(ex.Domains))
+			fmt.Fprintf(out, "%s: %d links, %d domains, %d page(s) read\n\n", final, len(ex.Links), len(ex.Domains), len(c.Pages))
 			w := tabwriter.NewWriter(out, 0, 4, 2, ' ', 0)
 			fmt.Fprintln(w, "DOMAIN\tLINKS\tINTERNAL\tEXAMPLE")
 			for _, d := range ex.Domains {
@@ -100,7 +138,16 @@ func newLinksCmd() *cobra.Command {
 		},
 	}
 	n.add(c)
+	n.addCrawl(c)
 	return c
+}
+
+func pageURLs(c *scanner.Crawled) []string {
+	out := make([]string, 0, len(c.Pages))
+	for _, p := range c.Pages {
+		out = append(out, p.Page.FinalURL)
+	}
+	return out
 }
 
 func newSocialCmd() *cobra.Command {
@@ -111,13 +158,12 @@ func newSocialCmd() *cobra.Command {
 		Long:  "social fetches a page and lists the social profiles and the email addresses and\ntelephone numbers it publishes." + netNotice,
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ob, err := observeURL(cmd.Context(), n, args[0], false, false)
+			c, ex, err := crawlFor(cmd, n, args[0])
 			if err != nil {
 				return err
 			}
-			ex := extractFrom(ob)
 			if n.asJSON {
-				return printJSON(cmd, map[string]any{"target": ob.Page.FinalURL, "socials": ex.Socials, "contacts": ex.Contacts, "warnings": ex.Warnings})
+				return printJSON(cmd, map[string]any{"target": c.Main.Page.FinalURL, "pages": pageURLs(c), "socials": ex.Socials, "contacts": ex.Contacts, "warnings": ex.Warnings})
 			}
 			printSocial(cmd, ex)
 			printWarnings(cmd, ex.Warnings)
@@ -125,6 +171,7 @@ func newSocialCmd() *cobra.Command {
 		},
 	}
 	n.add(c)
+	n.addCrawl(c)
 	return c
 }
 

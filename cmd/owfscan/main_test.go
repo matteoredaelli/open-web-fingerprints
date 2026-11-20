@@ -238,3 +238,76 @@ func TestScanCommand(t *testing.T) {
 		t.Errorf("a damaged export must be refused: %v", err)
 	}
 }
+
+func contactSite() *httptest.Server {
+	mux := http.NewServeMux()
+	page := func(w http.ResponseWriter, body string) {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		_, _ = w.Write([]byte("<!doctype html><html><body>" + body + "</body></html>"))
+	}
+	mux.HandleFunc("/robots.txt", func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte("User-agent: *\nDisallow: /about\n"))
+	})
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/":
+			page(w, `<a href="/contact">Contact</a> <a href="/about">About</a>`)
+		case "/contact":
+			w.Header().Set("X-Powered-By", "PHP/8.2.1")
+			page(w, `<a href="https://www.linkedin.com/company/acme">in</a> <a href="mailto:hello@acme.example">m</a>`)
+		case "/about":
+			page(w, `<a href="https://github.com/acme">gh</a>`)
+		default:
+			http.NotFound(w, r)
+		}
+	})
+	return httptest.NewServer(mux)
+}
+
+func TestDepth(t *testing.T) {
+	srv := contactSite()
+	defer srv.Close()
+	reg := filepath.Join(t.TempDir(), "registry.json")
+	if err := os.WriteFile(reg, scantest.RegistryJSON(t), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	common := []string{"--allow-private", "--delay", "1ms", srv.URL}
+
+	out, err := run(t, "", append([]string{"social"}, common...)...)
+	if err != nil || strings.Contains(out, "linkedin") {
+		t.Errorf("without --depth only the home page is read: %v\n%s", err, out)
+	}
+	out, err = run(t, "", append([]string{"social", "--depth", "1"}, common...)...)
+	if err != nil || !strings.Contains(out, "linkedin") || !strings.Contains(out, "hello@acme.example") || strings.Contains(out, "github") {
+		t.Errorf("--depth 1 reads /contact and respects robots.txt (no /about): %v\n%s", err, out)
+	}
+	out, err = run(t, "", append([]string{"social", "--depth", "1", "--ignore-robots"}, common...)...)
+	if err != nil || !strings.Contains(out, "github") {
+		t.Errorf("--ignore-robots reads /about: %v\n%s", err, out)
+	}
+	out, err = run(t, "", append([]string{"links", "--depth", "1", "--json"}, common...)...)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var doc struct{ Pages []string }
+	if err := json.Unmarshal([]byte(out), &doc); err != nil || len(doc.Pages) != 2 {
+		t.Errorf("pages: %v %v", doc.Pages, err)
+	}
+
+	out, err = run(t, "", append([]string{"scan", "--registry", reg, "--no-dns", "--no-favicon", "--depth", "1", "--max-pages", "2"}, common...)...)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{"+ 1 more page(s)", "pages read:", "/contact", "PHP", "8.2.1", "linkedin", "hello@acme.example"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("scan output lacks %q:\n%s", want, out)
+		}
+	}
+	out, err = run(t, "", append([]string{"scan", "--registry", reg, "--no-dns", "--no-favicon", "--json", "--depth", "1"}, common...)...)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := schemas.ValidateScanResult([]byte(out)); err != nil {
+		t.Errorf("a crawled result must satisfy the schema: %v", err)
+	}
+}

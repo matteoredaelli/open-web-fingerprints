@@ -2,7 +2,7 @@
 
 Status: **phases 1 to 3 done**: `owfscan scan <url> --registry FILE` returns the
 technologies, links, domains, social profiles and contacts of a live page, with the
-coverage of the rules. `--depth`, a browser and approved probes are still to do. Go only.
+coverage of the rules. `--depth` works; a browser and approved probes are still to do. Go only.
 Contract: `scan/result.go`, `schemas/scan-result.schema.json`, examples in
 `examples/`. Try it: `owfscan extract --url https://site.example/ page.html`.
 
@@ -140,8 +140,8 @@ internal/scan/...   links, social, fetch, observe, engine (public later if neede
 2. **Fetch and observe.** *Done.* `internal/scan/fetch` and `internal/scan/observe`.
    - **Requests:** one GET of the page, following redirects (recorded, at most 10),
      cookies kept along the chain, a 20 s timeout and a 5 MiB cap per request, all
-     settable. An identifying User-Agent. Only `http`/`https`. No crawling, no
-     `robots.txt`, no probes. A bare `host` is tried over https, and over http only
+     settable. An identifying User-Agent. Only `http`/`https`. Crawling only with `--depth`
+     (see `owfscan.md`), no probes. A bare `host` is tried over https, and over http only
      if the connection cannot be made (a warning says so).
    - **Safety:** addresses that are not public (loopback, private ranges,
      link-local including the cloud metadata address, CGNAT, unique-local) are
@@ -205,7 +205,7 @@ internal/scan/...   links, social, fetch, observe, engine (public later if neede
 
 - How much of `internal/matcher` to promote to a public package (or whether the
   scanner keeps importing it from inside the module).
-- `--depth` (several pages) and its limits.
+- Which words select pages for `--depth`; they are a judgement call, not measured on many sites.
 - Caching the loaded registry between runs (loading a 34 MB export takes most of a scan).
 - Matching technologies of different sources that have the same name (two `PHP`).
 - Rules that are true for any site of a kind (`Metatag CMS`): flag them in the registry with tests rather than in the scanner.

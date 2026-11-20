@@ -63,7 +63,12 @@ type Options struct {
 	Fetch     fetch.Options
 	Resolver  observe.Resolver // nil: no DNS
 	NoFavicon bool
-	MinHealth string
+	// Depth, MaxPages, Delay and IgnoreRobots control how many pages beyond the one
+	// asked for are read; see CrawlOptions. Depth 0 reads only that page.
+	Depth, MaxPages int
+	Delay           time.Duration
+	IgnoreRobots    bool
+	MinHealth       string
 	// Version names the scanner in the result.
 	Version string
 	Now     func() time.Time
@@ -82,28 +87,48 @@ func Scan(ctx context.Context, opt Options, target string) (*scan.Result, error)
 		now = opt.Now
 	}
 	started := now().UTC()
-	ob, err := observe.Observe(ctx, observe.Options{Fetcher: fetch.New(opt.Fetch), Resolver: opt.Resolver, NoFavicon: opt.NoFavicon}, target)
+	crawl, err := Crawl(ctx, CrawlOptions{
+		Fetch: opt.Fetch, Resolver: opt.Resolver, NoFavicon: opt.NoFavicon,
+		Depth: opt.Depth, MaxPages: opt.MaxPages, Delay: opt.Delay, IgnoreRobots: opt.IgnoreRobots,
+	}, target)
 	if err != nil {
 		return nil, err
 	}
+	ob := crawl.Main
 	final, err := url.Parse(ob.Page.FinalURL)
 	if err != nil {
 		return nil, fmt.Errorf("scanner: %w", err)
 	}
-	ex := web.Extract([]web.Page{{URL: ob.Page.FinalURL, Body: ob.HTML}}, final.Hostname())
-	out := opt.Registry.Engine.Run(engine.Input{
-		Observation: &ob.Observation, Page: ob.Page.FinalURL,
-		DNSLooked: ob.DNSLooked, HasTLS: ob.Host.TLS != nil, FaviconTried: ob.FaviconTried,
-	}, engine.Options{MinHealth: opt.MinHealth})
+	ob.Observation.Robots = crawl.Robots
+
+	var pages []web.Page
+	var outs []engine.Output
+	for i, p := range crawl.Pages {
+		if len(p.HTML) > 0 {
+			pages = append(pages, web.Page{URL: p.Page.FinalURL, Body: p.HTML})
+		}
+		in := engine.Input{Observation: &p.Observation, Page: p.Page.FinalURL}
+		if i == 0 {
+			// Host-level observations belong to the first page.
+			in.DNSLooked, in.HasTLS, in.FaviconTried, in.RobotsFetched = ob.DNSLooked, ob.Host.TLS != nil, ob.FaviconTried, crawl.RobotsFetched
+		}
+		outs = append(outs, opt.Registry.Engine.Run(in, engine.Options{MinHealth: opt.MinHealth}))
+	}
+	ex := web.Extract(pages, final.Hostname())
+	out := engine.Merge(outs, 0)
+	ex.Warnings = append(append([]scan.Warning{}, crawl.Warnings...), ex.Warnings...)
 
 	res := &scan.Result{
 		Schema: "https://github.com/matteoredaelli/open-web-fingerprints/schemas/scan-result.schema.json", SchemaVersion: scan.SchemaVersion,
 		ScannedAt: started, Scanner: "owfscan " + opt.Version,
-		Target: scan.Target{Input: target, URL: ob.Page.FinalURL, Host: final.Hostname(), RegistrableDomain: web.RegistrableDomain(final.Hostname())},
-		Pages:  []scan.Page{ob.Page}, Technologies: out.Technologies,
-		Links: ex.Links, Domains: ex.Domains, Socials: ex.Socials, Contacts: ex.Contacts,
+		Target:       scan.Target{Input: target, URL: ob.Page.FinalURL, Host: final.Hostname(), RegistrableDomain: web.RegistrableDomain(final.Hostname())},
+		Technologies: out.Technologies,
+		Links:        ex.Links, Domains: ex.Domains, Socials: ex.Socials, Contacts: ex.Contacts,
 		Coverage: out.Coverage, Registry: opt.Registry.Ref,
-		Warnings: append(append(append([]scan.Warning{}, ob.Warnings...), ex.Warnings...), out.Warnings...),
+		Warnings: append(append([]scan.Warning{}, ex.Warnings...), out.Warnings...),
+	}
+	for _, p := range crawl.Pages {
+		res.Pages = append(res.Pages, p.Page)
 	}
 	if len(ob.Host.IPs) > 0 || ob.Host.DNS != nil || ob.Host.TLS != nil {
 		h := ob.Host

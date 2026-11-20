@@ -326,3 +326,76 @@ func TestDeprecatedTechnologyAndDeterminism(t *testing.T) {
 		t.Error("ValidHealth")
 	}
 }
+
+func techRec(id, name, page string, conf float64, version string, rules ...string) scan.Technology {
+	t := scan.Technology{ID: id, Slug: strings.ToLower(name), Name: name, Confidence: conf, Version: version, Sources: []string{"alpha"}}
+	for _, r := range rules {
+		t.Evidence = append(t.Evidence, scan.Evidence{RuleID: r, Observation: "html", Health: "unknown", Source: "alpha", Page: page})
+	}
+	return t
+}
+
+func TestMergeCombinesPages(t *testing.T) {
+	a := Output{
+		Coverage: scan.Coverage{RulesTotal: 10, RulesEvaluated: 8, RulesUnsupported: 2, Skipped: map[string]int{"x": 2}},
+		Technologies: []scan.Technology{
+			techRec("tech_2", "Beta", "https://e.org/", 0.5, "1.0", "fp_2"),
+			techRec("tech_1", "alpha", "https://e.org/", 0.4, "", "fp_1"),
+		},
+		Warnings: []scan.Warning{{Code: "w", Message: "m", Ref: "r"}},
+	}
+	b := Output{
+		Coverage: scan.Coverage{RulesTotal: 10, RulesEvaluated: 3, RulesUnsupported: 7},
+		Technologies: []scan.Technology{
+			techRec("tech_1", "alpha", "https://e.org/contact", 0.9, "2.0", "fp_1", "fp_9"),
+			techRec("tech_3", "Gamma", "https://e.org/contact", 0.5, "", "fp_3"),
+		},
+		Warnings: []scan.Warning{{Code: "w", Message: "m", Ref: "r"}, {Code: "v", Message: "n", Ref: "s"}},
+	}
+	b.Technologies[0].Sources = []string{"beta"}
+	m := Merge([]Output{a, b}, 0)
+	if m.Coverage.RulesEvaluated != 8 || m.Coverage.Skipped["x"] != 2 {
+		t.Errorf("coverage comes from the first page: %+v", m.Coverage)
+	}
+	var names []string
+	for _, x := range m.Technologies {
+		names = append(names, x.Name)
+	}
+	if strings.Join(names, ",") != "alpha,Beta,Gamma" {
+		t.Errorf("sorted by name, one record per technology: %v", names)
+	}
+	al := m.Technologies[0]
+	if al.Confidence != 0.9 || strings.Join(al.Sources, ",") != "alpha,beta" || len(al.Evidence) != 3 {
+		t.Errorf("alpha: %+v", al)
+	}
+	// The same rule on two pages is two pieces of evidence, ordered by page.
+	if al.Evidence[0].Page != "https://e.org/" || al.Evidence[1].Page != "https://e.org/contact" {
+		t.Errorf("evidence order: %+v", al.Evidence)
+	}
+	if al.Version != "2.0" {
+		t.Errorf("the version of the most confident record wins: %q", al.Version)
+	}
+	if len(m.Warnings) != 2 {
+		t.Errorf("warnings are not repeated: %+v", m.Warnings)
+	}
+	if got := Merge(nil, 0); got.Technologies == nil || len(got.Technologies) != 0 {
+		t.Errorf("nothing merged is an empty list: %+v", got)
+	}
+
+	// Disagreeing versions are reported, and the evidence is bounded.
+	c := Output{Technologies: []scan.Technology{techRec("tech_2", "Beta", "https://e.org/x", 0.7, "1.1", "fp_a", "fp_b", "fp_c")}}
+	m = Merge([]Output{a, c}, 2)
+	var conflict bool
+	for _, w := range m.Warnings {
+		conflict = conflict || (w.Code == "conflicting_versions" && strings.Contains(w.Message, "1.0") && strings.Contains(w.Message, "1.1"))
+	}
+	var beta scan.Technology
+	for _, x := range m.Technologies {
+		if x.Name == "Beta" {
+			beta = x
+		}
+	}
+	if !conflict || beta.Version != "1.1" || len(beta.Evidence) != 2 {
+		t.Errorf("conflict=%v beta=%+v", conflict, beta)
+	}
+}

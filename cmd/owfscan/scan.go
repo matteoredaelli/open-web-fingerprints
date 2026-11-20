@@ -60,6 +60,7 @@ func newScanCmd() *cobra.Command {
 			}
 			opt := scanner.Options{
 				Registry: reg, NoFavicon: noFavicon, MinHealth: minHealth, Version: version(),
+				Depth: n.depth, MaxPages: n.maxPages, Delay: n.delay, IgnoreRobots: n.ignoreRobots,
 				Fetch: fetch.Options{Timeout: n.timeout, AllowPrivate: n.allowPrivate, Insecure: n.insecure, CacheDir: n.cacheDir, MaxAge: n.maxAge},
 			}
 			if !noDNS {
@@ -80,6 +81,7 @@ func newScanCmd() *cobra.Command {
 		},
 	}
 	n.add(c)
+	n.addCrawl(c)
 	c.Flags().StringVar(&registry, "registry", os.Getenv("OWFSCAN_REGISTRY"), "registry export to apply (env OWFSCAN_REGISTRY)")
 	c.Flags().StringVar(&minHealth, "min-health", "", "use only rules at least this healthy: broken (all, default), degraded, unknown, ok")
 	c.Flags().BoolVar(&noDNS, "no-dns", false, "do not look up DNS records")
@@ -93,7 +95,11 @@ var healthOrder = map[string]int{"broken": 0, "degraded": 1, "unknown": 2, "ok":
 func printScan(cmd *cobra.Command, r *scan.Result, verbose bool) {
 	out := cmd.OutOrStdout()
 	p := r.Pages[0]
-	fmt.Fprintf(out, "%s  (%d, %d ms%s)\n", r.Target.URL, p.Status, p.DurationMS, map[bool]string{true: ", cached"}[p.Cached])
+	fmt.Fprintf(out, "%s  (%d, %d ms%s)", r.Target.URL, p.Status, p.DurationMS, map[bool]string{true: ", cached"}[p.Cached])
+	if len(r.Pages) > 1 {
+		fmt.Fprintf(out, " + %d more page(s)", len(r.Pages)-1)
+	}
+	fmt.Fprintln(out)
 	short := r.Registry.ContentSHA256
 	if len(short) > 19 {
 		short = short[:19]
@@ -103,6 +109,12 @@ func printScan(cmd *cobra.Command, r *scan.Result, verbose bool) {
 		fmt.Fprintf(out, "NOTICE: %s\n", r.Registry.Notice)
 	}
 
+	if len(r.Pages) > 1 {
+		fmt.Fprintln(out, "pages read:")
+		for _, pg := range r.Pages {
+			fmt.Fprintf(out, "  %d  %s\n", pg.Status, pg.FinalURL)
+		}
+	}
 	fmt.Fprintf(out, "\nTECHNOLOGIES (%d)\n", len(r.Technologies))
 	w := tabwriter.NewWriter(out, 0, 4, 2, ' ', 0)
 	fmt.Fprintln(w, "NAME\tVERSION\tCONFIDENCE\tBEST HEALTH\tRULES\tSOURCES")

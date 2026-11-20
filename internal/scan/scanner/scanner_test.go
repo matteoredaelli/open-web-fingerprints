@@ -5,6 +5,8 @@ package scanner
 
 import (
 	"context"
+	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
@@ -171,5 +173,101 @@ func TestScanRefusesLocalAddressesByDefault(t *testing.T) {
 	defer srv.Close()
 	if _, err := Scan(context.Background(), opt, srv.URL); err == nil {
 		t.Error("a local address is refused by default")
+	}
+}
+
+// A site whose home page says little: the details are on /contact, and robots.txt
+// carries a signature.
+func depthSite() *httptest.Server {
+	mux := http.NewServeMux()
+	html := func(w http.ResponseWriter, body string) {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		_, _ = w.Write([]byte("<!doctype html><html><body>" + body + "</body></html>"))
+	}
+	mux.HandleFunc("/robots.txt", func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte("User-agent: *\nDisallow: /private\n# Powered by Shoporama\n"))
+	})
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/":
+			html(w, `<a href="/contact">Contact</a> <a href="/private/contact">Private</a>`)
+		case "/contact":
+			w.Header().Set("X-Powered-By", "PHP/8.2.1")
+			html(w, `<a href="https://www.linkedin.com/company/acme">in</a> <a href="mailto:hello@acme.example">m</a> <a href="tel:+39 02 1234 5678">t</a>`)
+		default:
+			http.NotFound(w, r)
+		}
+	})
+	return httptest.NewServer(mux)
+}
+
+func TestScanDepthFindsWhatTheHomePageDoesNot(t *testing.T) {
+	srv := depthSite()
+	defer srv.Close()
+	opt := options(t)
+
+	home, err := Scan(context.Background(), opt, srv.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(home.Pages) != 1 || len(home.Socials) != 0 || len(home.Contacts) != 0 || tech(home, "PHP") != nil {
+		t.Fatalf("the home page alone says little: pages=%d socials=%d contacts=%d techs=%v", len(home.Pages), len(home.Socials), len(home.Contacts), names(home))
+	}
+	if home.Coverage.Skipped["robots.txt not fetched"] == 0 {
+		t.Errorf("without a crawl robots.txt is not fetched: %+v", home.Coverage.Skipped)
+	}
+
+	opt.Depth, opt.Delay = 1, time.Millisecond
+	deep, err := Scan(context.Background(), opt, srv.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := Validate(deep); err != nil {
+		t.Fatalf("a crawled result must satisfy the schema: %v", err)
+	}
+	if len(deep.Pages) != 2 || !strings.HasSuffix(deep.Pages[1].FinalURL, "/contact") {
+		t.Fatalf("pages: %+v (the page under /private is disallowed)", deep.Pages)
+	}
+	if len(deep.Socials) != 1 || deep.Socials[0].Platform != "linkedin" || !strings.HasSuffix(deep.Socials[0].Found[0].Page, "/contact") {
+		t.Errorf("socials: %+v", deep.Socials)
+	}
+	if len(deep.Contacts) != 2 {
+		t.Errorf("contacts: %+v", deep.Contacts)
+	}
+	php := tech(deep, "PHP")
+	if php == nil || php.Version != "8.2.1" {
+		t.Fatalf("PHP found on the second page: %v", names(deep))
+	}
+	for _, ev := range php.Evidence {
+		if !strings.HasSuffix(ev.Page, "/contact") {
+			t.Errorf("each piece of evidence says which page it comes from: %+v", ev)
+		}
+	}
+	// robots.txt is now read, and the rule on it can match.
+	if tech(deep, "Shoporama") == nil || deep.Coverage.Skipped["robots.txt not fetched"] != 0 {
+		t.Errorf("a rule on robots.txt: %v, skipped %+v", names(deep), deep.Coverage.Skipped)
+	}
+	// Coverage counts rules, not rules per page.
+	if deep.Coverage.RulesTotal != home.Coverage.RulesTotal || deep.Coverage.RulesEvaluated < home.Coverage.RulesEvaluated {
+		t.Errorf("coverage: %+v vs %+v", deep.Coverage, home.Coverage)
+	}
+}
+
+func TestScanDepthRespectsRobotsOnRequest(t *testing.T) {
+	srv := depthSite()
+	defer srv.Close()
+	opt := options(t)
+	opt.Depth, opt.Delay, opt.IgnoreRobots = 1, time.Millisecond, true
+	res, err := Scan(context.Background(), opt, srv.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Nothing says "private" is off limits any more, but it still has no keyword score
+	// ("contact" is the last segment): both pages are candidates.
+	if len(res.Pages) != 3 {
+		t.Errorf("pages with --ignore-robots: %d", len(res.Pages))
+	}
+	if tech(res, "Shoporama") != nil || res.Coverage.Skipped["robots.txt not fetched"] == 0 {
+		t.Errorf("robots.txt is not read when it is ignored: %v", names(res))
 	}
 }

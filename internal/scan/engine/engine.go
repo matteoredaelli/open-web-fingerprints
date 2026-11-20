@@ -58,8 +58,9 @@ type Input struct {
 	Observation *matcher.Observation
 	// Page is the URL the observation comes from.
 	Page string
-	// DNSLooked, HasTLS and FaviconTried tell which observations were attempted.
-	DNSLooked, HasTLS, FaviconTried bool
+	// DNSLooked, HasTLS, FaviconTried and RobotsFetched tell which observations
+	// were made.
+	DNSLooked, HasTLS, FaviconTried, RobotsFetched bool
 }
 
 // Output is the outcome of a run.
@@ -213,7 +214,9 @@ func (r *run) reason(f domain.Fingerprint) string {
 	case domain.ObsJSGlobal, domain.ObsXHR:
 		return ReasonBrowser
 	case domain.ObsRobots:
-		return ReasonRobots
+		if !r.in.RobotsFetched {
+			return ReasonRobots
+		}
 	case domain.ObsDNSRecord:
 		if !r.in.DNSLooked {
 			return ReasonNoDNS
@@ -435,4 +438,117 @@ func clip(s string, n int) string {
 	}
 	r := []rune(strings.ToValidUTF8(s, ""))
 	return string(r[:n-1]) + "…"
+}
+
+// Merge combines the outputs of several pages of one site. A technology found on
+// several pages is one record: the evidence of all pages (each item says which
+// page), the highest confidence, the sources of every rule. The coverage is that of
+// the first output, which must be the main page (the one with the DNS, TLS and
+// favicon observations): the same rules apply to every page, and counting them per
+// page would count them several times.
+func Merge(outs []Output, maxEvidence int) Output {
+	if maxEvidence <= 0 {
+		maxEvidence = 50
+	}
+	if len(outs) == 0 {
+		return Output{Technologies: []scan.Technology{}}
+	}
+	merged := Output{Coverage: outs[0].Coverage}
+	seenWarn := map[string]bool{}
+	byID := map[string]*scan.Technology{}
+	var order []string
+	type ver struct {
+		v    string
+		conf float64
+	}
+	versions := map[string][]ver{}
+	for _, o := range outs {
+		for _, w := range o.Warnings {
+			if k := w.Code + "\x00" + w.Ref + "\x00" + w.Message; !seenWarn[k] {
+				seenWarn[k] = true
+				merged.Warnings = append(merged.Warnings, w)
+			}
+		}
+		for _, t := range o.Technologies {
+			cur, ok := byID[t.ID]
+			if !ok {
+				c := t
+				c.Evidence = append([]scan.Evidence(nil), t.Evidence...)
+				byID[t.ID] = &c
+				order = append(order, t.ID)
+				if t.Version != "" {
+					versions[t.ID] = append(versions[t.ID], ver{t.Version, t.Confidence})
+				}
+				continue
+			}
+			cur.Evidence = append(cur.Evidence, t.Evidence...)
+			cur.Sources = unionStrings(cur.Sources, t.Sources)
+			if t.Confidence > cur.Confidence {
+				cur.Confidence = t.Confidence
+			}
+			if t.Version != "" {
+				versions[t.ID] = append(versions[t.ID], ver{t.Version, t.Confidence})
+			}
+		}
+	}
+	for _, id := range order {
+		t := byID[id]
+		sort.SliceStable(t.Evidence, func(i, j int) bool {
+			a, b := t.Evidence[i], t.Evidence[j]
+			if a.Page != b.Page {
+				return a.Page < b.Page
+			}
+			return a.RuleID < b.RuleID
+		})
+		if len(t.Evidence) > maxEvidence {
+			t.Evidence = t.Evidence[:maxEvidence]
+		}
+		if vs := versions[id]; len(vs) > 0 {
+			best := vs[0]
+			distinct := map[string]bool{}
+			for _, v := range vs {
+				distinct[v.v] = true
+				if v.conf > best.conf {
+					best = v
+				}
+			}
+			t.Version = best.v
+			if len(distinct) > 1 {
+				var all []string
+				for v := range distinct {
+					all = append(all, v)
+				}
+				sort.Strings(all)
+				merged.Warnings = append(merged.Warnings, scan.Warning{Code: "conflicting_versions",
+					Message: fmt.Sprintf("pages give different versions (%s); %s was chosen", strings.Join(all, ", "), t.Version), Ref: t.Slug})
+			}
+		}
+		merged.Technologies = append(merged.Technologies, *t)
+	}
+	sort.SliceStable(merged.Technologies, func(i, j int) bool {
+		a, b := merged.Technologies[i], merged.Technologies[j]
+		if la, lb := strings.ToLower(a.Name), strings.ToLower(b.Name); la != lb {
+			return la < lb
+		}
+		return a.Slug < b.Slug
+	})
+	if merged.Technologies == nil {
+		merged.Technologies = []scan.Technology{}
+	}
+	return merged
+}
+
+func unionStrings(a, b []string) []string {
+	seen := map[string]bool{}
+	var out []string
+	for _, l := range [][]string{a, b} {
+		for _, s := range l {
+			if !seen[s] {
+				seen[s] = true
+				out = append(out, s)
+			}
+		}
+	}
+	sort.Strings(out)
+	return out
 }

@@ -325,27 +325,63 @@ is *invented* to show the full shape, including technologies; it is not a real s
 | Rule | Behaviour |
 |---|---|
 | Methods | `GET` only |
-| Which URLs | the one you give, its redirects, and (with `observe`) the favicon |
+| Which URLs | the one you give, its redirects, the favicon, and with `--depth` a few more pages (below) |
 | Redirects | followed up to 10 times, recorded; only to http and https |
 | Size and time | 5 MiB per body, 20 s per request (both can be changed in code, the timeout with `--timeout`) |
 | Addresses | loopback, private ranges, link-local (including the cloud metadata address `169.254.169.254`), CGNAT and unique-local addresses are refused when connecting, **including after a redirect**; `--allow-private` lifts this for your own network |
 | Proxy | the environment's proxy settings are ignored |
 | Identity | `User-Agent: owfscan (+https://github.com/matteoredaelli/open-web-fingerprints)` |
-| Not done | crawling, `robots.txt`, probes, form submission, login |
+| Not done | probes, form submission, login, JavaScript |
 | Cookies | kept in memory for the duration of the command, not stored |
 | Cache | with `--cache-dir`, responses are stored on disk with the hash of the body; a damaged entry is ignored; 5xx answers are not stored |
 
 Because the cache is plain files, do not point it at a shared location if the pages
 you fetch are private.
 
+## Reading more than one page (`--depth`)
+
+By default only the page you name is read, so a profile or an address that appears
+only on `/contact` is missed. `--depth N` (for `scan`, `links` and `social`) follows
+links up to N levels, with these limits:
+
+- **Which pages.** Only ordinary links (`<a>`) to the same registrable domain, over
+  http or https, without a query string, that are not files (pdf, images, archives,
+  feeds...). Of those, only pages whose path contains a word that usually marks a page
+  with company details, in several languages: `contact`, `contatti`, `kontakt`, `about`,
+  `chi-siamo`, `impressum`, `imprint`, `legal`, `press`, `stampa`, `careers`, `team`,
+  `support`, `privacy`... Pages without such a word (a blog post, a product) are not
+  fetched. Best candidates first, then by address. The word list is in
+  `internal/scan/scanner/crawl.go`.
+- **`robots.txt`.** Read once per host before any further page, with the rules of
+  RFC 9309 (the group for `owfscan`, else `*`; longest rule wins; `Allow` wins a tie).
+  A page it disallows is not fetched. If the file cannot be read because of a server
+  error, nothing more is fetched from that host (the site cannot be asked), and a
+  warning says so; a missing file (404) allows everything. `--ignore-robots` lifts
+  this, for your own site. **The page you name is always fetched.**
+- **Pace.** `--delay` (default 500 ms) before each further page, or the site's
+  `Crawl-delay` if larger, at most 10 s. Requests are sequential.
+- **Size.** `--max-pages` (default 8) in total; a warning says when it stopped there.
+- **Safety.** The same rules as for the first page: public addresses only, also after
+  a redirect. A page that redirects to another site is dropped.
+- **Result.** Technologies found on several pages are one record whose evidence says
+  which page each item comes from; confidence is the highest, and if pages give
+  different versions the most confident is chosen and a warning lists them. Links,
+  socials and contacts say where they were found. The coverage counts rules once, not
+  once per page; host-level observations (DNS, TLS, favicon, `robots.txt`) come from
+  the first page.
+
+With `--depth` the `robots.txt` file is also an observation, so the one rule that needs
+it is evaluated. Without `--depth` it is not fetched.
+
+On `mr70.eu` (my own site), `--depth 1` read the home page and `/contact/` in about 3 s
+and added the contact email address that the home page does not have.
+
 ## What is not there yet
 
-- **Several pages** (`--depth`): today only the page you name is read, so a profile
-  that appears only on `/contact` is missed.
 - **JavaScript.** Nothing is executed. Links, handles and widgets added by scripts
   are not seen; neither are the technologies that only show in JavaScript variables
   (about a quarter of the registry's rules).
-- Active probes, a browser, `robots.txt`.
+- Active probes and a browser.
 - DNS `SOA` records (the standard library cannot ask for them), HTTP/2 and HTTP/3
   details.
 
