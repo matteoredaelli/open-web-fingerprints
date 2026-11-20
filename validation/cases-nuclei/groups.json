@@ -2,36 +2,8 @@
  "schema_version": "0.1.0",
  "cases": [
   {
-   "id": "metatag-cms-positive",
-   "description": "Upstream's rule matches ANY page that declares a generator, whatever the product: a Hugo site is reported as 'Metatag CMS'. Documents the rule's real behaviour; it does not say the page uses a CMS called Metatag.",
-   "group": [
-    {
-     "technology": "metatag-cms",
-     "observation": "response_headers",
-     "operator": "contains",
-     "pattern": "text/html"
-    },
-    {
-     "technology": "metatag-cms",
-     "observation": "html",
-     "operator": "regex",
-     "pattern": "(?-i)(?i)<meta\\s+?name=\"?generator\"?\\s+?content=\"[^\"]+?\""
-    }
-   ],
-   "input": {
-    "status": 200,
-    "headers": {
-     "Content-Type": "text/html; charset=utf-8"
-    },
-    "html": "<html><head><meta name=\"generator\" content=\"Hugo 0.119.0\"></head></html>"
-   },
-   "expect": {
-    "match": true
-   }
-  },
-  {
    "id": "metatag-cms-negative-no-generator",
-   "description": "Without a generator meta tag the group does not hold.",
+   "description": "Without a generator meta tag the group does not hold. There is deliberately no positive case: the rule matches any page that declares a generator (a Hugo site included), so it cannot be called reliable as 'Metatag CMS'; it stays unknown.",
    "group": [
     {
      "technology": "metatag-cms",
@@ -557,6 +529,1912 @@
      "X-Jenkins": "2.426.1"
     },
     "html": "<title>Other</title>"
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "shopify-header-positive",
+   "description": "The response carries the marker 'X-Shopify-Stage'.",
+   "group": [
+    {
+     "technology": "shopify",
+     "observation": "http_response",
+     "operator": "regex",
+     "pattern": "X-Shopify-Stage"
+    },
+    {
+     "technology": "shopify",
+     "observation": "http_status",
+     "operator": "equals",
+     "pattern": "200"
+    }
+   ],
+   "input": {
+    "status": 200,
+    "headers": {
+     "X-Shopify-Stage": "production"
+    },
+    "html": "<html></html>"
+   },
+   "expect": {
+    "match": true
+   }
+  },
+  {
+   "id": "shopify-header-negative",
+   "description": "Another site that does not carry the marker.",
+   "group": [
+    {
+     "technology": "shopify",
+     "observation": "http_response",
+     "operator": "regex",
+     "pattern": "X-Shopify-Stage"
+    },
+    {
+     "technology": "shopify",
+     "observation": "http_status",
+     "operator": "equals",
+     "pattern": "200"
+    }
+   ],
+   "input": {
+    "status": 200,
+    "headers": {
+     "X-Stage": "production"
+    },
+    "html": "<html>shop</html>"
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "shopify-header-negative-status",
+   "description": "The group requires status 200.",
+   "group": [
+    {
+     "technology": "shopify",
+     "observation": "http_response",
+     "operator": "regex",
+     "pattern": "X-Shopify-Stage"
+    },
+    {
+     "technology": "shopify",
+     "observation": "http_status",
+     "operator": "equals",
+     "pattern": "200"
+    }
+   ],
+   "input": {
+    "status": 500,
+    "headers": {
+     "X-Shopify-Stage": "production"
+    },
+    "html": "<html></html>"
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "shopify-cdn-positive",
+   "description": "The response carries the marker 'cdn\\\\.shopify\\\\.com'.",
+   "group": [
+    {
+     "technology": "shopify",
+     "observation": "http_response",
+     "operator": "regex",
+     "pattern": "cdn\\.shopify\\.com"
+    },
+    {
+     "technology": "shopify",
+     "observation": "http_status",
+     "operator": "equals",
+     "pattern": "200"
+    }
+   ],
+   "input": {
+    "status": 200,
+    "html": "<script src=\"https://cdn.shopify.com/s/files/1/x.js\"></script>"
+   },
+   "expect": {
+    "match": true
+   }
+  },
+  {
+   "id": "shopify-cdn-negative",
+   "description": "A different CDN host whose path mentions shopify.",
+   "group": [
+    {
+     "technology": "shopify",
+     "observation": "http_response",
+     "operator": "regex",
+     "pattern": "cdn\\.shopify\\.com"
+    },
+    {
+     "technology": "shopify",
+     "observation": "http_status",
+     "operator": "equals",
+     "pattern": "200"
+    }
+   ],
+   "input": {
+    "status": 200,
+    "html": "<script src=\"https://cdn.example.com/shopify.js\"></script>"
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "shopify-cdn-negative-status",
+   "description": "The group requires status 200.",
+   "group": [
+    {
+     "technology": "shopify",
+     "observation": "http_response",
+     "operator": "regex",
+     "pattern": "cdn\\.shopify\\.com"
+    },
+    {
+     "technology": "shopify",
+     "observation": "http_status",
+     "operator": "equals",
+     "pattern": "200"
+    }
+   ],
+   "input": {
+    "status": 500,
+    "html": "<script src=\"https://cdn.shopify.com/s/files/1/x.js\"></script>"
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "squarespace-header-positive",
+   "description": "The response carries the marker 'X-Squarespace-Request-Id'.",
+   "group": [
+    {
+     "technology": "squarespace",
+     "observation": "http_response",
+     "operator": "regex",
+     "pattern": "X-Squarespace-Request-Id"
+    },
+    {
+     "technology": "squarespace",
+     "observation": "http_status",
+     "operator": "equals",
+     "pattern": "200"
+    }
+   ],
+   "input": {
+    "status": 200,
+    "headers": {
+     "X-Squarespace-Request-Id": "abc"
+    },
+    "html": "<html></html>"
+   },
+   "expect": {
+    "match": true
+   }
+  },
+  {
+   "id": "squarespace-header-negative",
+   "description": "Another site that does not carry the marker.",
+   "group": [
+    {
+     "technology": "squarespace",
+     "observation": "http_response",
+     "operator": "regex",
+     "pattern": "X-Squarespace-Request-Id"
+    },
+    {
+     "technology": "squarespace",
+     "observation": "http_status",
+     "operator": "equals",
+     "pattern": "200"
+    }
+   ],
+   "input": {
+    "status": 200,
+    "headers": {
+     "X-Request-Id": "abc"
+    },
+    "html": "<html></html>"
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "squarespace-header-negative-status",
+   "description": "The group requires status 200.",
+   "group": [
+    {
+     "technology": "squarespace",
+     "observation": "http_response",
+     "operator": "regex",
+     "pattern": "X-Squarespace-Request-Id"
+    },
+    {
+     "technology": "squarespace",
+     "observation": "http_status",
+     "operator": "equals",
+     "pattern": "200"
+    }
+   ],
+   "input": {
+    "status": 500,
+    "headers": {
+     "X-Squarespace-Request-Id": "abc"
+    },
+    "html": "<html></html>"
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "squarespace-template-positive",
+   "description": "The response carries the marker 'Squarespace Template'.",
+   "group": [
+    {
+     "technology": "squarespace",
+     "observation": "http_response",
+     "operator": "regex",
+     "pattern": "Squarespace Template"
+    },
+    {
+     "technology": "squarespace",
+     "observation": "http_status",
+     "operator": "equals",
+     "pattern": "200"
+    }
+   ],
+   "input": {
+    "status": 200,
+    "html": "<!-- This is a Squarespace Template -->"
+   },
+   "expect": {
+    "match": true
+   }
+  },
+  {
+   "id": "squarespace-template-negative",
+   "description": "Another site that does not carry the marker.",
+   "group": [
+    {
+     "technology": "squarespace",
+     "observation": "http_response",
+     "operator": "regex",
+     "pattern": "Squarespace Template"
+    },
+    {
+     "technology": "squarespace",
+     "observation": "http_status",
+     "operator": "equals",
+     "pattern": "200"
+    }
+   ],
+   "input": {
+    "status": 200,
+    "html": "<!-- a template -->"
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "squarespace-template-negative-status",
+   "description": "The group requires status 200.",
+   "group": [
+    {
+     "technology": "squarespace",
+     "observation": "http_response",
+     "operator": "regex",
+     "pattern": "Squarespace Template"
+    },
+    {
+     "technology": "squarespace",
+     "observation": "http_status",
+     "operator": "equals",
+     "pattern": "200"
+    }
+   ],
+   "input": {
+    "status": 500,
+    "html": "<!-- This is a Squarespace Template -->"
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "bigcommerce-header-positive",
+   "description": "The response carries the marker 'X-BigCommerce-Request-Id'.",
+   "group": [
+    {
+     "technology": "bigcommerce",
+     "observation": "http_response",
+     "operator": "regex",
+     "pattern": "X-BigCommerce-Request-Id"
+    },
+    {
+     "technology": "bigcommerce",
+     "observation": "http_status",
+     "operator": "equals",
+     "pattern": "200"
+    }
+   ],
+   "input": {
+    "status": 200,
+    "headers": {
+     "X-BigCommerce-Request-Id": "1"
+    },
+    "html": ""
+   },
+   "expect": {
+    "match": true
+   }
+  },
+  {
+   "id": "bigcommerce-header-negative",
+   "description": "Another site that does not carry the marker.",
+   "group": [
+    {
+     "technology": "bigcommerce",
+     "observation": "http_response",
+     "operator": "regex",
+     "pattern": "X-BigCommerce-Request-Id"
+    },
+    {
+     "technology": "bigcommerce",
+     "observation": "http_status",
+     "operator": "equals",
+     "pattern": "200"
+    }
+   ],
+   "input": {
+    "status": 200,
+    "headers": {
+     "X-Request-Id": "1"
+    },
+    "html": ""
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "bigcommerce-header-negative-status",
+   "description": "The group requires status 200.",
+   "group": [
+    {
+     "technology": "bigcommerce",
+     "observation": "http_response",
+     "operator": "regex",
+     "pattern": "X-BigCommerce-Request-Id"
+    },
+    {
+     "technology": "bigcommerce",
+     "observation": "http_status",
+     "operator": "equals",
+     "pattern": "200"
+    }
+   ],
+   "input": {
+    "status": 500,
+    "headers": {
+     "X-BigCommerce-Request-Id": "1"
+    },
+    "html": ""
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "bigcommerce-domain-positive",
+   "description": "The response carries the marker 'bigcommerce\\\\.com'.",
+   "group": [
+    {
+     "technology": "bigcommerce",
+     "observation": "http_response",
+     "operator": "regex",
+     "pattern": "bigcommerce\\.com"
+    },
+    {
+     "technology": "bigcommerce",
+     "observation": "http_status",
+     "operator": "equals",
+     "pattern": "200"
+    }
+   ],
+   "input": {
+    "status": 200,
+    "html": "<img src=\"https://cdn11.bigcommerce.com/s-1/a.png\">"
+   },
+   "expect": {
+    "match": true
+   }
+  },
+  {
+   "id": "bigcommerce-domain-negative",
+   "description": "Text that merely resembles the name.",
+   "group": [
+    {
+     "technology": "bigcommerce",
+     "observation": "http_response",
+     "operator": "regex",
+     "pattern": "bigcommerce\\.com"
+    },
+    {
+     "technology": "bigcommerce",
+     "observation": "http_status",
+     "operator": "equals",
+     "pattern": "200"
+    }
+   ],
+   "input": {
+    "status": 200,
+    "html": "<p>a big commerce site</p>"
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "bigcommerce-domain-negative-status",
+   "description": "The group requires status 200.",
+   "group": [
+    {
+     "technology": "bigcommerce",
+     "observation": "http_response",
+     "operator": "regex",
+     "pattern": "bigcommerce\\.com"
+    },
+    {
+     "technology": "bigcommerce",
+     "observation": "http_status",
+     "operator": "equals",
+     "pattern": "200"
+    }
+   ],
+   "input": {
+    "status": 500,
+    "html": "<img src=\"https://cdn11.bigcommerce.com/s-1/a.png\">"
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "bitrix-header-positive",
+   "description": "The response carries the marker 'X-Powered-By-Bitrix'.",
+   "group": [
+    {
+     "technology": "bitrix",
+     "observation": "http_response",
+     "operator": "regex",
+     "pattern": "X-Powered-By-Bitrix"
+    },
+    {
+     "technology": "bitrix",
+     "observation": "http_status",
+     "operator": "equals",
+     "pattern": "200"
+    }
+   ],
+   "input": {
+    "status": 200,
+    "headers": {
+     "X-Powered-By-Bitrix": "Bitrix24"
+    },
+    "html": ""
+   },
+   "expect": {
+    "match": true
+   }
+  },
+  {
+   "id": "bitrix-header-negative",
+   "description": "Another site that does not carry the marker.",
+   "group": [
+    {
+     "technology": "bitrix",
+     "observation": "http_response",
+     "operator": "regex",
+     "pattern": "X-Powered-By-Bitrix"
+    },
+    {
+     "technology": "bitrix",
+     "observation": "http_status",
+     "operator": "equals",
+     "pattern": "200"
+    }
+   ],
+   "input": {
+    "status": 200,
+    "headers": {
+     "X-Powered-By": "PHP"
+    },
+    "html": ""
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "bitrix-header-negative-status",
+   "description": "The group requires status 200.",
+   "group": [
+    {
+     "technology": "bitrix",
+     "observation": "http_response",
+     "operator": "regex",
+     "pattern": "X-Powered-By-Bitrix"
+    },
+    {
+     "technology": "bitrix",
+     "observation": "http_status",
+     "operator": "equals",
+     "pattern": "200"
+    }
+   ],
+   "input": {
+    "status": 500,
+    "headers": {
+     "X-Powered-By-Bitrix": "Bitrix24"
+    },
+    "html": ""
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "bitrix-js-positive",
+   "description": "The response carries the marker 'bitrixjs'.",
+   "group": [
+    {
+     "technology": "bitrix",
+     "observation": "http_response",
+     "operator": "regex",
+     "pattern": "bitrixjs"
+    },
+    {
+     "technology": "bitrix",
+     "observation": "http_status",
+     "operator": "equals",
+     "pattern": "200"
+    }
+   ],
+   "input": {
+    "status": 200,
+    "html": "<script>window.bitrixjs = {};</script>"
+   },
+   "expect": {
+    "match": true
+   }
+  },
+  {
+   "id": "bitrix-js-negative",
+   "description": "Another site that does not carry the marker.",
+   "group": [
+    {
+     "technology": "bitrix",
+     "observation": "http_response",
+     "operator": "regex",
+     "pattern": "bitrixjs"
+    },
+    {
+     "technology": "bitrix",
+     "observation": "http_status",
+     "operator": "equals",
+     "pattern": "200"
+    }
+   ],
+   "input": {
+    "status": 200,
+    "html": "<script>window.app = {};</script>"
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "bitrix-js-negative-status",
+   "description": "The group requires status 200.",
+   "group": [
+    {
+     "technology": "bitrix",
+     "observation": "http_response",
+     "operator": "regex",
+     "pattern": "bitrixjs"
+    },
+    {
+     "technology": "bitrix",
+     "observation": "http_status",
+     "operator": "equals",
+     "pattern": "200"
+    }
+   ],
+   "input": {
+    "status": 500,
+    "html": "<script>window.bitrixjs = {};</script>"
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "blogger-blogspot-positive",
+   "description": "The response carries the marker 'blogspot\\\\.com'.",
+   "group": [
+    {
+     "technology": "blogger",
+     "observation": "http_response",
+     "operator": "regex",
+     "pattern": "blogspot\\.com"
+    },
+    {
+     "technology": "blogger",
+     "observation": "http_status",
+     "operator": "equals",
+     "pattern": "200"
+    }
+   ],
+   "input": {
+    "status": 200,
+    "html": "<link rel=\"canonical\" href=\"https://example.blogspot.com/\">"
+   },
+   "expect": {
+    "match": true
+   }
+  },
+  {
+   "id": "blogger-blogspot-negative",
+   "description": "A path that contains the word but is not the blogspot.com domain.",
+   "group": [
+    {
+     "technology": "blogger",
+     "observation": "http_response",
+     "operator": "regex",
+     "pattern": "blogspot\\.com"
+    },
+    {
+     "technology": "blogger",
+     "observation": "http_status",
+     "operator": "equals",
+     "pattern": "200"
+    }
+   ],
+   "input": {
+    "status": 200,
+    "html": "<link rel=\"canonical\" href=\"https://example.org/blogspot\">"
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "blogger-blogspot-negative-status",
+   "description": "The group requires status 200.",
+   "group": [
+    {
+     "technology": "blogger",
+     "observation": "http_response",
+     "operator": "regex",
+     "pattern": "blogspot\\.com"
+    },
+    {
+     "technology": "blogger",
+     "observation": "http_status",
+     "operator": "equals",
+     "pattern": "200"
+    }
+   ],
+   "input": {
+    "status": 500,
+    "html": "<link rel=\"canonical\" href=\"https://example.blogspot.com/\">"
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "opencart-store-positive",
+   "description": "The response carries the marker 'OpenCart Store'.",
+   "group": [
+    {
+     "technology": "opencart",
+     "observation": "http_response",
+     "operator": "regex",
+     "pattern": "OpenCart Store"
+    },
+    {
+     "technology": "opencart",
+     "observation": "http_status",
+     "operator": "equals",
+     "pattern": "200"
+    }
+   ],
+   "input": {
+    "status": 200,
+    "html": "<title>My OpenCart Store</title>"
+   },
+   "expect": {
+    "match": true
+   }
+  },
+  {
+   "id": "opencart-store-negative",
+   "description": "Another site that does not carry the marker.",
+   "group": [
+    {
+     "technology": "opencart",
+     "observation": "http_response",
+     "operator": "regex",
+     "pattern": "OpenCart Store"
+    },
+    {
+     "technology": "opencart",
+     "observation": "http_status",
+     "operator": "equals",
+     "pattern": "200"
+    }
+   ],
+   "input": {
+    "status": 200,
+    "html": "<title>My Store</title>"
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "opencart-store-negative-status",
+   "description": "The group requires status 200.",
+   "group": [
+    {
+     "technology": "opencart",
+     "observation": "http_response",
+     "operator": "regex",
+     "pattern": "OpenCart Store"
+    },
+    {
+     "technology": "opencart",
+     "observation": "http_status",
+     "operator": "equals",
+     "pattern": "200"
+    }
+   ],
+   "input": {
+    "status": 500,
+    "html": "<title>My OpenCart Store</title>"
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "oscommerce-powered-positive",
+   "description": "The response carries the marker 'Powered by osCommerce'.",
+   "group": [
+    {
+     "technology": "oscommerce",
+     "observation": "http_response",
+     "operator": "regex",
+     "pattern": "Powered by osCommerce"
+    },
+    {
+     "technology": "oscommerce",
+     "observation": "http_status",
+     "operator": "equals",
+     "pattern": "200"
+    }
+   ],
+   "input": {
+    "status": 200,
+    "html": "<div>Powered by osCommerce</div>"
+   },
+   "expect": {
+    "match": true
+   }
+  },
+  {
+   "id": "oscommerce-powered-negative",
+   "description": "Another site that does not carry the marker.",
+   "group": [
+    {
+     "technology": "oscommerce",
+     "observation": "http_response",
+     "operator": "regex",
+     "pattern": "Powered by osCommerce"
+    },
+    {
+     "technology": "oscommerce",
+     "observation": "http_status",
+     "operator": "equals",
+     "pattern": "200"
+    }
+   ],
+   "input": {
+    "status": 200,
+    "html": "<div>Powered by OpenCart</div>"
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "oscommerce-powered-negative-status",
+   "description": "The group requires status 200.",
+   "group": [
+    {
+     "technology": "oscommerce",
+     "observation": "http_response",
+     "operator": "regex",
+     "pattern": "Powered by osCommerce"
+    },
+    {
+     "technology": "oscommerce",
+     "observation": "http_status",
+     "operator": "equals",
+     "pattern": "200"
+    }
+   ],
+   "input": {
+    "status": 500,
+    "html": "<div>Powered by osCommerce</div>"
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "silverstripe-powered-positive",
+   "description": "The response carries the marker 'Powered by SilverStripe'.",
+   "group": [
+    {
+     "technology": "silverstripe",
+     "observation": "http_response",
+     "operator": "regex",
+     "pattern": "Powered by SilverStripe"
+    },
+    {
+     "technology": "silverstripe",
+     "observation": "http_status",
+     "operator": "equals",
+     "pattern": "200"
+    }
+   ],
+   "input": {
+    "status": 200,
+    "html": "<meta name=\"generator\" content=\"SilverStripe - http://silverstripe.org\">Powered by SilverStripe"
+   },
+   "expect": {
+    "match": true
+   }
+  },
+  {
+   "id": "silverstripe-powered-negative",
+   "description": "Another site that does not carry the marker.",
+   "group": [
+    {
+     "technology": "silverstripe",
+     "observation": "http_response",
+     "operator": "regex",
+     "pattern": "Powered by SilverStripe"
+    },
+    {
+     "technology": "silverstripe",
+     "observation": "http_status",
+     "operator": "equals",
+     "pattern": "200"
+    }
+   ],
+   "input": {
+    "status": 200,
+    "html": "Powered by Drupal"
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "silverstripe-powered-negative-status",
+   "description": "The group requires status 200.",
+   "group": [
+    {
+     "technology": "silverstripe",
+     "observation": "http_response",
+     "operator": "regex",
+     "pattern": "Powered by SilverStripe"
+    },
+    {
+     "technology": "silverstripe",
+     "observation": "http_status",
+     "operator": "equals",
+     "pattern": "200"
+    }
+   ],
+   "input": {
+    "status": 500,
+    "html": "<meta name=\"generator\" content=\"SilverStripe - http://silverstripe.org\">Powered by SilverStripe"
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "expressionengine-powered-positive",
+   "description": "The response carries the marker 'Powered by ExpressionEngine'.",
+   "group": [
+    {
+     "technology": "expressionengine",
+     "observation": "http_response",
+     "operator": "regex",
+     "pattern": "Powered by ExpressionEngine"
+    },
+    {
+     "technology": "expressionengine",
+     "observation": "http_status",
+     "operator": "equals",
+     "pattern": "200"
+    }
+   ],
+   "input": {
+    "status": 200,
+    "html": "Powered by ExpressionEngine"
+   },
+   "expect": {
+    "match": true
+   }
+  },
+  {
+   "id": "expressionengine-powered-negative",
+   "description": "Another site that does not carry the marker.",
+   "group": [
+    {
+     "technology": "expressionengine",
+     "observation": "http_response",
+     "operator": "regex",
+     "pattern": "Powered by ExpressionEngine"
+    },
+    {
+     "technology": "expressionengine",
+     "observation": "http_status",
+     "operator": "equals",
+     "pattern": "200"
+    }
+   ],
+   "input": {
+    "status": 200,
+    "html": "Powered by something"
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "expressionengine-powered-negative-status",
+   "description": "The group requires status 200.",
+   "group": [
+    {
+     "technology": "expressionengine",
+     "observation": "http_response",
+     "operator": "regex",
+     "pattern": "Powered by ExpressionEngine"
+    },
+    {
+     "technology": "expressionengine",
+     "observation": "http_status",
+     "operator": "equals",
+     "pattern": "200"
+    }
+   ],
+   "input": {
+    "status": 500,
+    "html": "Powered by ExpressionEngine"
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "flask-powered-positive",
+   "description": "The response carries the marker 'Powered by Flask'.",
+   "group": [
+    {
+     "technology": "flask",
+     "observation": "http_response",
+     "operator": "regex",
+     "pattern": "Powered by Flask"
+    },
+    {
+     "technology": "flask",
+     "observation": "http_status",
+     "operator": "equals",
+     "pattern": "200"
+    }
+   ],
+   "input": {
+    "status": 200,
+    "html": "<footer>Powered by Flask</footer>"
+   },
+   "expect": {
+    "match": true
+   }
+  },
+  {
+   "id": "flask-powered-negative",
+   "description": "Another site that does not carry the marker.",
+   "group": [
+    {
+     "technology": "flask",
+     "observation": "http_response",
+     "operator": "regex",
+     "pattern": "Powered by Flask"
+    },
+    {
+     "technology": "flask",
+     "observation": "http_status",
+     "operator": "equals",
+     "pattern": "200"
+    }
+   ],
+   "input": {
+    "status": 200,
+    "html": "<footer>Powered by Django</footer>"
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "flask-powered-negative-status",
+   "description": "The group requires status 200.",
+   "group": [
+    {
+     "technology": "flask",
+     "observation": "http_response",
+     "operator": "regex",
+     "pattern": "Powered by Flask"
+    },
+    {
+     "technology": "flask",
+     "observation": "http_status",
+     "operator": "equals",
+     "pattern": "200"
+    }
+   ],
+   "input": {
+    "status": 500,
+    "html": "<footer>Powered by Flask</footer>"
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "weebly-domain-positive",
+   "description": "The response carries the marker 'weebly\\\\.com'.",
+   "group": [
+    {
+     "technology": "weebly",
+     "observation": "http_response",
+     "operator": "regex",
+     "pattern": "weebly\\.com"
+    },
+    {
+     "technology": "weebly",
+     "observation": "http_status",
+     "operator": "equals",
+     "pattern": "200"
+    }
+   ],
+   "input": {
+    "status": 200,
+    "html": "<script src=\"//cdn2.editmysite.com/x.js\"></script><a href=\"https://www.weebly.com\">"
+   },
+   "expect": {
+    "match": true
+   }
+  },
+  {
+   "id": "weebly-domain-negative",
+   "description": "Another site that does not carry the marker.",
+   "group": [
+    {
+     "technology": "weebly",
+     "observation": "http_response",
+     "operator": "regex",
+     "pattern": "weebly\\.com"
+    },
+    {
+     "technology": "weebly",
+     "observation": "http_status",
+     "operator": "equals",
+     "pattern": "200"
+    }
+   ],
+   "input": {
+    "status": 200,
+    "html": "<p>we ebly</p>"
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "weebly-domain-negative-status",
+   "description": "The group requires status 200.",
+   "group": [
+    {
+     "technology": "weebly",
+     "observation": "http_response",
+     "operator": "regex",
+     "pattern": "weebly\\.com"
+    },
+    {
+     "technology": "weebly",
+     "observation": "http_status",
+     "operator": "equals",
+     "pattern": "200"
+    }
+   ],
+   "input": {
+    "status": 500,
+    "html": "<script src=\"//cdn2.editmysite.com/x.js\"></script><a href=\"https://www.weebly.com\">"
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "weebly-header-positive",
+   "description": "The response carries the marker 'X-Powered-By-Weebly'.",
+   "group": [
+    {
+     "technology": "weebly",
+     "observation": "http_response",
+     "operator": "regex",
+     "pattern": "X-Powered-By-Weebly"
+    },
+    {
+     "technology": "weebly",
+     "observation": "http_status",
+     "operator": "equals",
+     "pattern": "200"
+    }
+   ],
+   "input": {
+    "status": 200,
+    "headers": {
+     "X-Powered-By-Weebly": "1"
+    },
+    "html": ""
+   },
+   "expect": {
+    "match": true
+   }
+  },
+  {
+   "id": "weebly-header-negative",
+   "description": "The rule is the exact header name X-Powered-By-Weebly; the generic X-Powered-By header is not it.",
+   "group": [
+    {
+     "technology": "weebly",
+     "observation": "http_response",
+     "operator": "regex",
+     "pattern": "X-Powered-By-Weebly"
+    },
+    {
+     "technology": "weebly",
+     "observation": "http_status",
+     "operator": "equals",
+     "pattern": "200"
+    }
+   ],
+   "input": {
+    "status": 200,
+    "headers": {
+     "X-Powered-By": "Weebly"
+    },
+    "html": ""
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "weebly-header-negative-status",
+   "description": "The group requires status 200.",
+   "group": [
+    {
+     "technology": "weebly",
+     "observation": "http_response",
+     "operator": "regex",
+     "pattern": "X-Powered-By-Weebly"
+    },
+    {
+     "technology": "weebly",
+     "observation": "http_status",
+     "operator": "equals",
+     "pattern": "200"
+    }
+   ],
+   "input": {
+    "status": 500,
+    "headers": {
+     "X-Powered-By-Weebly": "1"
+    },
+    "html": ""
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "concrete5-powered-positive",
+   "description": "The page carries the marker 'Powered by Concrete5'.",
+   "group": [
+    {
+     "technology": "concrete5",
+     "observation": "html",
+     "operator": "regex",
+     "pattern": "Powered by Concrete5"
+    },
+    {
+     "technology": "concrete5",
+     "observation": "http_status",
+     "operator": "equals",
+     "pattern": "200"
+    }
+   ],
+   "input": {
+    "status": 200,
+    "html": "<p>Powered by Concrete5</p>"
+   },
+   "expect": {
+    "match": true
+   }
+  },
+  {
+   "id": "concrete5-powered-negative",
+   "description": "Another page.",
+   "group": [
+    {
+     "technology": "concrete5",
+     "observation": "html",
+     "operator": "regex",
+     "pattern": "Powered by Concrete5"
+    },
+    {
+     "technology": "concrete5",
+     "observation": "http_status",
+     "operator": "equals",
+     "pattern": "200"
+    }
+   ],
+   "input": {
+    "status": 200,
+    "html": "<p>Powered by WordPress</p>"
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "limesurvey-lang-positive",
+   "description": "The page carries the marker 'data-limesurvey-lang='.",
+   "group": [
+    {
+     "technology": "limesurvey-survey-software-2",
+     "observation": "html",
+     "operator": "regex",
+     "pattern": "data-limesurvey-lang="
+    },
+    {
+     "technology": "limesurvey-survey-software-2",
+     "observation": "http_status",
+     "operator": "equals",
+     "pattern": "200"
+    }
+   ],
+   "input": {
+    "status": 200,
+    "html": "<html data-limesurvey-lang=\"en\">"
+   },
+   "expect": {
+    "match": true
+   }
+  },
+  {
+   "id": "limesurvey-lang-negative",
+   "description": "Another page.",
+   "group": [
+    {
+     "technology": "limesurvey-survey-software-2",
+     "observation": "html",
+     "operator": "regex",
+     "pattern": "data-limesurvey-lang="
+    },
+    {
+     "technology": "limesurvey-survey-software-2",
+     "observation": "http_status",
+     "operator": "equals",
+     "pattern": "200"
+    }
+   ],
+   "input": {
+    "status": 200,
+    "html": "<html lang=\"en\">"
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "jitsi-script-positive",
+   "description": "The page carries the marker 'jitsimeetjs\\\\.app'.",
+   "group": [
+    {
+     "technology": "jitsi-meet-page",
+     "observation": "html",
+     "operator": "regex",
+     "pattern": "jitsimeetjs\\.app"
+    },
+    {
+     "technology": "jitsi-meet-page",
+     "observation": "http_status",
+     "operator": "equals",
+     "pattern": "200"
+    }
+   ],
+   "input": {
+    "status": 200,
+    "html": "<script src=\"libs/app.bundle.min.js?v=1\">window.jitsimeetjs.app=1</script>"
+   },
+   "expect": {
+    "match": true
+   }
+  },
+  {
+   "id": "jitsi-script-negative",
+   "description": "Another page.",
+   "group": [
+    {
+     "technology": "jitsi-meet-page",
+     "observation": "html",
+     "operator": "regex",
+     "pattern": "jitsimeetjs\\.app"
+    },
+    {
+     "technology": "jitsi-meet-page",
+     "observation": "http_status",
+     "operator": "equals",
+     "pattern": "200"
+    }
+   ],
+   "input": {
+    "status": 200,
+    "html": "<script>window.meet=1</script>"
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "mojoportal-powered-positive",
+   "description": "The page carries the marker '(?-i)Powered by mojoPortal'.",
+   "group": [
+    {
+     "technology": "mojoportal",
+     "observation": "html",
+     "operator": "regex",
+     "pattern": "(?-i)Powered by mojoPortal"
+    },
+    {
+     "technology": "mojoportal",
+     "observation": "http_status",
+     "operator": "equals",
+     "pattern": "200"
+    }
+   ],
+   "input": {
+    "status": 200,
+    "html": "<a>Powered by mojoPortal</a>"
+   },
+   "expect": {
+    "match": true
+   }
+  },
+  {
+   "id": "mojoportal-powered-negative",
+   "description": "Another page.",
+   "group": [
+    {
+     "technology": "mojoportal",
+     "observation": "html",
+     "operator": "regex",
+     "pattern": "(?-i)Powered by mojoPortal"
+    },
+    {
+     "technology": "mojoportal",
+     "observation": "http_status",
+     "operator": "equals",
+     "pattern": "200"
+    }
+   ],
+   "input": {
+    "status": 200,
+    "html": "<a>Powered by DotNetNuke</a>"
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "openhab-title-positive",
+   "description": "The page carries the marker 'openHAB'.",
+   "group": [
+    {
+     "technology": "openhab-web-interface",
+     "observation": "html",
+     "operator": "contains",
+     "pattern": "openHAB"
+    },
+    {
+     "technology": "openhab-web-interface",
+     "observation": "http_status",
+     "operator": "equals",
+     "pattern": "200"
+    }
+   ],
+   "input": {
+    "status": 200,
+    "html": "<title>openHAB</title>"
+   },
+   "expect": {
+    "match": true
+   }
+  },
+  {
+   "id": "openhab-title-negative",
+   "description": "Another page.",
+   "group": [
+    {
+     "technology": "openhab-web-interface",
+     "observation": "html",
+     "operator": "contains",
+     "pattern": "openHAB"
+    },
+    {
+     "technology": "openhab-web-interface",
+     "observation": "http_status",
+     "operator": "equals",
+     "pattern": "200"
+    }
+   ],
+   "input": {
+    "status": 200,
+    "html": "<title>Home</title>"
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "redcap-positive",
+   "description": "Both phrases and status 200.",
+   "group": [
+    {
+     "technology": "redcap",
+     "observation": "html",
+     "operator": "contains",
+     "pattern": "REDCap"
+    },
+    {
+     "technology": "redcap",
+     "observation": "html",
+     "operator": "contains",
+     "pattern": "Vanderbilt University"
+    },
+    {
+     "technology": "redcap",
+     "observation": "http_status",
+     "operator": "equals",
+     "pattern": "200"
+    }
+   ],
+   "input": {
+    "status": 200,
+    "html": "<p>REDCap</p><p>Vanderbilt University</p>"
+   },
+   "expect": {
+    "match": true
+   }
+  },
+  {
+   "id": "redcap-negative-one-phrase",
+   "description": "All members are needed.",
+   "group": [
+    {
+     "technology": "redcap",
+     "observation": "html",
+     "operator": "contains",
+     "pattern": "REDCap"
+    },
+    {
+     "technology": "redcap",
+     "observation": "html",
+     "operator": "contains",
+     "pattern": "Vanderbilt University"
+    },
+    {
+     "technology": "redcap",
+     "observation": "http_status",
+     "operator": "equals",
+     "pattern": "200"
+    }
+   ],
+   "input": {
+    "status": 200,
+    "html": "<p>Vanderbilt University</p>"
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "pihole-positive",
+   "description": "Three phrases.",
+   "group": [
+    {
+     "technology": "pi-hole-login-panel",
+     "observation": "html",
+     "operator": "contains",
+     "pattern": "Pi-hole"
+    },
+    {
+     "technology": "pi-hole-login-panel",
+     "observation": "html",
+     "operator": "contains",
+     "pattern": "Web Interface"
+    },
+    {
+     "technology": "pi-hole-login-panel",
+     "observation": "html",
+     "operator": "contains",
+     "pattern": "FTL"
+    }
+   ],
+   "input": {
+    "status": 200,
+    "html": "<title>Pi-hole Web Interface</title><p>FTL</p>"
+   },
+   "expect": {
+    "match": true
+   }
+  },
+  {
+   "id": "pihole-negative",
+   "description": "Missing members.",
+   "group": [
+    {
+     "technology": "pi-hole-login-panel",
+     "observation": "html",
+     "operator": "contains",
+     "pattern": "Pi-hole"
+    },
+    {
+     "technology": "pi-hole-login-panel",
+     "observation": "html",
+     "operator": "contains",
+     "pattern": "Web Interface"
+    },
+    {
+     "technology": "pi-hole-login-panel",
+     "observation": "html",
+     "operator": "contains",
+     "pattern": "FTL"
+    }
+   ],
+   "input": {
+    "status": 200,
+    "html": "<title>Pi-hole</title>"
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "roundcube-positive",
+   "description": "Roundcube and its version marker.",
+   "group": [
+    {
+     "technology": "roundcube-webmail-2",
+     "observation": "html",
+     "operator": "regex",
+     "pattern": "(?-i)\"rcversion\":\\d\\d\\d\\d"
+    },
+    {
+     "technology": "roundcube-webmail-2",
+     "observation": "html",
+     "operator": "regex",
+     "pattern": "(?-i)(?i)roundcube"
+    },
+    {
+     "technology": "roundcube-webmail-2",
+     "observation": "http_status",
+     "operator": "equals",
+     "pattern": "200"
+    }
+   ],
+   "input": {
+    "status": 200,
+    "html": "<title>Roundcube Webmail</title><script>{\"rcversion\":10609}</script>"
+   },
+   "expect": {
+    "match": true
+   }
+  },
+  {
+   "id": "roundcube-negative",
+   "description": "The version marker is also required.",
+   "group": [
+    {
+     "technology": "roundcube-webmail-2",
+     "observation": "html",
+     "operator": "regex",
+     "pattern": "(?-i)\"rcversion\":\\d\\d\\d\\d"
+    },
+    {
+     "technology": "roundcube-webmail-2",
+     "observation": "html",
+     "operator": "regex",
+     "pattern": "(?-i)(?i)roundcube"
+    },
+    {
+     "technology": "roundcube-webmail-2",
+     "observation": "http_status",
+     "operator": "equals",
+     "pattern": "200"
+    }
+   ],
+   "input": {
+    "status": 200,
+    "html": "<title>Roundcube Webmail</title>"
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "sails-positive",
+   "description": "Header and cookie.",
+   "group": [
+    {
+     "technology": "sails-js-framework",
+     "observation": "response_headers",
+     "operator": "regex",
+     "pattern": "X-Powered-By: Sails"
+    },
+    {
+     "technology": "sails-js-framework",
+     "observation": "response_headers",
+     "operator": "regex",
+     "pattern": "(?-i)(?i)set-cookie:\\s*sails\\.sid="
+    }
+   ],
+   "input": {
+    "status": 200,
+    "headers": {
+     "X-Powered-By": "Sails <sailsjs.org>",
+     "Set-Cookie": "sails.sid=abc; Path=/"
+    }
+   },
+   "expect": {
+    "match": true
+   }
+  },
+  {
+   "id": "sails-negative",
+   "description": "The cookie is also required.",
+   "group": [
+    {
+     "technology": "sails-js-framework",
+     "observation": "response_headers",
+     "operator": "regex",
+     "pattern": "X-Powered-By: Sails"
+    },
+    {
+     "technology": "sails-js-framework",
+     "observation": "response_headers",
+     "operator": "regex",
+     "pattern": "(?-i)(?i)set-cookie:\\s*sails\\.sid="
+    }
+   ],
+   "input": {
+    "status": 200,
+    "headers": {
+     "X-Powered-By": "Sails <sailsjs.org>"
+    }
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "spip-positive",
+   "description": "Composed-By header.",
+   "group": [
+    {
+     "technology": "spip",
+     "observation": "response_headers",
+     "operator": "regex",
+     "pattern": "(?-i)Composed-By: SPIP"
+    },
+    {
+     "technology": "spip",
+     "observation": "http_status",
+     "operator": "equals",
+     "pattern": "200"
+    }
+   ],
+   "input": {
+    "status": 200,
+    "headers": {
+     "Composed-By": "SPIP 4.2 @ www.spip.net"
+    }
+   },
+   "expect": {
+    "match": true
+   }
+  },
+  {
+   "id": "spip-negative",
+   "description": "Another header.",
+   "group": [
+    {
+     "technology": "spip",
+     "observation": "response_headers",
+     "operator": "regex",
+     "pattern": "(?-i)Composed-By: SPIP"
+    },
+    {
+     "technology": "spip",
+     "observation": "http_status",
+     "operator": "equals",
+     "pattern": "200"
+    }
+   ],
+   "input": {
+    "status": 200,
+    "headers": {
+     "X-Powered-By": "PHP"
+    }
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "basic-auth-positive",
+   "description": "A 401 asking for Basic authentication (not a technology, a behaviour).",
+   "group": [
+    {
+     "technology": "basic-auth",
+     "observation": "response_headers",
+     "operator": "regex",
+     "pattern": "(?-i)(?i)www-authenticate: basic"
+    },
+    {
+     "technology": "basic-auth",
+     "observation": "http_status",
+     "operator": "equals",
+     "pattern": "401"
+    }
+   ],
+   "input": {
+    "status": 401,
+    "headers": {
+     "WWW-Authenticate": "Basic realm=\"x\""
+    }
+   },
+   "expect": {
+    "match": true
+   }
+  },
+  {
+   "id": "basic-auth-negative-bearer",
+   "description": "Bearer is not Basic.",
+   "group": [
+    {
+     "technology": "basic-auth",
+     "observation": "response_headers",
+     "operator": "regex",
+     "pattern": "(?-i)(?i)www-authenticate: basic"
+    },
+    {
+     "technology": "basic-auth",
+     "observation": "http_status",
+     "operator": "equals",
+     "pattern": "401"
+    }
+   ],
+   "input": {
+    "status": 401,
+    "headers": {
+     "WWW-Authenticate": "Bearer"
+    }
+   },
+   "expect": {
+    "match": false
+   }
+  },
+  {
+   "id": "actuators-positive",
+   "description": "The actuator index.",
+   "group": [
+    {
+     "technology": "springboot-actuators",
+     "observation": "html",
+     "operator": "contains",
+     "pattern": "\"_links\":"
+    },
+    {
+     "technology": "springboot-actuators",
+     "observation": "html",
+     "operator": "contains",
+     "pattern": "\"self\":"
+    },
+    {
+     "technology": "springboot-actuators",
+     "observation": "html",
+     "operator": "contains",
+     "pattern": "\"health\""
+    }
+   ],
+   "input": {
+    "status": 200,
+    "html": "{\"_links\":{\"self\":{\"href\":\"/actuator\"},\"health\":{\"href\":\"/actuator/health\"}}}"
+   },
+   "expect": {
+    "match": true
+   }
+  },
+  {
+   "id": "actuators-negative",
+   "description": "A HAL document that is not the actuator index.",
+   "group": [
+    {
+     "technology": "springboot-actuators",
+     "observation": "html",
+     "operator": "contains",
+     "pattern": "\"_links\":"
+    },
+    {
+     "technology": "springboot-actuators",
+     "observation": "html",
+     "operator": "contains",
+     "pattern": "\"self\":"
+    },
+    {
+     "technology": "springboot-actuators",
+     "observation": "html",
+     "operator": "contains",
+     "pattern": "\"health\""
+    }
+   ],
+   "input": {
+    "status": 200,
+    "html": "{\"_links\":{\"next\":{\"href\":\"/p2\"}}}"
    },
    "expect": {
     "match": false
