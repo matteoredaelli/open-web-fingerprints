@@ -77,7 +77,7 @@ examples/  docs/  testdata under each package
 Technology, Vendor, Category, Fingerprint (one observation rule), Relationship,
 Source, Snapshot, Provenance, Conflict, Alias. A fingerprint has observation,
 target, operator, pattern, `regex_flavor` (`re2` | `ecmascript` | `pcre`),
-optional `version_extract`, `group_id` (rules that must hold together), optional
+optional `version_extract`, `role` (`version` for a rule that only reads a version), `group_id` (rules that must hold together), optional
 `probe`, confidence, status, validation, provenance, `raw`. Observation types
 are an open set. Details: `docs/domain-model.md`.
 
@@ -130,14 +130,13 @@ upstream examples, with the origin of each piece of evidence), redistribution
 guard.
 
 Open, roughly in order:
-1. nuclei version extractors (209 templates lose versions).
-2. Write cases for groups and rules of the Wappalyzer-format and nuclei sources
+1. Write cases for groups and rules of the Wappalyzer-format and nuclei sources
    (only 16 and a few groups have evidence; Recog has upstream examples).
-3. Review the 281 candidate conflicts; legal review of every source.
-4. Export 0.2: conflicts, aliases, test evidence, manifest with revisions and
+2. Review the 281 candidate conflicts; legal review of every source.
+3. Export 0.2: conflicts, aliases, test evidence, manifest with revisions and
    checksums; semantic versioning and releases (always explicit, never
    automatic).
-5. Separate repositories for the detection engine and the public site.
+4. Separate repositories for the detection engine and the public site.
 
 Docs: `docs/domain-model.md`, `sources.md`, `dedup-design.md`, `validation.md`,
 `redistribution.md`.

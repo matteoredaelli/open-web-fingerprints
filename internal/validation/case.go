@@ -50,6 +50,9 @@ type Selector struct {
 	Target      string `json:"target,omitempty"`
 	Operator    string `json:"operator,omitempty"`
 	Pattern     string `json:"pattern,omitempty"`
+	// Role is "version" to select a rule that only reads a version. Without it
+	// only detection rules are selected.
+	Role string `json:"role,omitempty"`
 }
 
 // Expect is the asserted outcome.

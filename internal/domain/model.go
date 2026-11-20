@@ -68,6 +68,9 @@ const (
 	ObsProbeResponse Observation = "probe_response"
 )
 
+// RoleVersion is the Role of a rule that reads a version and does not detect.
+const RoleVersion = "version"
+
 // Registry is the root of an export document.
 type Registry struct {
 	Schema        string         `json:"$schema,omitempty"`
@@ -169,21 +172,25 @@ type Technology struct {
 
 // Fingerprint is one observation rule for one technology.
 type Fingerprint struct {
-	ID             FingerprintID   `json:"id"`
-	TechnologyID   TechnologyID    `json:"technology_id"`
-	GroupID        GroupID         `json:"group_id,omitempty"`
-	Observation    Observation     `json:"observation"`
-	Target         string          `json:"target,omitempty"`
-	Operator       Operator        `json:"operator"`
-	Pattern        string          `json:"pattern,omitempty"`
-	RegexFlavor    RegexFlavor     `json:"regex_flavor,omitempty"`
-	VersionExtract string          `json:"version_extract,omitempty"`
-	Confidence     float64         `json:"confidence"`
-	Probe          *Probe          `json:"probe,omitempty"`
-	Status         Status          `json:"status"`
-	Validation     *Validation     `json:"validation,omitempty"`
-	Provenance     []Provenance    `json:"provenance"`
-	Raw            json.RawMessage `json:"raw,omitempty"`
+	ID             FingerprintID `json:"id"`
+	TechnologyID   TechnologyID  `json:"technology_id"`
+	GroupID        GroupID       `json:"group_id,omitempty"`
+	Observation    Observation   `json:"observation"`
+	Target         string        `json:"target,omitempty"`
+	Operator       Operator      `json:"operator"`
+	Pattern        string        `json:"pattern,omitempty"`
+	RegexFlavor    RegexFlavor   `json:"regex_flavor,omitempty"`
+	VersionExtract string        `json:"version_extract,omitempty"`
+	// Role is empty for a rule that detects the technology. RoleVersion marks a
+	// rule that only reads a version: it never detects by itself, and applies
+	// when a detection rule of the same technology matched on the same request.
+	Role       string          `json:"role,omitempty"`
+	Confidence float64         `json:"confidence"`
+	Probe      *Probe          `json:"probe,omitempty"`
+	Status     Status          `json:"status"`
+	Validation *Validation     `json:"validation,omitempty"`
+	Provenance []Provenance    `json:"provenance"`
+	Raw        json.RawMessage `json:"raw,omitempty"`
 }
 
 // Probe is an active, non-destructive request.

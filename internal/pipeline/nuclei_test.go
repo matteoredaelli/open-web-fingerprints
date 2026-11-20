@@ -6,6 +6,7 @@ package pipeline_test
 import (
 	"context"
 	"encoding/json"
+	"strings"
 	"testing"
 	"time"
 
@@ -97,6 +98,27 @@ func TestNucleiGroupsAndProbesSurviveTheRegistry(t *testing.T) {
 		}
 		if g == 0 || pr != probes {
 			t.Errorf("export groups=%d probes=%d (stored %d)", g, pr, probes)
+		}
+
+		// Version rules are stored and exported with their role; they are no
+		// part of a group and never active on their own as probes.
+		var versionRules int
+		for _, f := range all.Fingerprints {
+			if f.Role == domain.RoleVersion {
+				versionRules++
+				if f.VersionExtract == "" || f.GroupID != "" {
+					t.Errorf("version rule: %+v", f)
+				}
+			}
+		}
+		var exported int
+		for _, f := range reg.Fingerprints {
+			if f.Role == domain.RoleVersion {
+				exported++
+			}
+		}
+		if versionRules == 0 || exported != versionRules || !strings.Contains(string(b), `"role": "version"`) {
+			t.Errorf("version rules stored=%d exported=%d", versionRules, exported)
 		}
 
 		// Re-importing changes nothing.

@@ -155,6 +155,15 @@ func Validate(r domain.Records) []Issue {
 
 func (c *checker) fingerprint(f domain.Fingerprint) {
 	ref := string(f.ID)
+	switch f.Role {
+	case "":
+	case domain.RoleVersion:
+		if f.Operator != domain.OpRegex || f.VersionExtract == "" || f.GroupID != "" {
+			c.err("invalid_version_rule", ref, "a version rule is a regex with a version_extract and no group")
+		}
+	default:
+		c.err("invalid_role", ref, "unknown role %q", f.Role)
+	}
 	if f.Confidence < 0 || f.Confidence > 1 {
 		c.err("invalid_confidence", ref, "confidence %v out of range", f.Confidence)
 	}

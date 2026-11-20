@@ -281,11 +281,24 @@ entries. `favicon-detect` is read as a table of favicon hashes (the status
 condition is dropped, because a matching hash already implies a favicon was
 served).
 
-**Not mapped yet: version extractors.** 209 templates have extractors that read
-versions. Their rules detect the product but not the version, so version
-information from this source is missing. The DSL subset is deliberately small.
-Redirect settings of the requests (`host-redirects`, `max-redirects`) are
-ignored, and `{{RootURL}}` is treated like `{{BaseURL}}`.
+**Version extractors.** Nuclei reads versions with extractors, which are not
+matchers: they never decide that a product is there. A regex extractor with a
+capture group becomes a rule with `role: version` (a regex plus a
+`version_extract`), on the same request as the detection rules of its template
+(a probed path stays a probe). It applies only when a detection rule of the same
+technology matched; `matcher.Version` reads it. Real data: 209 templates have
+extractors, 110 technologies get at least one version rule (150 rules stored, 62
+of them on probed paths). An extractor is taken for a version if it is named
+`version`, `detected_version`, `internal_detected_version` or has "version" in
+its name, or if it is unnamed and its pattern looks numeric. Skipped and counted:
+`kval`, `json`, `dsl` and `xpath` extractors (61), regex extractors that read
+something else (a domain, an id, a timestamp: 136), regex extractors without a
+capture group (147; whole-match extractors return a banner, not a version), and
+groups that do not exist. The unnamed-pattern check is a heuristic and errs on
+the side of dropping. Templates whose matchers are outside the subset
+(`compare_versions` in the end-of-life templates) give no version either. Redirect
+settings of the requests (`host-redirects`, `max-redirects`) are ignored, and
+`{{RootURL}}` is treated like `{{BaseURL}}`.
 
 **Safety.** Probes are only imported, never run by this project. Review them
 before approving: `owf fingerprint list --observation probe_response`, and

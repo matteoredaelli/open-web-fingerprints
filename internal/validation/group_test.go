@@ -47,7 +47,7 @@ func TestGroupCases(t *testing.T) {
 		if r.Status != validation.Pass {
 			t.Errorf("%s: %s %s", r.Case.ID, r.Status, r.Message)
 		}
-		if len(r.RuleIDs) != 2 {
+		if len(r.Case.Group) > 0 && len(r.RuleIDs) != 2 {
 			t.Errorf("%s: evidence must cover both members: %v", r.Case.ID, r.RuleIDs)
 		}
 	}
@@ -76,7 +76,6 @@ func TestGroupCases(t *testing.T) {
 	if action != 2 || other != 0 {
 		t.Errorf("members=%d, other groups touched=%d", action, other)
 	}
-	// The accellion group has a positive and a negative too.
 	var ok int
 	for id, h := range health {
 		_ = id
@@ -84,8 +83,8 @@ func TestGroupCases(t *testing.T) {
 			ok++
 		}
 	}
-	if ok != 4 {
-		t.Errorf("ok rules = %d, want the 4 members of the two tested groups", ok)
+	if ok != 5 {
+		t.Errorf("ok rules = %d, want the 4 members of the two tested groups and the 4D version rule", ok)
 	}
 }
 

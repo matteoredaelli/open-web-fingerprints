@@ -474,6 +474,12 @@
         },
         "raw": {
           "description": "Upstream fragment kept for re-normalization."
+        },
+        "role": {
+          "enum": [
+            "version"
+          ],
+          "description": "Absent for a rule that detects. 'version' marks a rule that only reads a version: it applies when a detection rule of the same technology matched on the same request."
         }
       },
       "allOf": [
@@ -557,6 +563,25 @@
                   }
                 }
               }
+            }
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "role"
+            ]
+          },
+          "then": {
+            "required": [
+              "version_extract",
+              "pattern"
+            ],
+            "properties": {
+              "operator": {
+                "const": "regex"
+              },
+              "group_id": false
             }
           }
         }

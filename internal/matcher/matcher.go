@@ -246,3 +246,23 @@ func EvaluateGroup(rules []domain.Fingerprint, o *Observation) (Outcome, error) 
 	}
 	return out, nil
 }
+
+// Version reads the version of a detected technology. rules are the technology's
+// rules with role "version" for the request that matched; the first one that
+// matches and yields a version wins. Call it only after a detection matched:
+// a version rule does not detect.
+func Version(rules []domain.Fingerprint, o *Observation) (string, error) {
+	for _, r := range rules {
+		if r.Role != domain.RoleVersion {
+			continue
+		}
+		got, err := Evaluate(r, o)
+		if err != nil {
+			return "", err
+		}
+		if got.Matched && got.Version != "" {
+			return got.Version, nil
+		}
+	}
+	return "", nil
+}

@@ -478,11 +478,11 @@ func TestGroupCasesThroughTheCLI(t *testing.T) {
 	mustRun(t, db, "import", "projectdiscovery-nuclei-templates", "--snapshot", "../../internal/extractor/nuclei/testdata/snapshot", "--revision", "91be390")
 	cases := "../../internal/validation/testdata/groups"
 	out := mustRun(t, db, "fingerprint", "test", cases, "--apply")
-	if !strings.Contains(out, "6 cases: 6 pass") || !strings.Contains(out, "evidence stored on 4 fingerprints") {
+	if !strings.Contains(out, "8 cases: 8 pass") || !strings.Contains(out, "evidence stored on 5 fingerprints") {
 		t.Errorf("group cases:\n%s", out)
 	}
 	list := mustRun(t, db, "fingerprint", "list", "--technology", "4d", "--json")
-	if strings.Count(list, `"health": "ok"`) != 2 || strings.Count(list, `"health": "unknown"`) != 8 {
+	if strings.Count(list, `"health": "ok"`) != 3 || strings.Count(list, `"health": "unknown"`) != 8 {
 		t.Errorf("only the two members of the tested group are ok:\n%s", list)
 	}
 }

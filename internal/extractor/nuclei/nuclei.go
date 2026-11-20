@@ -22,8 +22,11 @@
 // What is skipped, and counted in warnings: raw requests, POST, request
 // headers or bodies, payload lists (wordlists), flows, negative matchers,
 // other matcher types and encodings, DSL outside the subset, and templates
-// whose formula expands to more than maxClauses clauses. Extractors (which
-// read versions) are not mapped yet.
+// whose formula expands to more than maxClauses clauses.
+//
+// Extractors that read a version with a regular expression are mapped to rules
+// with role "version" (see versionRules). Other extractors (kval, json, dsl,
+// xpath) and regex extractors that do not read a version are skipped and counted.
 //
 // Five templates are not read as products: tech-detect and
 // fingerprinthub-web-fingerprints are generated from Wappalyzer and
@@ -149,14 +152,16 @@ func (s *skip) Error() string { return s.reason }
 func skipf(format string, a ...any) error { return &skip{fmt.Sprintf(format, a...)} }
 
 type state struct {
-	res      *extractor.ExtractionResult
-	techs    map[string]int // technology key -> index
-	vendors  map[string]string
-	skipped  map[string]int
-	derived  int
-	blocks   int
-	rules    int
-	extracts int
+	res        *extractor.ExtractionResult
+	techs      map[string]int // technology key -> index
+	vendors    map[string]string
+	skipped    map[string]int
+	derived    int
+	blocks     int
+	rules      int
+	extracts   int
+	versioned  int // version rules produced
+	tplVersion map[string]bool
 }
 
 // Extract implements extractor.Extractor.
@@ -183,7 +188,7 @@ func (x *Extractor) Extract(ctx context.Context, src extractor.Source) (*extract
 	}
 	sort.Strings(files)
 
-	st := &state{res: res, techs: map[string]int{}, vendors: map[string]string{}, skipped: map[string]int{}}
+	st := &state{res: res, techs: map[string]int{}, vendors: map[string]string{}, skipped: map[string]int{}, tplVersion: map[string]bool{}}
 	seen := map[string]string{}
 	for _, f := range files {
 		if err := ctx.Err(); err != nil {
@@ -231,6 +236,8 @@ func (x *Extractor) Extract(ctx context.Context, src extractor.Source) (*extract
 	res.Metadata["derived_names"] = st.derived
 	res.Metadata["qualified_names"] = extractor.QualifyNames(res, st.vendors)
 	res.Metadata["templates_with_extractors"] = st.extracts
+	res.Metadata["version_rules"] = st.versioned
+	res.Metadata["templates_with_version"] = len(st.tplVersion)
 	return res, nil
 }
 
@@ -253,6 +260,7 @@ func (st *state) template(file string, t *template) {
 		probe   *domain.Probe
 		index   int
 		path    string
+		ex      []map[string]any
 	}
 	var all []mapped
 	for bi, b := range blocks {
@@ -267,7 +275,7 @@ func (st *state) template(file string, t *template) {
 			continue
 		}
 		for _, r := range reqs {
-			all = append(all, mapped{clauses: cls, probe: r.probe, index: bi, path: r.path})
+			all = append(all, mapped{clauses: cls, probe: r.probe, index: bi, path: r.path, ex: b.Extractors})
 		}
 		if len(b.Extractors) > 0 {
 			st.extracts++
@@ -277,8 +285,10 @@ func (st *state) template(file string, t *template) {
 		return
 	}
 	var emitted []extractor.ExtractedFingerprint
+	var versions []extractor.ExtractedFingerprint
 	for _, m := range all {
 		st.blocks++
+		before := len(emitted)
 		for ci, cl := range m.clauses {
 			group := ""
 			if len(cl) > 1 {
@@ -304,6 +314,10 @@ func (st *state) template(file string, t *template) {
 			}
 			emitted = append(emitted, rules...)
 		}
+		// Versions are read on the requests that detect something.
+		if len(emitted) > before {
+			versions = append(versions, st.versionRules(t.ID, file, m.index, m.path, m.probe, m.ex)...)
+		}
 	}
 	// A technology exists only if at least one rule of it was understood.
 	if len(emitted) == 0 {
@@ -314,7 +328,12 @@ func (st *state) template(file string, t *template) {
 	for i := range emitted {
 		emitted[i].TechnologyKey = key
 	}
+	for i := range versions {
+		versions[i].TechnologyKey = key
+	}
 	st.res.Fingerprints = append(st.res.Fingerprints, emitted...)
+	st.res.Fingerprints = append(st.res.Fingerprints, versions...)
+	st.versioned += len(versions)
 	st.rules += len(emitted)
 }
 
@@ -697,6 +716,86 @@ func cleanName(n string) string {
 		}
 	}
 	return n
+}
+
+// versionNames are the extractor names that mean "the version" (a name that
+// contains "version" also does, as in version_by_js). An unnamed
+// extractor counts only if its pattern looks like it reads a number.
+var versionNames = map[string]bool{
+	"": true, "version": true, "detected_version": true, "internal_detected_version": true,
+}
+
+var numericHint = regexp.MustCompile(`(?i)0-9|\d|version|ver\.`)
+
+// versionRules turns the regex extractors of a block into rules that read a
+// version. An extractor is not a matcher: it never decides whether the product
+// is there, so its rule has role "version" and applies only when a detection
+// rule of the same request matched. Extractors for other things (a domain, a
+// timestamp), extractors without a capture group, and non-regex extractors are
+// skipped and counted.
+func (st *state) versionRules(id, file string, block int, path string, probe *domain.Probe, exs []map[string]any) []extractor.ExtractedFingerprint {
+	var out []extractor.ExtractedFingerprint
+	for xi, e := range exs {
+		typ, _ := e["type"].(string)
+		if typ != "regex" {
+			st.skipped["extractor of type "+typ+" (not a regex)"]++
+			continue
+		}
+		name, _ := e["name"].(string)
+		patterns := toStrings(e["regex"])
+		group, _ := e["group"].(int)
+		switch {
+		case !versionNames[strings.ToLower(name)] && !strings.Contains(strings.ToLower(name), "version"):
+			st.skipped["extractor that reads something else than a version"]++
+			continue
+		case group < 1 || len(patterns) == 0:
+			st.skipped["extractor without a capture group"]++
+			continue
+		}
+		part, ok := partNames[strFrom(e["part"])]
+		if !ok || part == "status" {
+			st.skipped["extractor on an unsupported part"]++
+			continue
+		}
+		for pi, pat := range patterns {
+			if name == "" && !numericHint.MatchString(pat) {
+				st.skipped["extractor that reads something else than a version"]++
+				continue
+			}
+			if re, err := regexp.Compile(pat); err == nil && re.NumSubexp() < group {
+				st.skipped["extractor whose group does not exist"]++
+				continue
+			}
+			f, ok := st.fingerprint("", "", probe, term{part: part, op: domain.OpRegex, pattern: "(?-i)" + pat}, file)
+			if !ok {
+				continue
+			}
+			f.Role = domain.RoleVersion
+			f.VersionExtract = `\` + strconv.Itoa(group)
+			f.Raw = mustJSON(map[string]any{"template": id, "block": block, "path": path, "extractor": xi, "pattern": pi, "name": name, "group": group})
+			out = append(out, f)
+		}
+	}
+	if len(out) > 0 {
+		st.tplVersion[id] = true
+	}
+	return out
+}
+
+func toStrings(v any) []string {
+	l, _ := v.([]any)
+	var out []string
+	for _, x := range l {
+		if s, ok := x.(string); ok {
+			out = append(out, s)
+		}
+	}
+	return out
+}
+
+func strFrom(v any) string {
+	s, _ := v.(string)
+	return s
 }
 
 // displayName chooses how a technology is shown. The product of the metadata

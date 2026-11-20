@@ -99,7 +99,7 @@ func assign(sel []Selector, members []domain.Fingerprint) ([]domain.Fingerprint,
 // selects reports whether a selector describes a rule (technology aside).
 func selects(s Selector, f domain.Fingerprint) bool {
 	obs := domain.Observation(s.Observation)
-	return f.Observation == obs &&
+	return f.Observation == obs && f.Role == s.Role &&
 		(s.Target == "" || domain.NormalizeTarget(obs, f.Target) == domain.NormalizeTarget(obs, s.Target)) &&
 		(s.Operator == "" || string(f.Operator) == s.Operator) &&
 		(s.Pattern == "" || f.Pattern == s.Pattern)

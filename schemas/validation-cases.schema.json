@@ -223,6 +223,11 @@
         },
         "pattern": {
           "type": "string"
+        },
+        "role": {
+          "enum": [
+            "version"
+          ]
         }
       }
     }

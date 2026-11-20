@@ -358,3 +358,14 @@ answers are read whatever their status; only a rule on `status` with the
 `exists` operator means "any 2xx". `favicon_hash` with target `mmh3` carries the
 hash used by Shodan-style databases. See
 [sources.md](sources.md#nuclei-technology-templates-imported-projectdiscovery-nuclei-templates).
+
+## Version rules (implemented)
+
+`Fingerprint.role` is absent for a rule that detects and `version` for a rule
+that only reads a version (a regex with a `version_extract`, never in a group).
+It does not detect by itself: it applies when a detection rule of the same
+technology matched on the same request (`matcher.Version`). The role is part of
+the semantic key and of the public schema. Validation cases select such a rule
+with `"role": "version"` in the selector; a selector without a role selects
+detection rules only. Detection rules that carry `version_extract` (Wappalyzer,
+Recog) are unchanged.

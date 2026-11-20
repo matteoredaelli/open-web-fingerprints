@@ -78,6 +78,13 @@ weaker rule. The case matches if all members match, and the evidence (with its
 all `broken`. A group needs its own positive and negative case to become `ok`.
 Probed members read the recorded answer to their path (`input.probes`).
 
+## Version rules
+
+A rule with `role: version` reads a version and never detects. Select it in a
+case with `"role": "version"`; a selector without it picks detection rules only.
+The case's input is the observation the version is read from, and `expect`
+carries `match` and `version`. It gets its own health like any rule.
+
 ## Matching semantics
 
 These were an open question; the matcher fixes them so they are explicit:

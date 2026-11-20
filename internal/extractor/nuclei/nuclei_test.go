@@ -60,7 +60,7 @@ func skipMessages(res *extractor.ExtractionResult) string {
 func toRule(f extractor.ExtractedFingerprint) domain.Fingerprint {
 	return domain.Fingerprint{
 		Observation: f.Observation, Target: f.Target, Operator: f.Operator, Pattern: f.Pattern,
-		RegexFlavor: f.RegexFlavor, VersionExtract: f.VersionExtract, Probe: f.Probe,
+		RegexFlavor: f.RegexFlavor, VersionExtract: f.VersionExtract, Role: f.Role, Probe: f.Probe,
 	}
 }
 
@@ -501,4 +501,107 @@ func TestFullSnapshot(t *testing.T) {
 	t.Logf("metadata=%v", res.Metadata)
 	t.Log(skipMessages(res))
 	extractortest.RunContract(t, New(), src)
+}
+
+func versionRules(res *extractor.ExtractionResult) []extractor.ExtractedFingerprint {
+	var out []extractor.ExtractedFingerprint
+	for _, f := range res.Fingerprints {
+		if f.Role == domain.RoleVersion {
+			out = append(out, f)
+		}
+	}
+	return out
+}
+
+func TestVersionExtractorsOfARealTemplate(t *testing.T) {
+	res := extract(t)
+	var v []extractor.ExtractedFingerprint
+	for _, f := range versionRules(res) {
+		if strings.HasPrefix(f.TechnologyKey, "4d|") {
+			v = append(v, f)
+		}
+	}
+	if len(v) != 1 {
+		t.Fatalf("4D version rules: %+v", v)
+	}
+	f := v[0]
+	if f.Observation != "response_headers" || f.Operator != domain.OpRegex || f.VersionExtract != `\1` ||
+		f.GroupKey != "" || f.Probe != nil || f.Pattern != `(?-i)Server:\s+4D(?:_V[0-9]+)?/([0-9.]+)` {
+		t.Errorf("rule: %+v", f)
+	}
+	o := &matcher.Observation{Headers: map[string]string{"Server": "4D_V20/20.4.1"}}
+	ver, err := matcher.Version([]domain.Fingerprint{toRule(f)}, o)
+	if err != nil || ver != "20.4.1" {
+		t.Errorf("version = %q err=%v", ver, err)
+	}
+	// A version rule never detects: it is not part of a clause.
+	if got, _ := matcher.Evaluate(toRule(f), &matcher.Observation{Headers: map[string]string{"Server": "nginx"}}); got.Matched {
+		t.Error("must not match another server")
+	}
+	if res.Metadata["version_rules"].(int) == 0 || res.Metadata["templates_with_version"].(int) == 0 {
+		t.Errorf("metadata: %v", res.Metadata)
+	}
+}
+
+func TestVersionExtractorRules(t *testing.T) {
+	tpl := func(path, extractors string) string {
+		return "id: x\ninfo: {name: X Detect}\nhttp:\n  - method: GET\n    path: ['{{BaseURL}}" + path + "']\n    matchers:\n      - {type: word, words: [w]}\n    extractors:\n" + extractors
+	}
+	type want struct {
+		n      int
+		skip   string
+		part   string
+		target string
+		group  string
+	}
+	cases := map[string]struct {
+		ex string
+		w  want
+	}{
+		"unnamed with digits": {"      - {type: regex, part: body, group: 1, regex: ['v([0-9.]+)']}\n", want{n: 1, part: "html", group: `\1`}},
+		"named version":       {"      - {type: regex, name: version, part: header, group: 2, regex: ['(a)(b)']}\n", want{n: 1, part: "response_headers", group: `\2`}},
+		"detected_version":    {"      - {type: regex, name: detected_version, internal: true, group: 1, regex: ['(.+)']}\n", want{n: 1, part: "html", group: `\1`}},
+		"name has version":    {"      - {type: regex, name: version_by_js, group: 1, regex: ['x=(.+)']}\n", want{n: 1, part: "html", group: `\1`}},
+		"two patterns":        {"      - {type: regex, name: version, group: 1, regex: ['a([0-9]+)', 'b([0-9]+)']}\n", want{n: 2, part: "html", group: `\1`}},
+		"server part":         {"      - {type: regex, name: version, part: server, group: 1, regex: ['/([0-9.]+)']}\n", want{n: 1, part: "http_header", target: "Server", group: `\1`}},
+		"other thing":         {"      - {type: regex, name: domain, group: 1, regex: ['d=([a-z0-9]+)']}\n", want{skip: "reads something else than a version"}},
+		"unnamed, no number":  {"      - {type: regex, part: body, group: 1, regex: ['<title>([A-Za-z ]+)</title>']}\n", want{skip: "reads something else than a version"}},
+		"no group":            {"      - {type: regex, name: version, regex: ['[0-9.]+']}\n", want{skip: "without a capture group"}},
+		"group out of range":  {"      - {type: regex, name: version, group: 3, regex: ['([0-9.]+)']}\n", want{skip: "group does not exist"}},
+		"kval":                {"      - {type: kval, kval: [Server]}\n", want{skip: "not a regex"}},
+		"json":                {"      - {type: json, name: version, json: ['.version']}\n", want{skip: "not a regex"}},
+		"status part":         {"      - {type: regex, name: version, part: status, group: 1, regex: ['([0-9]+)']}\n", want{skip: "unsupported part"}},
+	}
+	for name, tc := range cases {
+		res := one(t, tpl("", tc.ex))
+		v := versionRules(res)
+		if tc.w.skip != "" {
+			if len(v) != 0 || !strings.Contains(skipMessages(res), tc.w.skip) {
+				t.Errorf("%s: rules=%d skips=%q", name, len(v), skipMessages(res))
+			}
+			continue
+		}
+		if len(v) != tc.w.n {
+			t.Errorf("%s: version rules = %d, want %d (%s)", name, len(v), tc.w.n, skipMessages(res))
+			continue
+		}
+		if v[0].Observation != domain.Observation(tc.w.part) || v[0].Target != tc.w.target || v[0].VersionExtract != tc.w.group {
+			t.Errorf("%s: %+v", name, v[0])
+		}
+	}
+
+	// On a probed path the version rule reads the recorded answer of that path.
+	res := one(t, tpl("/about", "      - {type: regex, name: version, part: body, group: 1, regex: ['v([0-9.]+)']}\n"))
+	v := versionRules(res)
+	if len(v) != 1 || v[0].Observation != domain.ObsProbeResponse || v[0].Target != "body" ||
+		v[0].Probe == nil || v[0].Probe.Path != "/about" || v[0].Probe.SafetyReview != "pending" {
+		t.Errorf("probed version rule: %+v", v)
+	}
+
+	// No detection rule on a request, no version rule: a template whose matchers
+	// cannot be represented gives nothing, not an orphan version.
+	res = one(t, "id: x\ninfo: {name: X Detect}\nhttp:\n  - method: POST\n    path: ['{{BaseURL}}']\n    matchers: [{type: word, words: [w]}]\n    extractors:\n      - {type: regex, name: version, group: 1, regex: ['v([0-9.]+)']}\n")
+	if len(res.Fingerprints) != 0 || len(res.Technologies) != 0 {
+		t.Errorf("orphan version rule: %+v", res.Fingerprints)
+	}
 }

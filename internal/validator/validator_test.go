@@ -97,3 +97,11 @@ func TestAConsistentGroupIsValid(t *testing.T) {
 		t.Fatalf("unexpected: %v", issues)
 	}
 }
+
+func TestAVersionRuleIsValid(t *testing.T) {
+	r := valid()
+	r.Fingerprints[0].Role, r.Fingerprints[0].VersionExtract = domain.RoleVersion, `\1`
+	if issues := Validate(r); len(issues) != 0 {
+		t.Fatalf("unexpected: %v", issues)
+	}
+}

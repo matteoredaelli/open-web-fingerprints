@@ -1,0 +1,18 @@
+{
+  "schema_version": "0.1.0",
+  "cases": [
+    {
+      "id": "4d-version-positive",
+      "description": "The rule only reads the version; it does not detect.",
+      "rule": {"technology": "4d", "observation": "response_headers", "role": "version"},
+      "input": {"headers": {"Server": "4D_V20/20.4.1"}},
+      "expect": {"match": true, "version": "20.4.1"}
+    },
+    {
+      "id": "4d-version-negative",
+      "rule": {"technology": "4d", "observation": "response_headers", "role": "version"},
+      "input": {"headers": {"Server": "nginx/1.25.3"}},
+      "expect": {"match": false}
+    }
+  ]
+}

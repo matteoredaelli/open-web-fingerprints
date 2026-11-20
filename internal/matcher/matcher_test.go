@@ -283,3 +283,26 @@ func TestEvaluateGroup(t *testing.T) {
 		t.Error("an empty group is an error")
 	}
 }
+
+func TestVersionRulesDoNotDetect(t *testing.T) {
+	v := rule(domain.ObsHTTPHeader, "Server", domain.OpRegex, `x/([\d.]+)`)
+	v.VersionExtract, v.Role = `\1`, domain.RoleVersion
+	det := rule(domain.ObsHTTPHeader, "Server", domain.OpRegex, `^x`)
+	o := &Observation{Headers: map[string]string{"Server": "x/1.2"}}
+	if got, err := Version([]domain.Fingerprint{det, v}, o); err != nil || got != "1.2" {
+		t.Errorf("version = %q err=%v (detection rules are ignored)", got, err)
+	}
+	if got, _ := Version([]domain.Fingerprint{v}, &Observation{Headers: map[string]string{"Server": "y/9"}}); got != "" {
+		t.Errorf("no match, no version: %q", got)
+	}
+	w := v
+	w.Pattern = `y/([\d.]+)`
+	if got, _ := Version([]domain.Fingerprint{w, v}, o); got != "1.2" {
+		t.Errorf("the first rule that reads a version wins: %q", got)
+	}
+	bad := v
+	bad.RegexFlavor = domain.FlavorPCRE
+	if _, err := Version([]domain.Fingerprint{bad}, o); !errors.Is(err, ErrUnsupported) {
+		t.Errorf("unsupported flavor: %v", err)
+	}
+}

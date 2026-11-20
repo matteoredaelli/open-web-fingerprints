@@ -102,7 +102,7 @@ func resolve(s Selector, rules []domain.Fingerprint) (domain.Fingerprint, error)
 	obs := domain.Observation(s.Observation)
 	var found []domain.Fingerprint
 	for _, f := range rules {
-		if f.Observation != obs ||
+		if f.Observation != obs || f.Role != s.Role ||
 			(s.Target != "" && domain.NormalizeTarget(obs, f.Target) != domain.NormalizeTarget(obs, s.Target)) ||
 			(s.Operator != "" && string(f.Operator) != s.Operator) ||
 			(s.Pattern != "" && f.Pattern != s.Pattern) {

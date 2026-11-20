@@ -206,7 +206,7 @@ func ruleKey(f extractor.ExtractedFingerprint) string {
 		h.Write(f.Raw)
 	} else {
 		h.Write([]byte(strings.Join([]string{
-			string(f.Observation), f.Target, string(f.Operator), f.Pattern, f.VersionExtract,
+			string(f.Observation), f.Target, string(f.Operator), f.Pattern, f.VersionExtract, f.Role,
 		}, "|")))
 	}
 	return f.TechnologyKey + "#" + hex.EncodeToString(h.Sum(nil))[:12]
@@ -234,7 +234,7 @@ func (r *run) fingerprints() error {
 		fp := domain.Fingerprint{
 			TechnologyID: tid, Observation: f.Observation,
 			Target: f.Target, Operator: f.Operator, Pattern: f.Pattern,
-			RegexFlavor: f.RegexFlavor, VersionExtract: f.VersionExtract, Confidence: conf,
+			RegexFlavor: f.RegexFlavor, VersionExtract: f.VersionExtract, Role: f.Role, Confidence: conf,
 			Status: domain.StatusActive, Validation: &domain.Validation{Health: "unknown"},
 			Provenance: r.prov(key, f.File, f.Confidence), Raw: f.Raw,
 		}

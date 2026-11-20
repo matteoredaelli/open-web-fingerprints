@@ -32,7 +32,7 @@ func (f Fingerprint) SemanticKey() string {
 	h := sha256.New()
 	h.Write([]byte(strings.Join([]string{
 		string(f.TechnologyID), string(f.Observation), NormalizeTarget(f.Observation, f.Target),
-		string(f.Operator), f.Pattern, string(f.RegexFlavor), f.VersionExtract, string(f.GroupID),
+		string(f.Operator), f.Pattern, string(f.RegexFlavor), f.VersionExtract, string(f.GroupID), f.Role,
 	}, "\x1f")))
 	return hex.EncodeToString(h.Sum(nil))[:32]
 }

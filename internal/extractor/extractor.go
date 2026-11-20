@@ -111,10 +111,12 @@ type ExtractedFingerprint struct {
 	Pattern        string
 	RegexFlavor    domain.RegexFlavor
 	VersionExtract string
-	Confidence     *float64 // nil when the source gives none
-	Probe          *domain.Probe
-	File           string
-	Raw            json.RawMessage
+	// Role is domain.RoleVersion for a rule that only reads a version.
+	Role       string
+	Confidence *float64 // nil when the source gives none
+	Probe      *domain.Probe
+	File       string
+	Raw        json.RawMessage
 }
 
 // ExtractedRelationship links technologies or a technology and a category.
