@@ -117,7 +117,8 @@ are not exported.
 | `rapid7-recog` | recog | web databases only; new data (favicon md5, title, cookie) |
 | `projectdiscovery-nuclei-templates` | nuclei | `http/technologies`; groups and probes |
 
-Adding a source: extractor package with real fixtures from a pinned revision
+More sources are planned in `docs/sources-plan.md` (order, licences, what to measure
+first; Inoue is excluded: proprietary). Adding a source: extractor package with real fixtures from a pinned revision
 and a `testdata/README.md` (licence notice), contract test, catalogue entry in
 `internal/builtin`, a short survey in `docs/sources.md`. Measure real overlap
 before claiming value. Prefer sources with different data and clear licences.
