@@ -149,8 +149,9 @@ Open, roughly in order:
 0. Scanner `owfscan` (docs/scan.md): links, domains, social profiles and contacts
    `owfscan scan` works (fetch, observe, engine, links, social, contacts). Next:
    `--depth`, registry caching, a browser for JS rules, approved probes.
-1. Write cases for groups and rules of the Wappalyzer-format and nuclei sources
-   (only 16 and a few groups have evidence; Recog has upstream examples).
+1. More cases: 115 Enthec rules and 2 nuclei groups have test evidence (Recog has
+   685 from upstream examples). Next: the remaining popular technologies, nuclei
+   groups, and cookie rules whose names look like patterns.
 2. Review the 281 candidate conflicts; legal review of every source.
 3. Releases: semantic versioning of the data, a published schema URL, release
    notes (always explicit, never automatic); export of conflicts and aliases if

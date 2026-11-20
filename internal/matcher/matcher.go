@@ -88,8 +88,11 @@ func (p *Prepared) Evaluate(f domain.Fingerprint) (Outcome, error) {
 	}
 	if f.Operator == domain.OpExists {
 		out := Outcome{Matched: present}
-		if present && len(vals) > 0 {
-			out.Value = vals[0]
+		if present {
+			out.Version = renderVersion(f.VersionExtract, nil)
+			if len(vals) > 0 {
+				out.Value = vals[0]
+			}
 		}
 		return out, nil
 	}
@@ -215,8 +218,16 @@ var (
 // renderVersion expands a version_extract template: "\1" is capture group 1,
 // and "\1?a:b" is a if group 1 is not empty, else b.
 func renderVersion(tpl string, groups []string) string {
-	if tpl == "" || groups == nil {
+	if tpl == "" {
 		return ""
+	}
+	if groups == nil {
+		// Nothing was captured (an exists rule, or an operator without groups): a
+		// template that is a plain value, such as "UA", is still the version.
+		if strings.Contains(tpl, `\`) {
+			return ""
+		}
+		return tpl
 	}
 	group := func(n string) string {
 		i := int(n[0] - '0')

@@ -1,0 +1,1372 @@
+{
+  "schema_version": "0.1.0",
+  "cases": [
+    {
+      "id": "php-http-header-1-positive",
+      "rule": {
+        "technology": "php",
+        "observation": "http_header",
+        "target": "Server",
+        "pattern": "php/?([\\d.]+)?",
+        "operator": "regex"
+      },
+      "input": {
+        "headers": {
+          "Server": "Apache/2.4 PHP/8.1.2"
+        }
+      },
+      "expect": {
+        "match": true,
+        "version": "8.1.2"
+      }
+    },
+    {
+      "id": "php-http-header-1-negative",
+      "rule": {
+        "technology": "php",
+        "observation": "http_header",
+        "target": "Server",
+        "pattern": "php/?([\\d.]+)?",
+        "operator": "regex"
+      },
+      "input": {
+        "headers": {
+          "Server": "Apache/2.4"
+        }
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "php-page-url-1-positive",
+      "rule": {
+        "technology": "php",
+        "observation": "page_url",
+        "pattern": "\\.php(?:$|\\?)",
+        "operator": "regex"
+      },
+      "input": {
+        "url": "https://example.org/index.php?id=1"
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "php-page-url-1-negative",
+      "rule": {
+        "technology": "php",
+        "observation": "page_url",
+        "pattern": "\\.php(?:$|\\?)",
+        "operator": "regex"
+      },
+      "input": {
+        "url": "https://example.org/phpinfo"
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "php-cookie-1-positive",
+      "rule": {
+        "technology": "php",
+        "observation": "cookie",
+        "target": "PHPSESSID",
+        "operator": "exists"
+      },
+      "input": {
+        "cookies": {
+          "PHPSESSID": "abc"
+        }
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "php-cookie-1-negative",
+      "rule": {
+        "technology": "php",
+        "observation": "cookie",
+        "target": "PHPSESSID",
+        "operator": "exists"
+      },
+      "input": {
+        "cookies": {
+          "JSESSIONID": "abc"
+        }
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "next-js-http-header-1-positive",
+      "rule": {
+        "technology": "next-js",
+        "observation": "http_header",
+        "target": "x-powered-by",
+        "pattern": "^Next\\.js ?([0-9.]+)?",
+        "operator": "regex"
+      },
+      "input": {
+        "headers": {
+          "X-Powered-By": "Next.js 14.0.4"
+        }
+      },
+      "expect": {
+        "match": true,
+        "version": "14.0.4"
+      }
+    },
+    {
+      "id": "next-js-http-header-1-negative",
+      "rule": {
+        "technology": "next-js",
+        "observation": "http_header",
+        "target": "x-powered-by",
+        "pattern": "^Next\\.js ?([0-9.]+)?",
+        "operator": "regex"
+      },
+      "input": {
+        "headers": {
+          "X-Powered-By": "Express"
+        }
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "next-js-cookie-1-positive",
+      "rule": {
+        "technology": "next-js",
+        "observation": "cookie",
+        "target": "NEXT_LOCALE",
+        "operator": "exists"
+      },
+      "input": {
+        "cookies": {
+          "NEXT_LOCALE": "it"
+        }
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "next-js-cookie-1-negative",
+      "rule": {
+        "technology": "next-js",
+        "observation": "cookie",
+        "target": "NEXT_LOCALE",
+        "operator": "exists"
+      },
+      "input": {
+        "cookies": {
+          "locale": "it"
+        }
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "express-http-header-1-positive",
+      "rule": {
+        "technology": "express",
+        "observation": "http_header",
+        "target": "X-Powered-By",
+        "pattern": "^Express(?:$|,)",
+        "operator": "regex"
+      },
+      "input": {
+        "headers": {
+          "X-Powered-By": "Express"
+        }
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "express-http-header-1-negative",
+      "rule": {
+        "technology": "express",
+        "observation": "http_header",
+        "target": "X-Powered-By",
+        "pattern": "^Express(?:$|,)",
+        "operator": "regex"
+      },
+      "input": {
+        "headers": {
+          "X-Powered-By": "Expressive"
+        }
+      },
+      "expect": {
+        "match": false
+      },
+      "description": "Anchored: Express must end or be followed by a comma."
+    },
+    {
+      "id": "ruby-on-rails-http-header-1-positive",
+      "rule": {
+        "technology": "ruby-on-rails",
+        "observation": "http_header",
+        "target": "Server",
+        "pattern": "mod_(?:rails|rack)",
+        "operator": "regex"
+      },
+      "input": {
+        "headers": {
+          "Server": "Apache Phusion Passenger mod_rails/5.0"
+        }
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "ruby-on-rails-http-header-1-negative",
+      "rule": {
+        "technology": "ruby-on-rails",
+        "observation": "http_header",
+        "target": "Server",
+        "pattern": "mod_(?:rails|rack)",
+        "operator": "regex"
+      },
+      "input": {
+        "headers": {
+          "Server": "Apache/2.4"
+        }
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "ruby-on-rails-cookie-1-positive",
+      "rule": {
+        "technology": "ruby-on-rails",
+        "observation": "cookie",
+        "target": "_session_id",
+        "operator": "exists"
+      },
+      "input": {
+        "cookies": {
+          "_session_id": "abc"
+        }
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "ruby-on-rails-cookie-1-negative",
+      "rule": {
+        "technology": "ruby-on-rails",
+        "observation": "cookie",
+        "target": "_session_id",
+        "operator": "exists"
+      },
+      "input": {
+        "cookies": {
+          "session_id": "abc"
+        }
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "ruby-on-rails-meta-tag-1-positive",
+      "rule": {
+        "technology": "ruby-on-rails",
+        "observation": "meta_tag",
+        "target": "csrf-param",
+        "pattern": "^authenticity_token$",
+        "operator": "regex"
+      },
+      "input": {
+        "html": "<html><head><meta name=\"csrf-param\" content=\"authenticity_token\"></head></html>"
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "ruby-on-rails-meta-tag-1-negative",
+      "rule": {
+        "technology": "ruby-on-rails",
+        "observation": "meta_tag",
+        "target": "csrf-param",
+        "pattern": "^authenticity_token$",
+        "operator": "regex"
+      },
+      "input": {
+        "html": "<html><head><meta name=\"csrf-param\" content=\"csrf_token\"></head></html>"
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "django-cookie-1-positive",
+      "rule": {
+        "technology": "django",
+        "observation": "cookie",
+        "target": "django_language",
+        "operator": "exists"
+      },
+      "input": {
+        "cookies": {
+          "django_language": "en"
+        }
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "django-cookie-1-negative",
+      "rule": {
+        "technology": "django",
+        "observation": "cookie",
+        "target": "django_language",
+        "operator": "exists"
+      },
+      "input": {
+        "cookies": {
+          "language": "en"
+        }
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "django-html-1-positive",
+      "rule": {
+        "technology": "django",
+        "observation": "html",
+        "pattern": "(?:powered by <a[^>]+>Django ?([\\d.]+)?<\\/a>|<input[^>]*name=[\"']csrfmiddlewaretoken[\"'][^>]*>)",
+        "operator": "regex"
+      },
+      "input": {
+        "html": "<form><input type=\"hidden\" name=\"csrfmiddlewaretoken\" value=\"abc\"></form>"
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "django-html-1-negative",
+      "rule": {
+        "technology": "django",
+        "observation": "html",
+        "pattern": "(?:powered by <a[^>]+>Django ?([\\d.]+)?<\\/a>|<input[^>]*name=[\"']csrfmiddlewaretoken[\"'][^>]*>)",
+        "operator": "regex"
+      },
+      "input": {
+        "html": "<form><input type=\"hidden\" name=\"csrf\" value=\"abc\"></form>"
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "laravel-cookie-1-positive",
+      "rule": {
+        "technology": "laravel",
+        "observation": "cookie",
+        "target": "laravel_session",
+        "operator": "exists"
+      },
+      "input": {
+        "cookies": {
+          "laravel_session": "abc"
+        }
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "laravel-cookie-1-negative",
+      "rule": {
+        "technology": "laravel",
+        "observation": "cookie",
+        "target": "laravel_session",
+        "operator": "exists"
+      },
+      "input": {
+        "cookies": {
+          "session": "abc"
+        }
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "drupal-http-header-1-positive",
+      "rule": {
+        "technology": "drupal",
+        "observation": "http_header",
+        "target": "X-Drupal-Cache",
+        "operator": "exists"
+      },
+      "input": {
+        "headers": {
+          "X-Drupal-Cache": "HIT"
+        }
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "drupal-http-header-1-negative",
+      "rule": {
+        "technology": "drupal",
+        "observation": "http_header",
+        "target": "X-Drupal-Cache",
+        "operator": "exists"
+      },
+      "input": {
+        "headers": {
+          "X-Cache": "HIT"
+        }
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "drupal-http-header-2-positive",
+      "rule": {
+        "technology": "drupal",
+        "observation": "http_header",
+        "target": "X-Generator",
+        "pattern": "^Drupal(?:\\s([\\d.]+))?",
+        "operator": "regex"
+      },
+      "input": {
+        "headers": {
+          "X-Generator": "Drupal 10 (https://www.drupal.org)"
+        }
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "drupal-http-header-2-negative",
+      "rule": {
+        "technology": "drupal",
+        "observation": "http_header",
+        "target": "X-Generator",
+        "pattern": "^Drupal(?:\\s([\\d.]+))?",
+        "operator": "regex"
+      },
+      "input": {
+        "headers": {
+          "X-Generator": "WordPress"
+        }
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "drupal-meta-tag-1-positive",
+      "rule": {
+        "technology": "drupal",
+        "observation": "meta_tag",
+        "target": "generator",
+        "pattern": "^Drupal(?:\\s([\\d.]+))?",
+        "operator": "regex"
+      },
+      "input": {
+        "html": "<html><head><meta name=\"generator\" content=\"Drupal 10 (https://www.drupal.org)\"></head></html>"
+      },
+      "expect": {
+        "match": true,
+        "version": "10"
+      }
+    },
+    {
+      "id": "drupal-meta-tag-1-negative",
+      "rule": {
+        "technology": "drupal",
+        "observation": "meta_tag",
+        "target": "generator",
+        "pattern": "^Drupal(?:\\s([\\d.]+))?",
+        "operator": "regex"
+      },
+      "input": {
+        "html": "<html><head><meta name=\"generator\" content=\"WordPress 6.4\"></head></html>"
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "drupal-script-url-1-positive",
+      "rule": {
+        "technology": "drupal",
+        "observation": "script_url",
+        "pattern": "drupal\\.js",
+        "operator": "regex"
+      },
+      "input": {
+        "scripts": [
+          "/misc/drupal.js?v=7.98"
+        ]
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "drupal-script-url-1-negative",
+      "rule": {
+        "technology": "drupal",
+        "observation": "script_url",
+        "pattern": "drupal\\.js",
+        "operator": "regex"
+      },
+      "input": {
+        "scripts": [
+          "/misc/jquery.js"
+        ]
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "joomla-http-header-1-positive",
+      "rule": {
+        "technology": "joomla",
+        "observation": "http_header",
+        "target": "X-Content-Encoded-By",
+        "pattern": "Joomla! ([\\d.]+)",
+        "operator": "regex"
+      },
+      "input": {
+        "headers": {
+          "X-Content-Encoded-By": "Joomla! 3.9.2"
+        }
+      },
+      "expect": {
+        "match": true,
+        "version": "3.9.2"
+      }
+    },
+    {
+      "id": "joomla-http-header-1-negative",
+      "rule": {
+        "technology": "joomla",
+        "observation": "http_header",
+        "target": "X-Content-Encoded-By",
+        "pattern": "Joomla! ([\\d.]+)",
+        "operator": "regex"
+      },
+      "input": {
+        "headers": {
+          "X-Content-Encoded-By": "Other"
+        }
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "joomla-meta-tag-1-positive",
+      "rule": {
+        "technology": "joomla",
+        "observation": "meta_tag",
+        "target": "generator",
+        "pattern": "Joomla!(?: ([\\d.]+))?",
+        "operator": "regex"
+      },
+      "input": {
+        "html": "<html><head><meta name=\"generator\" content=\"Joomla! - Open Source Content Management\"></head></html>"
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "joomla-meta-tag-1-negative",
+      "rule": {
+        "technology": "joomla",
+        "observation": "meta_tag",
+        "target": "generator",
+        "pattern": "Joomla!(?: ([\\d.]+))?",
+        "operator": "regex"
+      },
+      "input": {
+        "html": "<html><head><meta name=\"generator\" content=\"Drupal 9\"></head></html>"
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "joomla-html-1-positive",
+      "rule": {
+        "technology": "joomla",
+        "observation": "html",
+        "pattern": "(?:<div[^>]+id=\"wrapper_r\"|<(?:link|script)[^>]+(?:feed|components)/com_|<table[^>]+class=\"pill)",
+        "operator": "regex"
+      },
+      "input": {
+        "html": "<link href=\"/components/com_content/style.css\" rel=\"stylesheet\">"
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "joomla-html-1-negative",
+      "rule": {
+        "technology": "joomla",
+        "observation": "html",
+        "pattern": "(?:<div[^>]+id=\"wrapper_r\"|<(?:link|script)[^>]+(?:feed|components)/com_|<table[^>]+class=\"pill)",
+        "operator": "regex"
+      },
+      "input": {
+        "html": "<link href=\"/components/style.css\" rel=\"stylesheet\">"
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "ghost-http-header-1-positive",
+      "rule": {
+        "technology": "ghost",
+        "observation": "http_header",
+        "target": "X-Ghost-Cache-Status",
+        "operator": "exists"
+      },
+      "input": {
+        "headers": {
+          "X-Ghost-Cache-Status": "HIT"
+        }
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "ghost-http-header-1-negative",
+      "rule": {
+        "technology": "ghost",
+        "observation": "http_header",
+        "target": "X-Ghost-Cache-Status",
+        "operator": "exists"
+      },
+      "input": {
+        "headers": {
+          "X-Cache-Status": "HIT"
+        }
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "ghost-meta-tag-1-positive",
+      "rule": {
+        "technology": "ghost",
+        "observation": "meta_tag",
+        "target": "generator",
+        "pattern": "Ghost(?:\\s([\\d.]+))?",
+        "operator": "regex"
+      },
+      "input": {
+        "html": "<html><head><meta name=\"generator\" content=\"Ghost 5.74\"></head></html>"
+      },
+      "expect": {
+        "match": true,
+        "version": "5.74"
+      }
+    },
+    {
+      "id": "ghost-meta-tag-1-negative",
+      "rule": {
+        "technology": "ghost",
+        "observation": "meta_tag",
+        "target": "generator",
+        "pattern": "Ghost(?:\\s([\\d.]+))?",
+        "operator": "regex"
+      },
+      "input": {
+        "html": "<html><head><meta name=\"generator\" content=\"Hugo 0.119\"></head></html>"
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "gatsby-meta-tag-1-positive",
+      "rule": {
+        "technology": "gatsby",
+        "observation": "meta_tag",
+        "target": "generator",
+        "pattern": "^Gatsby(?: ([0-9.]+))?$",
+        "operator": "regex"
+      },
+      "input": {
+        "html": "<html><head><meta name=\"generator\" content=\"Gatsby 5.12.0\"></head></html>"
+      },
+      "expect": {
+        "match": true,
+        "version": "5.12.0"
+      }
+    },
+    {
+      "id": "gatsby-meta-tag-1-negative",
+      "rule": {
+        "technology": "gatsby",
+        "observation": "meta_tag",
+        "target": "generator",
+        "pattern": "^Gatsby(?: ([0-9.]+))?$",
+        "operator": "regex"
+      },
+      "input": {
+        "html": "<html><head><meta name=\"generator\" content=\"Gatsbyish\"></head></html>"
+      },
+      "expect": {
+        "match": false
+      },
+      "description": "Anchored on both ends."
+    },
+    {
+      "id": "gatsby-dom-1-positive",
+      "rule": {
+        "technology": "gatsby",
+        "observation": "dom",
+        "target": "div#___gatsby, style#gatsby-inlined-css",
+        "operator": "exists"
+      },
+      "input": {
+        "html": "<body><div id=\"___gatsby\"></div></body>"
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "gatsby-dom-1-negative",
+      "rule": {
+        "technology": "gatsby",
+        "observation": "dom",
+        "target": "div#___gatsby, style#gatsby-inlined-css",
+        "operator": "exists"
+      },
+      "input": {
+        "html": "<body><div id=\"app\"></div></body>"
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "hugo-meta-tag-1-positive",
+      "rule": {
+        "technology": "hugo",
+        "observation": "meta_tag",
+        "target": "generator",
+        "pattern": "Hugo ([\\d.]+)?",
+        "operator": "regex"
+      },
+      "input": {
+        "html": "<html><head><meta name=\"generator\" content=\"Hugo 0.119.0\"></head></html>"
+      },
+      "expect": {
+        "match": true,
+        "version": "0.119.0"
+      }
+    },
+    {
+      "id": "hugo-meta-tag-1-negative",
+      "rule": {
+        "technology": "hugo",
+        "observation": "meta_tag",
+        "target": "generator",
+        "pattern": "Hugo ([\\d.]+)?",
+        "operator": "regex"
+      },
+      "input": {
+        "html": "<html><head><meta name=\"generator\" content=\"Jekyll 4.3\"></head></html>"
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "wordpress-http-header-1-positive",
+      "rule": {
+        "technology": "wordpress",
+        "observation": "http_header",
+        "target": "link",
+        "pattern": "rel=\"https://api\\.w\\.org/\"",
+        "operator": "regex"
+      },
+      "input": {
+        "headers": {
+          "Link": "<https://example.org/wp-json/>; rel=\"https://api.w.org/\""
+        }
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "wordpress-http-header-1-negative",
+      "rule": {
+        "technology": "wordpress",
+        "observation": "http_header",
+        "target": "link",
+        "pattern": "rel=\"https://api\\.w\\.org/\"",
+        "operator": "regex"
+      },
+      "input": {
+        "headers": {
+          "Link": "<https://example.org/next>; rel=\"next\""
+        }
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "wordpress-script-url-1-positive",
+      "rule": {
+        "technology": "wordpress",
+        "observation": "script_url",
+        "pattern": "wp-embed\\.min\\.js",
+        "operator": "regex"
+      },
+      "input": {
+        "scripts": [
+          "https://example.org/wp-includes/js/wp-embed.min.js?ver=6.4.2"
+        ]
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "wordpress-script-url-1-negative",
+      "rule": {
+        "technology": "wordpress",
+        "observation": "script_url",
+        "pattern": "wp-embed\\.min\\.js",
+        "operator": "regex"
+      },
+      "input": {
+        "scripts": [
+          "https://example.org/static/embed.min.js"
+        ]
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "woocommerce-cookie-1-positive",
+      "rule": {
+        "technology": "woocommerce",
+        "observation": "cookie",
+        "target": "woocommerce_recently_viewed",
+        "operator": "exists"
+      },
+      "input": {
+        "cookies": {
+          "woocommerce_recently_viewed": "1%7C2"
+        }
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "woocommerce-cookie-1-negative",
+      "rule": {
+        "technology": "woocommerce",
+        "observation": "cookie",
+        "target": "woocommerce_recently_viewed",
+        "operator": "exists"
+      },
+      "input": {
+        "cookies": {
+          "recently_viewed": "1"
+        }
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "woocommerce-meta-tag-1-positive",
+      "rule": {
+        "technology": "woocommerce",
+        "observation": "meta_tag",
+        "target": "generator",
+        "pattern": "WooCommerce ([\\d.]+)",
+        "operator": "regex"
+      },
+      "input": {
+        "html": "<html><head><meta name=\"generator\" content=\"WooCommerce 8.4.0\"></head></html>"
+      },
+      "expect": {
+        "match": true,
+        "version": "8.4.0"
+      }
+    },
+    {
+      "id": "woocommerce-meta-tag-1-negative",
+      "rule": {
+        "technology": "woocommerce",
+        "observation": "meta_tag",
+        "target": "generator",
+        "pattern": "WooCommerce ([\\d.]+)",
+        "operator": "regex"
+      },
+      "input": {
+        "html": "<html><head><meta name=\"generator\" content=\"WordPress 6.4\"></head></html>"
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "woocommerce-dom-1-positive",
+      "rule": {
+        "technology": "woocommerce",
+        "observation": "dom",
+        "target": ".woocommerce, .woocommerce-no-js, link[rel*='woocommerce']",
+        "operator": "exists"
+      },
+      "input": {
+        "html": "<body class=\"woocommerce woocommerce-page\"><p>shop</p></body>"
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "woocommerce-dom-1-negative",
+      "rule": {
+        "technology": "woocommerce",
+        "observation": "dom",
+        "target": ".woocommerce, .woocommerce-no-js, link[rel*='woocommerce']",
+        "operator": "exists"
+      },
+      "input": {
+        "html": "<body class=\"shop\"><p>shop</p></body>"
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "elementor-cookie-1-positive",
+      "rule": {
+        "technology": "elementor",
+        "observation": "cookie",
+        "target": "elementor_pro_login",
+        "operator": "exists"
+      },
+      "input": {
+        "cookies": {
+          "elementor_pro_login": "1"
+        }
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "elementor-cookie-1-negative",
+      "rule": {
+        "technology": "elementor",
+        "observation": "cookie",
+        "target": "elementor_pro_login",
+        "operator": "exists"
+      },
+      "input": {
+        "cookies": {
+          "elementor": "1"
+        }
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "elementor-meta-tag-1-positive",
+      "rule": {
+        "technology": "elementor",
+        "observation": "meta_tag",
+        "target": "generator",
+        "pattern": "^Elementor\\s([\\d\\.]+)",
+        "operator": "regex"
+      },
+      "input": {
+        "html": "<html><head><meta name=\"generator\" content=\"Elementor 3.18.3; features: e_dom_optimization\"></head></html>"
+      },
+      "expect": {
+        "match": true,
+        "version": "3.18.3"
+      }
+    },
+    {
+      "id": "elementor-meta-tag-1-negative",
+      "rule": {
+        "technology": "elementor",
+        "observation": "meta_tag",
+        "target": "generator",
+        "pattern": "^Elementor\\s([\\d\\.]+)",
+        "operator": "regex"
+      },
+      "input": {
+        "html": "<html><head><meta name=\"generator\" content=\"Elementary\"></head></html>"
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "elementor-script-url-1-positive",
+      "rule": {
+        "technology": "elementor",
+        "observation": "script_url",
+        "pattern": "/wp-content/plugins/elementor(?:-pro)?/.+frontend-modules\\.min\\.js(?:\\?ver=(\\d+(?:\\.\\d+)+))?",
+        "operator": "regex"
+      },
+      "input": {
+        "scripts": [
+          "/wp-content/plugins/elementor/assets/js/frontend-modules.min.js?ver=3.18.3"
+        ]
+      },
+      "expect": {
+        "match": true,
+        "version": "3.18.3"
+      }
+    },
+    {
+      "id": "elementor-script-url-1-negative",
+      "rule": {
+        "technology": "elementor",
+        "observation": "script_url",
+        "pattern": "/wp-content/plugins/elementor(?:-pro)?/.+frontend-modules\\.min\\.js(?:\\?ver=(\\d+(?:\\.\\d+)+))?",
+        "operator": "regex"
+      },
+      "input": {
+        "scripts": [
+          "/wp-content/plugins/other/assets/js/frontend-modules.min.js"
+        ]
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "elementor-dom-1-positive",
+      "rule": {
+        "technology": "elementor",
+        "observation": "dom",
+        "target": "link[href*='/wp-content/plugins/elementor/']",
+        "operator": "exists"
+      },
+      "input": {
+        "html": "<link rel=\"stylesheet\" href=\"/wp-content/plugins/elementor/assets/css/frontend.min.css\">"
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "elementor-dom-1-negative",
+      "rule": {
+        "technology": "elementor",
+        "observation": "dom",
+        "target": "link[href*='/wp-content/plugins/elementor/']",
+        "operator": "exists"
+      },
+      "input": {
+        "html": "<link rel=\"stylesheet\" href=\"/wp-content/plugins/other/frontend.css\">"
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "yoast-seo-dom-1-positive",
+      "rule": {
+        "technology": "yoast-seo",
+        "observation": "dom",
+        "target": "script[class*='yoast-schema-graph']",
+        "operator": "exists"
+      },
+      "input": {
+        "html": "<script type=\"application/ld+json\" class=\"yoast-schema-graph\">{}</script>"
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "yoast-seo-dom-1-negative",
+      "rule": {
+        "technology": "yoast-seo",
+        "observation": "dom",
+        "target": "script[class*='yoast-schema-graph']",
+        "operator": "exists"
+      },
+      "input": {
+        "html": "<script type=\"application/ld+json\">{}</script>"
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "yoast-seo-html-1-positive",
+      "rule": {
+        "technology": "yoast-seo",
+        "observation": "html",
+        "pattern": "<!-- This site is optimized with the Yoast (?:WordPress )?SEO plugin v([^\\s]+) -",
+        "operator": "regex"
+      },
+      "input": {
+        "html": "<!-- This site is optimized with the Yoast SEO plugin v21.7 - https://yoast.com/wordpress/plugins/seo/ -->"
+      },
+      "expect": {
+        "match": true,
+        "version": "21.7"
+      }
+    },
+    {
+      "id": "yoast-seo-html-1-negative",
+      "rule": {
+        "technology": "yoast-seo",
+        "observation": "html",
+        "pattern": "<!-- This site is optimized with the Yoast (?:WordPress )?SEO plugin v([^\\s]+) -",
+        "operator": "regex"
+      },
+      "input": {
+        "html": "<!-- This site uses an SEO plugin -->"
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "shopify-cookie-1-positive",
+      "rule": {
+        "technology": "shopify",
+        "observation": "cookie",
+        "target": "_shopify_y",
+        "operator": "exists"
+      },
+      "input": {
+        "cookies": {
+          "_shopify_y": "abc"
+        }
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "shopify-cookie-1-negative",
+      "rule": {
+        "technology": "shopify",
+        "observation": "cookie",
+        "target": "_shopify_y",
+        "operator": "exists"
+      },
+      "input": {
+        "cookies": {
+          "_shopify": "abc"
+        }
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "shopify-meta-tag-1-positive",
+      "rule": {
+        "technology": "shopify",
+        "observation": "meta_tag",
+        "target": "shopify-digital-wallet",
+        "operator": "exists"
+      },
+      "input": {
+        "html": "<html><head><meta name=\"shopify-digital-wallet\" content=\"/12345/digital_wallets/dialog\"></head></html>"
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "shopify-meta-tag-1-negative",
+      "rule": {
+        "technology": "shopify",
+        "observation": "meta_tag",
+        "target": "shopify-digital-wallet",
+        "operator": "exists"
+      },
+      "input": {
+        "html": "<html><head><meta name=\"digital-wallet\" content=\"x\"></head></html>"
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "shopify-script-url-1-positive",
+      "rule": {
+        "technology": "shopify",
+        "observation": "script_url",
+        "pattern": "cdn\\.shopify\\.com",
+        "operator": "regex"
+      },
+      "input": {
+        "scripts": [
+          "https://cdn.shopify.com/s/files/1/0000/theme.js"
+        ]
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "shopify-script-url-1-negative",
+      "rule": {
+        "technology": "shopify",
+        "observation": "script_url",
+        "pattern": "cdn\\.shopify\\.com",
+        "operator": "regex"
+      },
+      "input": {
+        "scripts": [
+          "https://cdn.example.com/shopify.js"
+        ]
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "matomo-analytics-cookie-1-positive",
+      "rule": {
+        "technology": "matomo-analytics",
+        "observation": "cookie",
+        "target": "PIWIK_SESSID",
+        "operator": "exists"
+      },
+      "input": {
+        "cookies": {
+          "PIWIK_SESSID": "abc"
+        }
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "matomo-analytics-cookie-1-negative",
+      "rule": {
+        "technology": "matomo-analytics",
+        "observation": "cookie",
+        "target": "PIWIK_SESSID",
+        "operator": "exists"
+      },
+      "input": {
+        "cookies": {
+          "MATOMO_SESSID": "abc"
+        }
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "matomo-analytics-script-url-1-positive",
+      "rule": {
+        "technology": "matomo-analytics",
+        "observation": "script_url",
+        "pattern": "piwik\\.js|piwik\\.php",
+        "operator": "regex"
+      },
+      "input": {
+        "scripts": [
+          "https://stats.example.org/piwik.js"
+        ]
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "matomo-analytics-script-url-1-negative",
+      "rule": {
+        "technology": "matomo-analytics",
+        "observation": "script_url",
+        "pattern": "piwik\\.js|piwik\\.php",
+        "operator": "regex"
+      },
+      "input": {
+        "scripts": [
+          "https://stats.example.org/analytics.js"
+        ]
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "tailwind-css-meta-tag-1-positive",
+      "rule": {
+        "technology": "tailwind-css",
+        "observation": "meta_tag",
+        "target": "application-name",
+        "pattern": "^Tailwind CSS$",
+        "operator": "regex"
+      },
+      "input": {
+        "html": "<html><head><meta name=\"application-name\" content=\"Tailwind CSS\"></head></html>"
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "tailwind-css-meta-tag-1-negative",
+      "rule": {
+        "technology": "tailwind-css",
+        "observation": "meta_tag",
+        "target": "application-name",
+        "pattern": "^Tailwind CSS$",
+        "operator": "regex"
+      },
+      "input": {
+        "html": "<html><head><meta name=\"application-name\" content=\"Tailwind CSS Playground\"></head></html>"
+      },
+      "expect": {
+        "match": false
+      }
+    }
+  ]
+}

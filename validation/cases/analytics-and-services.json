@@ -1,0 +1,1156 @@
+{
+  "schema_version": "0.1.0",
+  "cases": [
+    {
+      "id": "google-analytics-cookie-1-positive",
+      "rule": {
+        "technology": "google-analytics",
+        "observation": "cookie",
+        "target": "_ga",
+        "operator": "exists"
+      },
+      "input": {
+        "cookies": {
+          "_ga": "GA1.2.123456.1700000000"
+        }
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "google-analytics-cookie-1-negative",
+      "rule": {
+        "technology": "google-analytics",
+        "observation": "cookie",
+        "target": "_ga",
+        "operator": "exists"
+      },
+      "input": {
+        "cookies": {
+          "_gid": "GA1.2.1"
+        }
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "google-analytics-cookie-2-positive",
+      "rule": {
+        "technology": "google-analytics",
+        "observation": "cookie",
+        "target": "_gat",
+        "operator": "exists"
+      },
+      "input": {
+        "cookies": {
+          "_gat": "1"
+        }
+      },
+      "expect": {
+        "match": true,
+        "version": "UA"
+      }
+    },
+    {
+      "id": "google-analytics-cookie-2-negative",
+      "rule": {
+        "technology": "google-analytics",
+        "observation": "cookie",
+        "target": "_gat",
+        "operator": "exists"
+      },
+      "input": {
+        "cookies": {
+          "_ga": "GA1.2.1"
+        }
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "google-analytics-script-url-1-positive",
+      "rule": {
+        "technology": "google-analytics",
+        "observation": "script_url",
+        "pattern": "googletagmanager\\.com/gtag/js",
+        "operator": "regex"
+      },
+      "input": {
+        "scripts": [
+          "https://www.googletagmanager.com/gtag/js?id=G-ABC123"
+        ]
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "google-analytics-script-url-1-negative",
+      "rule": {
+        "technology": "google-analytics",
+        "observation": "script_url",
+        "pattern": "googletagmanager\\.com/gtag/js",
+        "operator": "regex"
+      },
+      "input": {
+        "scripts": [
+          "https://www.googletagmanager.com/gtm.js?id=GTM-ABC"
+        ]
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "google-analytics-script-url-2-positive",
+      "rule": {
+        "technology": "google-analytics",
+        "observation": "script_url",
+        "pattern": "google-analytics\\.com/(?:ga|urchin|analytics)\\.js",
+        "operator": "regex"
+      },
+      "input": {
+        "scripts": [
+          "https://www.google-analytics.com/analytics.js"
+        ]
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "google-analytics-script-url-2-negative",
+      "rule": {
+        "technology": "google-analytics",
+        "observation": "script_url",
+        "pattern": "google-analytics\\.com/(?:ga|urchin|analytics)\\.js",
+        "operator": "regex"
+      },
+      "input": {
+        "scripts": [
+          "https://www.google.com/analytics.js"
+        ]
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "google-tag-manager-script-url-1-positive",
+      "rule": {
+        "technology": "google-tag-manager",
+        "observation": "script_url",
+        "pattern": "googletagmanager\\.com/gtm\\.js",
+        "operator": "regex"
+      },
+      "input": {
+        "scripts": [
+          "https://www.googletagmanager.com/gtm.js?id=GTM-ABC123"
+        ]
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "google-tag-manager-script-url-1-negative",
+      "rule": {
+        "technology": "google-tag-manager",
+        "observation": "script_url",
+        "pattern": "googletagmanager\\.com/gtm\\.js",
+        "operator": "regex"
+      },
+      "input": {
+        "scripts": [
+          "https://www.googletagmanager.com/gtag/js?id=G-ABC"
+        ]
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "google-tag-manager-html-1-positive",
+      "rule": {
+        "technology": "google-tag-manager",
+        "observation": "html",
+        "pattern": "<!-- (?:End )?Google Tag Manager -->",
+        "operator": "regex"
+      },
+      "input": {
+        "html": "<!-- Google Tag Manager --><script>x</script><!-- End Google Tag Manager -->"
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "google-tag-manager-html-1-negative",
+      "rule": {
+        "technology": "google-tag-manager",
+        "observation": "html",
+        "pattern": "<!-- (?:End )?Google Tag Manager -->",
+        "operator": "regex"
+      },
+      "input": {
+        "html": "<!-- Tag manager -->"
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "google-adsense-script-url-1-positive",
+      "rule": {
+        "technology": "google-adsense",
+        "observation": "script_url",
+        "pattern": "googlesyndication\\.com/",
+        "operator": "regex"
+      },
+      "input": {
+        "scripts": [
+          "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"
+        ]
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "google-adsense-script-url-1-negative",
+      "rule": {
+        "technology": "google-adsense",
+        "observation": "script_url",
+        "pattern": "googlesyndication\\.com/",
+        "operator": "regex"
+      },
+      "input": {
+        "scripts": [
+          "https://example.org/googlesyndic.js"
+        ]
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "hotjar-script-url-1-positive",
+      "rule": {
+        "technology": "hotjar",
+        "observation": "script_url",
+        "pattern": "//static\\.hotjar\\.com/",
+        "operator": "regex"
+      },
+      "input": {
+        "scripts": [
+          "https://static.hotjar.com/c/hotjar-123.js?sv=6"
+        ]
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "hotjar-script-url-1-negative",
+      "rule": {
+        "technology": "hotjar",
+        "observation": "script_url",
+        "pattern": "//static\\.hotjar\\.com/",
+        "operator": "regex"
+      },
+      "input": {
+        "scripts": [
+          "https://static.example.com/hotjar.js"
+        ]
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "onetrust-cookie-1-positive",
+      "rule": {
+        "technology": "onetrust",
+        "observation": "cookie",
+        "target": "OptanonConsent",
+        "operator": "exists"
+      },
+      "input": {
+        "cookies": {
+          "OptanonConsent": "isGpcEnabled=0"
+        }
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "onetrust-cookie-1-negative",
+      "rule": {
+        "technology": "onetrust",
+        "observation": "cookie",
+        "target": "OptanonConsent",
+        "operator": "exists"
+      },
+      "input": {
+        "cookies": {
+          "CookieConsent": "x"
+        }
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "onetrust-script-url-1-positive",
+      "rule": {
+        "technology": "onetrust",
+        "observation": "script_url",
+        "pattern": "cdn\\.cookielaw\\.org",
+        "operator": "regex"
+      },
+      "input": {
+        "scripts": [
+          "https://cdn.cookielaw.org/scripttemplates/otSDKStub.js"
+        ]
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "onetrust-script-url-1-negative",
+      "rule": {
+        "technology": "onetrust",
+        "observation": "script_url",
+        "pattern": "cdn\\.cookielaw\\.org",
+        "operator": "regex"
+      },
+      "input": {
+        "scripts": [
+          "https://cdn.example.com/consent.js"
+        ]
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "cookiebot-script-url-1-positive",
+      "rule": {
+        "technology": "cookiebot",
+        "observation": "script_url",
+        "pattern": "consent\\.cookiebot\\.com",
+        "operator": "regex"
+      },
+      "input": {
+        "scripts": [
+          "https://consent.cookiebot.com/uc.js"
+        ]
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "cookiebot-script-url-1-negative",
+      "rule": {
+        "technology": "cookiebot",
+        "observation": "script_url",
+        "pattern": "consent\\.cookiebot\\.com",
+        "operator": "regex"
+      },
+      "input": {
+        "scripts": [
+          "https://cookiebot.example.com/uc.js"
+        ]
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "facebook-pixel-script-url-1-positive",
+      "rule": {
+        "technology": "facebook-pixel",
+        "observation": "script_url",
+        "pattern": "connect\\.facebook\\.\\w+/.+/fbevents\\.js",
+        "operator": "regex"
+      },
+      "input": {
+        "scripts": [
+          "https://connect.facebook.net/en_US/fbevents.js"
+        ]
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "facebook-pixel-script-url-1-negative",
+      "rule": {
+        "technology": "facebook-pixel",
+        "observation": "script_url",
+        "pattern": "connect\\.facebook\\.\\w+/.+/fbevents\\.js",
+        "operator": "regex"
+      },
+      "input": {
+        "scripts": [
+          "https://connect.facebook.net/en_US/sdk.js"
+        ]
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "recaptcha-script-url-1-positive",
+      "rule": {
+        "technology": "recaptcha",
+        "observation": "script_url",
+        "pattern": "/recaptcha/(?:api|enterprise)\\.js",
+        "operator": "regex"
+      },
+      "input": {
+        "scripts": [
+          "https://www.google.com/recaptcha/api.js?render=abc"
+        ]
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "recaptcha-script-url-1-negative",
+      "rule": {
+        "technology": "recaptcha",
+        "observation": "script_url",
+        "pattern": "/recaptcha/(?:api|enterprise)\\.js",
+        "operator": "regex"
+      },
+      "input": {
+        "scripts": [
+          "https://www.google.com/maps/api.js"
+        ]
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "recaptcha-dom-1-positive",
+      "rule": {
+        "technology": "recaptcha",
+        "observation": "dom",
+        "target": "#recaptcha_image, iframe[src*='.google.com/recaptcha/'], div.g-recaptcha",
+        "operator": "exists"
+      },
+      "input": {
+        "html": "<div class=\"g-recaptcha\" data-sitekey=\"abc\"></div>"
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "recaptcha-dom-1-negative",
+      "rule": {
+        "technology": "recaptcha",
+        "observation": "dom",
+        "target": "#recaptcha_image, iframe[src*='.google.com/recaptcha/'], div.g-recaptcha",
+        "operator": "exists"
+      },
+      "input": {
+        "html": "<div class=\"captcha\"></div>"
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "segment-script-url-1-positive",
+      "rule": {
+        "technology": "segment",
+        "observation": "script_url",
+        "pattern": "cdn\\.segment\\.com/analytics\\.js",
+        "operator": "regex"
+      },
+      "input": {
+        "scripts": [
+          "https://cdn.segment.com/analytics.js/v1/abc/analytics.min.js"
+        ]
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "segment-script-url-1-negative",
+      "rule": {
+        "technology": "segment",
+        "observation": "script_url",
+        "pattern": "cdn\\.segment\\.com/analytics\\.js",
+        "operator": "regex"
+      },
+      "input": {
+        "scripts": [
+          "https://cdn.example.com/analytics.js"
+        ]
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "plausible-script-url-1-positive",
+      "rule": {
+        "technology": "plausible",
+        "observation": "script_url",
+        "pattern": "plausible\\.io/js/plausible\\.js",
+        "operator": "regex"
+      },
+      "input": {
+        "scripts": [
+          "https://plausible.io/js/plausible.js"
+        ]
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "plausible-script-url-1-negative",
+      "rule": {
+        "technology": "plausible",
+        "observation": "script_url",
+        "pattern": "plausible\\.io/js/plausible\\.js",
+        "operator": "regex"
+      },
+      "input": {
+        "scripts": [
+          "https://plausible.example.org/js/script.js"
+        ]
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "stripe-cookie-1-positive",
+      "rule": {
+        "technology": "stripe",
+        "observation": "cookie",
+        "target": "__stripe_mid",
+        "operator": "exists"
+      },
+      "input": {
+        "cookies": {
+          "__stripe_mid": "abc"
+        }
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "stripe-cookie-1-negative",
+      "rule": {
+        "technology": "stripe",
+        "observation": "cookie",
+        "target": "__stripe_mid",
+        "operator": "exists"
+      },
+      "input": {
+        "cookies": {
+          "stripe_mid": "abc"
+        }
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "stripe-script-url-1-positive",
+      "rule": {
+        "technology": "stripe",
+        "observation": "script_url",
+        "pattern": "js\\.stripe\\.com",
+        "operator": "regex"
+      },
+      "input": {
+        "scripts": [
+          "https://js.stripe.com/v3/"
+        ]
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "stripe-script-url-1-negative",
+      "rule": {
+        "technology": "stripe",
+        "observation": "script_url",
+        "pattern": "js\\.stripe\\.com",
+        "operator": "regex"
+      },
+      "input": {
+        "scripts": [
+          "https://example.org/stripe.js"
+        ]
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "sentry-http-header-1-positive",
+      "rule": {
+        "technology": "sentry",
+        "observation": "http_header",
+        "target": "Sentry-Trace",
+        "operator": "exists"
+      },
+      "input": {
+        "headers": {
+          "Sentry-Trace": "abc-def-1"
+        }
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "sentry-http-header-1-negative",
+      "rule": {
+        "technology": "sentry",
+        "observation": "http_header",
+        "target": "Sentry-Trace",
+        "operator": "exists"
+      },
+      "input": {
+        "headers": {
+          "Traceparent": "00-abc"
+        }
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "sentry-script-url-1-positive",
+      "rule": {
+        "technology": "sentry",
+        "observation": "script_url",
+        "pattern": "\\.sentry-cdn\\.com/",
+        "operator": "regex"
+      },
+      "input": {
+        "scripts": [
+          "https://js.sentry-cdn.com/abc123.min.js"
+        ]
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "sentry-script-url-1-negative",
+      "rule": {
+        "technology": "sentry",
+        "observation": "script_url",
+        "pattern": "\\.sentry-cdn\\.com/",
+        "operator": "regex"
+      },
+      "input": {
+        "scripts": [
+          "https://sentry.example.org/app.js"
+        ]
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "google-maps-script-url-1-positive",
+      "rule": {
+        "technology": "google-maps",
+        "observation": "script_url",
+        "pattern": "//maps\\.google(?:apis)?\\.com/maps/api/js",
+        "operator": "regex"
+      },
+      "input": {
+        "scripts": [
+          "https://maps.googleapis.com/maps/api/js?key=abc"
+        ]
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "google-maps-script-url-1-negative",
+      "rule": {
+        "technology": "google-maps",
+        "observation": "script_url",
+        "pattern": "//maps\\.google(?:apis)?\\.com/maps/api/js",
+        "operator": "regex"
+      },
+      "input": {
+        "scripts": [
+          "https://maps.googleapis.com/fonts/api/js"
+        ]
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "google-maps-dom-1-positive",
+      "rule": {
+        "technology": "google-maps",
+        "observation": "dom",
+        "target": "iframe[src*='google.com/maps']",
+        "operator": "exists"
+      },
+      "input": {
+        "html": "<iframe src=\"https://www.google.com/maps/embed?pb=abc\"></iframe>"
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "google-maps-dom-1-negative",
+      "rule": {
+        "technology": "google-maps",
+        "observation": "dom",
+        "target": "iframe[src*='google.com/maps']",
+        "operator": "exists"
+      },
+      "input": {
+        "html": "<iframe src=\"https://www.openstreetmap.org/export/embed.html\"></iframe>"
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "youtube-script-url-1-positive",
+      "rule": {
+        "technology": "youtube",
+        "observation": "script_url",
+        "pattern": "\\.youtube\\.com/",
+        "operator": "regex"
+      },
+      "input": {
+        "scripts": [
+          "https://www.youtube.com/iframe_api"
+        ]
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "youtube-script-url-1-negative",
+      "rule": {
+        "technology": "youtube",
+        "observation": "script_url",
+        "pattern": "\\.youtube\\.com/",
+        "operator": "regex"
+      },
+      "input": {
+        "scripts": [
+          "https://www.youtu.example.com/api.js"
+        ]
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "youtube-dom-1-positive",
+      "rule": {
+        "technology": "youtube",
+        "observation": "dom",
+        "target": "embed[src*='youtube.com'], embed[src*='youtube-nocookie.com'], iframe[src*='youtube.com'], iframe[src*='youtube-nocookie.com'], param[value*='youtube.com'], param[value*='youtube-nocookie.com']",
+        "operator": "exists"
+      },
+      "input": {
+        "html": "<iframe src=\"https://www.youtube-nocookie.com/embed/abc\"></iframe>"
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "youtube-dom-1-negative",
+      "rule": {
+        "technology": "youtube",
+        "observation": "dom",
+        "target": "embed[src*='youtube.com'], embed[src*='youtube-nocookie.com'], iframe[src*='youtube.com'], iframe[src*='youtube-nocookie.com'], param[value*='youtube.com'], param[value*='youtube-nocookie.com']",
+        "operator": "exists"
+      },
+      "input": {
+        "html": "<iframe src=\"https://player.vimeo.com/video/1\"></iframe>"
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "hubspot-script-url-1-positive",
+      "rule": {
+        "technology": "hubspot",
+        "observation": "script_url",
+        "pattern": "\\.hs-scripts\\.com/",
+        "operator": "regex"
+      },
+      "input": {
+        "scripts": [
+          "https://js.hs-scripts.com/12345.js"
+        ]
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "hubspot-script-url-1-negative",
+      "rule": {
+        "technology": "hubspot",
+        "observation": "script_url",
+        "pattern": "\\.hs-scripts\\.com/",
+        "operator": "regex"
+      },
+      "input": {
+        "scripts": [
+          "https://js.example.com/12345.js"
+        ]
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "hubspot-html-1-positive",
+      "rule": {
+        "technology": "hubspot",
+        "observation": "html",
+        "pattern": "<!-- Start of Async HubSpot",
+        "operator": "regex"
+      },
+      "input": {
+        "html": "<!-- Start of Async HubSpot Analytics Code -->"
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "hubspot-html-1-negative",
+      "rule": {
+        "technology": "hubspot",
+        "observation": "html",
+        "pattern": "<!-- Start of Async HubSpot",
+        "operator": "regex"
+      },
+      "input": {
+        "html": "<!-- Start of Async Analytics Code -->"
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "intercom-dom-1-positive",
+      "rule": {
+        "technology": "intercom",
+        "observation": "dom",
+        "target": "iframe#intercom-frame",
+        "operator": "exists"
+      },
+      "input": {
+        "html": "<iframe id=\"intercom-frame\"></iframe>"
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "intercom-dom-1-negative",
+      "rule": {
+        "technology": "intercom",
+        "observation": "dom",
+        "target": "iframe#intercom-frame",
+        "operator": "exists"
+      },
+      "input": {
+        "html": "<iframe id=\"chat-frame\"></iframe>"
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "google-font-api-dom-1-positive",
+      "rule": {
+        "technology": "google-font-api",
+        "observation": "dom",
+        "target": "link[href*='fonts.g']::attr(href)",
+        "pattern": "fonts\\.(?:googleapis|google|gstatic)\\.com",
+        "operator": "regex"
+      },
+      "input": {
+        "html": "<link href=\"https://fonts.googleapis.com/css2?family=Inter\" rel=\"stylesheet\">"
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "google-font-api-dom-1-negative",
+      "rule": {
+        "technology": "google-font-api",
+        "observation": "dom",
+        "target": "link[href*='fonts.g']::attr(href)",
+        "pattern": "fonts\\.(?:googleapis|google|gstatic)\\.com",
+        "operator": "regex"
+      },
+      "input": {
+        "html": "<link href=\"https://fonts.example.com/css2?family=Inter\" rel=\"stylesheet\">"
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "font-awesome-dom-1-positive",
+      "rule": {
+        "technology": "font-awesome",
+        "observation": "dom",
+        "target": "link[href*='kit-pro.fontawesome.com']::attr(href)",
+        "pattern": "/kit-pro\\.fontawesome\\.com/releases/v([\\d\\.]+)/",
+        "operator": "regex"
+      },
+      "input": {
+        "html": "<link rel=\"stylesheet\" href=\"https://kit-pro.fontawesome.com/releases/v6.4.0/css/pro.min.css\">"
+      },
+      "expect": {
+        "match": true,
+        "version": "6.4.0"
+      }
+    },
+    {
+      "id": "font-awesome-dom-1-negative",
+      "rule": {
+        "technology": "font-awesome",
+        "observation": "dom",
+        "target": "link[href*='kit-pro.fontawesome.com']::attr(href)",
+        "pattern": "/kit-pro\\.fontawesome\\.com/releases/v([\\d\\.]+)/",
+        "operator": "regex"
+      },
+      "input": {
+        "html": "<link rel=\"stylesheet\" href=\"https://kit.example.com/releases/v6.4.0/css/pro.min.css\">"
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "font-awesome-dom-2-positive",
+      "rule": {
+        "technology": "font-awesome",
+        "observation": "dom",
+        "target": "link[href*='font-awesome']::attr(href)",
+        "pattern": "/font-awesome/([\\d\\.]+)/css/",
+        "operator": "regex"
+      },
+      "input": {
+        "html": "<link rel=\"stylesheet\" href=\"https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css\">"
+      },
+      "expect": {
+        "match": true,
+        "version": "4.7.0"
+      }
+    },
+    {
+      "id": "font-awesome-dom-2-negative",
+      "rule": {
+        "technology": "font-awesome",
+        "observation": "dom",
+        "target": "link[href*='font-awesome']::attr(href)",
+        "pattern": "/font-awesome/([\\d\\.]+)/css/",
+        "operator": "regex"
+      },
+      "input": {
+        "html": "<link rel=\"stylesheet\" href=\"https://maxcdn.bootstrapcdn.com/bootstrap/4.7.0/css/bootstrap.min.css\">"
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "open-graph-dom-1-positive",
+      "rule": {
+        "technology": "open-graph",
+        "observation": "dom",
+        "target": "meta[property*='og:']",
+        "operator": "exists"
+      },
+      "input": {
+        "html": "<html><head><meta property=\"og:title\" content=\"x\"></head></html>"
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "open-graph-dom-1-negative",
+      "rule": {
+        "technology": "open-graph",
+        "observation": "dom",
+        "target": "meta[property*='og:']",
+        "operator": "exists"
+      },
+      "input": {
+        "html": "<html><head><meta name=\"title\" content=\"x\"></head></html>"
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "moment-js-script-url-1-positive",
+      "rule": {
+        "technology": "moment-js",
+        "observation": "script_url",
+        "pattern": "moment(?:\\.min)?\\.js",
+        "operator": "regex"
+      },
+      "input": {
+        "scripts": [
+          "https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"
+        ]
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "moment-js-script-url-1-negative",
+      "rule": {
+        "technology": "moment-js",
+        "observation": "script_url",
+        "pattern": "moment(?:\\.min)?\\.js",
+        "operator": "regex"
+      },
+      "input": {
+        "scripts": [
+          "https://cdn.example.com/momentum.js"
+        ]
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "swiper-script-url-1-positive",
+      "rule": {
+        "technology": "swiper",
+        "observation": "script_url",
+        "pattern": "swiper(?:\\.min)?\\.js",
+        "operator": "regex"
+      },
+      "input": {
+        "scripts": [
+          "https://unpkg.com/swiper/swiper.min.js"
+        ]
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "swiper-script-url-1-negative",
+      "rule": {
+        "technology": "swiper",
+        "observation": "script_url",
+        "pattern": "swiper(?:\\.min)?\\.js",
+        "operator": "regex"
+      },
+      "input": {
+        "scripts": [
+          "https://cdn.example.com/viper.js"
+        ]
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "swiper-dom-1-positive",
+      "rule": {
+        "technology": "swiper",
+        "observation": "dom",
+        "target": "div.swiper-wrapper",
+        "operator": "exists"
+      },
+      "input": {
+        "html": "<div class=\"swiper swiper-initialized\"><div class=\"swiper-wrapper\"></div></div>"
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "swiper-dom-1-negative",
+      "rule": {
+        "technology": "swiper",
+        "observation": "dom",
+        "target": "div.swiper-wrapper",
+        "operator": "exists"
+      },
+      "input": {
+        "html": "<div class=\"slider\"><div class=\"wrapper\"></div></div>"
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "slick-dom-1-positive",
+      "rule": {
+        "technology": "slick",
+        "observation": "dom",
+        "target": "link[href*='slick-theme.css']",
+        "operator": "exists"
+      },
+      "input": {
+        "html": "<link rel=\"stylesheet\" href=\"/css/slick-theme.css\">"
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "slick-dom-1-negative",
+      "rule": {
+        "technology": "slick",
+        "observation": "dom",
+        "target": "link[href*='slick-theme.css']",
+        "operator": "exists"
+      },
+      "input": {
+        "html": "<link rel=\"stylesheet\" href=\"/css/theme.css\">"
+      },
+      "expect": {
+        "match": false
+      }
+    }
+  ]
+}

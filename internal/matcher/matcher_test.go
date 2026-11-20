@@ -135,8 +135,11 @@ func TestRenderVersion(t *testing.T) {
 			t.Errorf("renderVersion(%q) = %q, want %q", tpl, got, want)
 		}
 	}
-	if renderVersion(`\1`, nil) != "" {
-		t.Error("no groups, no version")
+	if renderVersion(`\1`, nil) != "" || renderVersion(`\1?a:b`, nil) != "" {
+		t.Error("no groups, no version: a template that refers to a group has nothing to read")
+	}
+	if renderVersion("UA", nil) != "UA" || renderVersion("API v1", nil) != "API v1" {
+		t.Error("a plain value is the version even when nothing was captured")
 	}
 }
 
@@ -339,5 +342,17 @@ func TestOutcomeValueAndPrepared(t *testing.T) {
 	}
 	if got, _ := p.Evaluate(rule(domain.ObsHTTPHeader, "Server", domain.OpRegex, `apache`)); got.Matched || got.Value != "" {
 		t.Errorf("a miss has no value: %+v", got)
+	}
+}
+
+func TestExistsRuleWithAFixedVersion(t *testing.T) {
+	f := rule(domain.ObsCookie, "_gat", domain.OpExists, "")
+	f.VersionExtract = "UA"
+	got, err := Evaluate(f, &Observation{Cookies: map[string]string{"_gat": "1"}})
+	if err != nil || !got.Matched || got.Version != "UA" {
+		t.Errorf("%+v %v", got, err)
+	}
+	if got, _ := Evaluate(f, &Observation{Cookies: map[string]string{"_ga": "1"}}); got.Matched || got.Version != "" {
+		t.Errorf("a miss has no version: %+v", got)
 	}
 }

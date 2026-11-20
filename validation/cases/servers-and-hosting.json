@@ -1,0 +1,884 @@
+{
+  "schema_version": "0.1.0",
+  "cases": [
+    {
+      "id": "apache-http-server-http-header-1-positive",
+      "rule": {
+        "technology": "apache-http-server",
+        "observation": "http_header",
+        "target": "Server",
+        "pattern": "(?:Apache(?:$|/([\\d.]+)|[^/-])|(?:^|\\b)HTTPD)",
+        "operator": "regex"
+      },
+      "input": {
+        "headers": {
+          "Server": "Apache/2.4.58 (Ubuntu)"
+        }
+      },
+      "expect": {
+        "match": true,
+        "version": "2.4.58"
+      }
+    },
+    {
+      "id": "apache-http-server-http-header-1-negative",
+      "rule": {
+        "technology": "apache-http-server",
+        "observation": "http_header",
+        "target": "Server",
+        "pattern": "(?:Apache(?:$|/([\\d.]+)|[^/-])|(?:^|\\b)HTTPD)",
+        "operator": "regex"
+      },
+      "input": {
+        "headers": {
+          "Server": "Microsoft-IIS/10.0"
+        }
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "akamai-http-header-1-positive",
+      "rule": {
+        "technology": "akamai",
+        "observation": "http_header",
+        "target": "X-Akamai-Transformed",
+        "operator": "exists"
+      },
+      "input": {
+        "headers": {
+          "X-Akamai-Transformed": "9 - 0 pmb=mRUM,1"
+        }
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "akamai-http-header-1-negative",
+      "rule": {
+        "technology": "akamai",
+        "observation": "http_header",
+        "target": "X-Akamai-Transformed",
+        "operator": "exists"
+      },
+      "input": {
+        "headers": {
+          "Server": "AkamaiGHost"
+        }
+      },
+      "expect": {
+        "match": false
+      },
+      "description": "A different Akamai header is not this rule."
+    },
+    {
+      "id": "amazon-cloudfront-http-header-1-positive",
+      "rule": {
+        "technology": "amazon-cloudfront",
+        "observation": "http_header",
+        "target": "Via",
+        "pattern": "\\(CloudFront\\)$",
+        "operator": "regex"
+      },
+      "input": {
+        "headers": {
+          "Via": "1.1 d111111abcdef8.cloudfront.net (CloudFront)"
+        }
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "amazon-cloudfront-http-header-1-negative",
+      "rule": {
+        "technology": "amazon-cloudfront",
+        "observation": "http_header",
+        "target": "Via",
+        "pattern": "\\(CloudFront\\)$",
+        "operator": "regex"
+      },
+      "input": {
+        "headers": {
+          "Via": "1.1 varnish"
+        }
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "amazon-cloudfront-http-header-2-positive",
+      "rule": {
+        "technology": "amazon-cloudfront",
+        "observation": "http_header",
+        "target": "X-Amz-Cf-Id",
+        "operator": "exists"
+      },
+      "input": {
+        "headers": {
+          "X-Amz-Cf-Id": "abc123"
+        }
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "amazon-cloudfront-http-header-2-negative",
+      "rule": {
+        "technology": "amazon-cloudfront",
+        "observation": "http_header",
+        "target": "X-Amz-Cf-Id",
+        "operator": "exists"
+      },
+      "input": {
+        "headers": {
+          "X-Amz-Request-Id": "abc123"
+        }
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "amazon-s3-http-header-1-positive",
+      "rule": {
+        "technology": "amazon-s3",
+        "observation": "http_header",
+        "target": "server",
+        "pattern": "^AmazonS3$",
+        "operator": "regex"
+      },
+      "input": {
+        "headers": {
+          "Server": "AmazonS3"
+        }
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "amazon-s3-http-header-1-negative",
+      "rule": {
+        "technology": "amazon-s3",
+        "observation": "http_header",
+        "target": "server",
+        "pattern": "^AmazonS3$",
+        "operator": "regex"
+      },
+      "input": {
+        "headers": {
+          "Server": "AmazonS3-compatible-storage"
+        }
+      },
+      "expect": {
+        "match": false
+      },
+      "description": "The rule is anchored: another product whose name starts with AmazonS3 is not S3."
+    },
+    {
+      "id": "caddy-http-header-1-positive",
+      "rule": {
+        "technology": "caddy",
+        "observation": "http_header",
+        "target": "Server",
+        "pattern": "Caddy",
+        "operator": "regex"
+      },
+      "input": {
+        "headers": {
+          "Server": "Caddy"
+        }
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "caddy-http-header-1-negative",
+      "rule": {
+        "technology": "caddy",
+        "observation": "http_header",
+        "target": "Server",
+        "pattern": "Caddy",
+        "operator": "regex"
+      },
+      "input": {
+        "headers": {
+          "Server": "nginx"
+        }
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "fastly-http-header-1-positive",
+      "rule": {
+        "technology": "fastly",
+        "observation": "http_header",
+        "target": "X-Fastly-Request-ID",
+        "operator": "exists"
+      },
+      "input": {
+        "headers": {
+          "X-Fastly-Request-ID": "abc"
+        }
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "fastly-http-header-1-negative",
+      "rule": {
+        "technology": "fastly",
+        "observation": "http_header",
+        "target": "X-Fastly-Request-ID",
+        "operator": "exists"
+      },
+      "input": {
+        "headers": {
+          "X-Request-ID": "abc"
+        }
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "fastly-http-header-2-positive",
+      "rule": {
+        "technology": "fastly",
+        "observation": "http_header",
+        "target": "server",
+        "pattern": "Fastly",
+        "operator": "regex"
+      },
+      "input": {
+        "headers": {
+          "Server": "Fastly"
+        }
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "fastly-http-header-2-negative",
+      "rule": {
+        "technology": "fastly",
+        "observation": "http_header",
+        "target": "server",
+        "pattern": "Fastly",
+        "operator": "regex"
+      },
+      "input": {
+        "headers": {
+          "Server": "nginx"
+        }
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "github-pages-http-header-1-positive",
+      "rule": {
+        "technology": "github-pages",
+        "observation": "http_header",
+        "target": "Server",
+        "pattern": "^GitHub\\.com$",
+        "operator": "regex"
+      },
+      "input": {
+        "headers": {
+          "Server": "GitHub.com"
+        }
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "github-pages-http-header-1-negative",
+      "rule": {
+        "technology": "github-pages",
+        "observation": "http_header",
+        "target": "Server",
+        "pattern": "^GitHub\\.com$",
+        "operator": "regex"
+      },
+      "input": {
+        "headers": {
+          "Server": "GitHub.com.evil"
+        }
+      },
+      "expect": {
+        "match": false
+      },
+      "description": "Anchored: the dots are literal and the value must end."
+    },
+    {
+      "id": "github-pages-page-url-1-positive",
+      "rule": {
+        "technology": "github-pages",
+        "observation": "page_url",
+        "pattern": "^https?://[^/]+\\.github\\.io",
+        "operator": "regex"
+      },
+      "input": {
+        "url": "https://example.github.io/site/"
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "github-pages-page-url-1-negative",
+      "rule": {
+        "technology": "github-pages",
+        "observation": "page_url",
+        "pattern": "^https?://[^/]+\\.github\\.io",
+        "operator": "regex"
+      },
+      "input": {
+        "url": "https://example.org/github.io/"
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "litespeed-http-header-1-positive",
+      "rule": {
+        "technology": "litespeed",
+        "observation": "http_header",
+        "target": "Server",
+        "pattern": "^LiteSpeed$",
+        "operator": "regex"
+      },
+      "input": {
+        "headers": {
+          "Server": "LiteSpeed"
+        }
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "litespeed-http-header-1-negative",
+      "rule": {
+        "technology": "litespeed",
+        "observation": "http_header",
+        "target": "Server",
+        "pattern": "^LiteSpeed$",
+        "operator": "regex"
+      },
+      "input": {
+        "headers": {
+          "Server": "OpenLiteSpeed-ish"
+        }
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "netlify-http-header-1-positive",
+      "rule": {
+        "technology": "netlify",
+        "observation": "http_header",
+        "target": "Server",
+        "pattern": "^Netlify",
+        "operator": "regex"
+      },
+      "input": {
+        "headers": {
+          "Server": "Netlify"
+        }
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "netlify-http-header-1-negative",
+      "rule": {
+        "technology": "netlify",
+        "observation": "http_header",
+        "target": "Server",
+        "pattern": "^Netlify",
+        "operator": "regex"
+      },
+      "input": {
+        "headers": {
+          "Server": "nginx"
+        }
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "netlify-http-header-2-positive",
+      "rule": {
+        "technology": "netlify",
+        "observation": "http_header",
+        "target": "X-NF-Request-ID",
+        "operator": "exists"
+      },
+      "input": {
+        "headers": {
+          "X-NF-Request-ID": "01ABC"
+        }
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "netlify-http-header-2-negative",
+      "rule": {
+        "technology": "netlify",
+        "observation": "http_header",
+        "target": "X-NF-Request-ID",
+        "operator": "exists"
+      },
+      "input": {
+        "headers": {
+          "X-Request-ID": "01ABC"
+        }
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "openresty-http-header-1-positive",
+      "rule": {
+        "technology": "openresty",
+        "observation": "http_header",
+        "target": "Server",
+        "pattern": "openresty(?:/([\\d.]+))?",
+        "operator": "regex"
+      },
+      "input": {
+        "headers": {
+          "Server": "openresty/1.21.4.1"
+        }
+      },
+      "expect": {
+        "match": true,
+        "version": "1.21.4.1"
+      }
+    },
+    {
+      "id": "openresty-http-header-1-negative",
+      "rule": {
+        "technology": "openresty",
+        "observation": "http_header",
+        "target": "Server",
+        "pattern": "openresty(?:/([\\d.]+))?",
+        "operator": "regex"
+      },
+      "input": {
+        "headers": {
+          "Server": "nginx/1.21.4"
+        }
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "squarespace-http-header-1-positive",
+      "rule": {
+        "technology": "squarespace",
+        "observation": "http_header",
+        "target": "server",
+        "pattern": "Squarespace",
+        "operator": "regex"
+      },
+      "input": {
+        "headers": {
+          "Server": "Squarespace"
+        }
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "squarespace-http-header-1-negative",
+      "rule": {
+        "technology": "squarespace",
+        "observation": "http_header",
+        "target": "server",
+        "pattern": "Squarespace",
+        "operator": "regex"
+      },
+      "input": {
+        "headers": {
+          "Server": "Shopify"
+        }
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "varnish-http-header-1-positive",
+      "rule": {
+        "technology": "varnish",
+        "observation": "http_header",
+        "target": "Via",
+        "pattern": "varnish(?: \\(Varnish/([\\d.]+)\\))?",
+        "operator": "regex"
+      },
+      "input": {
+        "headers": {
+          "Via": "1.1 varnish (Varnish/6.0)"
+        }
+      },
+      "expect": {
+        "match": true,
+        "version": "6.0"
+      }
+    },
+    {
+      "id": "varnish-http-header-1-negative",
+      "rule": {
+        "technology": "varnish",
+        "observation": "http_header",
+        "target": "Via",
+        "pattern": "varnish(?: \\(Varnish/([\\d.]+)\\))?",
+        "operator": "regex"
+      },
+      "input": {
+        "headers": {
+          "Via": "1.1 cloudfront"
+        }
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "varnish-http-header-2-positive",
+      "rule": {
+        "technology": "varnish",
+        "observation": "http_header",
+        "target": "X-Varnish",
+        "operator": "exists"
+      },
+      "input": {
+        "headers": {
+          "X-Varnish": "32770 32769"
+        }
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "varnish-http-header-2-negative",
+      "rule": {
+        "technology": "varnish",
+        "observation": "http_header",
+        "target": "X-Varnish",
+        "operator": "exists"
+      },
+      "input": {
+        "headers": {
+          "X-Cache": "HIT"
+        }
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "vercel-http-header-1-positive",
+      "rule": {
+        "technology": "vercel",
+        "observation": "http_header",
+        "target": "x-vercel-id",
+        "operator": "exists"
+      },
+      "input": {
+        "headers": {
+          "X-Vercel-Id": "fra1::abc"
+        }
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "vercel-http-header-1-negative",
+      "rule": {
+        "technology": "vercel",
+        "observation": "http_header",
+        "target": "x-vercel-id",
+        "operator": "exists"
+      },
+      "input": {
+        "headers": {
+          "X-Request-Id": "abc"
+        }
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "vercel-http-header-2-positive",
+      "rule": {
+        "technology": "vercel",
+        "observation": "http_header",
+        "target": "server",
+        "pattern": "^now|Vercel$",
+        "operator": "regex"
+      },
+      "input": {
+        "headers": {
+          "Server": "Vercel"
+        }
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "vercel-http-header-2-negative",
+      "rule": {
+        "technology": "vercel",
+        "observation": "http_header",
+        "target": "server",
+        "pattern": "^now|Vercel$",
+        "operator": "regex"
+      },
+      "input": {
+        "headers": {
+          "Server": "Vercelish"
+        }
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "hsts-http-header-1-positive",
+      "rule": {
+        "technology": "hsts",
+        "observation": "http_header",
+        "target": "Strict-Transport-Security",
+        "operator": "exists"
+      },
+      "input": {
+        "headers": {
+          "Strict-Transport-Security": "max-age=31536000; includeSubDomains"
+        }
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "hsts-http-header-1-negative",
+      "rule": {
+        "technology": "hsts",
+        "observation": "http_header",
+        "target": "Strict-Transport-Security",
+        "operator": "exists"
+      },
+      "input": {
+        "headers": {
+          "X-Frame-Options": "DENY"
+        }
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "wix-http-header-1-positive",
+      "rule": {
+        "technology": "wix",
+        "observation": "http_header",
+        "target": "X-Wix-Request-Id",
+        "operator": "exists"
+      },
+      "input": {
+        "headers": {
+          "X-Wix-Request-Id": "abc"
+        }
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "wix-http-header-1-negative",
+      "rule": {
+        "technology": "wix",
+        "observation": "http_header",
+        "target": "X-Wix-Request-Id",
+        "operator": "exists"
+      },
+      "input": {
+        "headers": {
+          "X-Request-Id": "abc"
+        }
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "wix-meta-tag-1-positive",
+      "rule": {
+        "technology": "wix",
+        "observation": "meta_tag",
+        "target": "generator",
+        "pattern": "Wix\\.com Website Builder",
+        "operator": "regex"
+      },
+      "input": {
+        "html": "<html><head><meta name=\"generator\" content=\"Wix.com Website Builder\"></head></html>"
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "wix-meta-tag-1-negative",
+      "rule": {
+        "technology": "wix",
+        "observation": "meta_tag",
+        "target": "generator",
+        "pattern": "Wix\\.com Website Builder",
+        "operator": "regex"
+      },
+      "input": {
+        "html": "<html><head><meta name=\"generator\" content=\"Wordpress\"></head></html>"
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "wix-script-url-1-positive",
+      "rule": {
+        "technology": "wix",
+        "observation": "script_url",
+        "pattern": "static\\.parastorage\\.com",
+        "operator": "regex"
+      },
+      "input": {
+        "scripts": [
+          "https://static.parastorage.com/services/wix-thunderbolt/dist/main.js"
+        ]
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "wix-script-url-1-negative",
+      "rule": {
+        "technology": "wix",
+        "observation": "script_url",
+        "pattern": "static\\.parastorage\\.com",
+        "operator": "regex"
+      },
+      "input": {
+        "scripts": [
+          "https://static.example.com/main.js"
+        ]
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "microsoft-asp-net-http-header-1-positive",
+      "rule": {
+        "technology": "microsoft-asp-net",
+        "observation": "http_header",
+        "target": "X-AspNet-Version",
+        "pattern": "(.+)",
+        "operator": "regex"
+      },
+      "input": {
+        "headers": {
+          "X-AspNet-Version": "4.0.30319"
+        }
+      },
+      "expect": {
+        "match": true,
+        "version": "4.0.30319"
+      }
+    },
+    {
+      "id": "microsoft-asp-net-http-header-1-negative",
+      "rule": {
+        "technology": "microsoft-asp-net",
+        "observation": "http_header",
+        "target": "X-AspNet-Version",
+        "pattern": "(.+)",
+        "operator": "regex"
+      },
+      "input": {
+        "headers": {
+          "X-Powered-By": "PHP/8"
+        }
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "microsoft-asp-net-http-header-2-positive",
+      "rule": {
+        "technology": "microsoft-asp-net",
+        "observation": "http_header",
+        "target": "X-Powered-By",
+        "pattern": "^ASP\\.NET",
+        "operator": "regex"
+      },
+      "input": {
+        "headers": {
+          "X-Powered-By": "ASP.NET"
+        }
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "microsoft-asp-net-http-header-2-negative",
+      "rule": {
+        "technology": "microsoft-asp-net",
+        "observation": "http_header",
+        "target": "X-Powered-By",
+        "pattern": "^ASP\\.NET",
+        "operator": "regex"
+      },
+      "input": {
+        "headers": {
+          "X-Powered-By": "PHP/8.2"
+        }
+      },
+      "expect": {
+        "match": false
+      }
+    }
+  ]
+}

@@ -128,15 +128,50 @@ These were an open question; the matcher fixes them so they are explicit:
 
 ## Corpus
 
-`validation/cases/` holds cases for real, widely used rules (nginx,
-Cloudflare, WordPress, jQuery, Google Analytics, Pixelfed, Bootstrap). They need the full Enthec
-registry, so they run as `make validate-corpus` (git and network), against a
-pinned Enthec revision. In CI this is a separate job. Running with another
-`CORPUS_REVISION` shows whether upstream changes made a case stale.
-Current result: 34 cases, 34 pass, 16 rules `ok`.
+`validation/cases/` holds cases for rules of widely used technologies, written
+against the **Enthec-only registry** at the pinned revision (the technology slugs
+are the ones that registry gives). `make validate-corpus` fetches that revision with
+`git`, imports it, and runs every case (git and network needed); in CI it is a
+separate job. `CORPUS_REVISION=<sha>` shows whether newer upstream rules made a case
+stale. The cases for the small fixture snapshot are in
+`internal/validation/testdata/cases` and run in every `go test`.
 
-`internal/validation/testdata/cases/` holds cases against the small Enthec
-fixture snapshot; they run in every `go test`.
+Current state: **236 cases, all pass; 115 rules of 61 technologies are `ok`**, out of
+15836 Enthec rules (0.7%).
+
+| File | Contents |
+|---|---|
+| `web-servers.json`, `cms-and-libraries.json`, `dom.json` | the first 34 cases (nginx, Cloudflare, WordPress, jQuery, Google Analytics, Pixelfed, Bootstrap, ...) |
+| `servers-and-hosting.json` | Apache, Akamai, CloudFront, S3, Caddy, Fastly, GitHub Pages, LiteSpeed, Netlify, OpenResty, Squarespace, Varnish, Vercel, HSTS, Wix, ASP.NET |
+| `frameworks-and-cms.json` | PHP, Next.js, Express, Rails, Django, Laravel, Drupal, Joomla, Ghost, Gatsby, Hugo, WordPress, WooCommerce, Elementor, Yoast, Shopify, Matomo, Tailwind |
+| `analytics-and-services.json` | Google Analytics, Tag Manager, AdSense, Hotjar, OneTrust, Cookiebot, Facebook Pixel, reCAPTCHA, Segment, Plausible, Stripe, Sentry, Maps, YouTube, HubSpot, Intercom, Google Fonts, Font Awesome, Open Graph, Moment, Swiper, Slick |
+
+How to add one: pick a rule (`owf fingerprint list --technology <slug>`), write a
+positive input that a real page would produce and a negative that is a *near miss* (a
+similar header, an anchored name followed by more text, a different library with a
+similar file name), and select the rule by technology, observation and, where
+needed, target and pattern. Run `owf fingerprint test validation/cases`. A negative
+that makes the rule match is a finding about the rule, not a case to delete:
+note it (below) and write a fairer negative.
+
+**What this evidence is worth.** The inputs are written by hand from how the
+products behave; the negatives are near misses chosen by the author. A rule that
+passes both is shown to behave as asserted on those inputs. It is not a measurement
+of false positives on the web, and `ok` should not be read as "reliable".
+
+### Findings from writing the corpus
+
+- **Wildcards and regex in cookie names.** 13 Enthec cookie rules have a name with
+  regular-expression syntax (`connect\.sid`, `ASP\.NET_SessionId`, `SESS[a-f0-9]{32}`,
+  `joomla_[a-z0-9]+`, `_ga_*`). The matcher compares cookie names exactly, so a real
+  cookie never matches them. Whether the upstream engines treat names as patterns is
+  not verified here; the rules are inert in this registry until that is settled.
+- **`swiper(?:\.min)?\.js`** (Swiper) does not match `swiper-bundle.min.js`, the
+  usual file name of the library.
+- **Fixed versions on `exists` rules** (`_gat` gives version `UA`) were lost by the
+  matcher; fixed, with a test.
+- **Groups of rules from other projects can be true for any site** (`Metatag CMS`,
+  see [owfscan.md](owfscan.md#how-to-read-a-result)); they need negative cases too.
 
 ## Static lint
 
