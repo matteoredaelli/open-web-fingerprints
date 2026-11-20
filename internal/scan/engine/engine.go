@@ -69,11 +69,14 @@ type Output struct {
 	Technologies []scan.Technology
 	Coverage     scan.Coverage
 	Warnings     []scan.Warning
+	// Suppressed is filled by Resolve.
+	Suppressed []scan.Suppressed
 }
 
 // Engine holds an indexed registry. It is built once and can serve many runs.
 type Engine struct {
 	reg        *domain.Registry
+	rel        relations
 	techs      []domain.Technology
 	vendors    map[domain.VendorID]string
 	categories map[domain.CategoryID]string
@@ -123,6 +126,7 @@ func New(reg *domain.Registry) *Engine {
 			r.singles = append(r.singles, f)
 		}
 	}
+	e.rel = indexRelations(reg)
 	return e
 }
 

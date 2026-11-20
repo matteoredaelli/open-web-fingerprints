@@ -180,6 +180,16 @@ func printScan(cmd *cobra.Command, r *scan.Result, verbose bool) {
 		fmt.Fprintf(w, "%s\t%s\n", c.Kind, c.Value)
 	}
 	_ = w.Flush()
+	if len(r.Suppressed) > 0 {
+		fmt.Fprintf(out, "\nNOT REPORTED (%d): matched, but the registry says otherwise\n", len(r.Suppressed))
+		for _, s := range r.Suppressed {
+			why := "excluded by "
+			if s.Reason == scan.SuppressedRequirement {
+				why = "needs one of "
+			}
+			fmt.Fprintf(out, "  %s (confidence %.2f): %s%s\n", s.Name, s.Confidence, why, strings.Join(s.By, ", "))
+		}
+	}
 	if r.Browser != nil {
 		b := r.Browser
 		fmt.Fprintf(out, "\nBROWSER: %s, %d requests (%d refused), %d global variables found%s\n", b.Version, b.Requests, b.Blocked, b.Globals, map[bool]string{true: ", timed out"}[b.TimedOut])

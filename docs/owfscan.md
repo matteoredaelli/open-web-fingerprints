@@ -421,6 +421,33 @@ as it can for any script-based detector; and shared global names give false posi
 define `_`; the reference engines solve this with `excludes` between technologies, which
 the registry does not carry yet).
 
+## Technologies that matched but are not reported
+
+The registry carries relationships between technologies, from its sources, and the scanner
+applies two of them to what it found (`internal/scan/engine/resolve.go`). Whatever it holds
+back is listed in `suppressed` (and printed as `NOT REPORTED`), with the reason and the
+technologies responsible: nothing is dropped silently.
+
+- **`excludes`.** If A excludes B and A was found, B is not reported. When two exclude each
+  other (Lodash and Underscore.js both define `_`), the one with the higher confidence
+  stays; with equal confidence both stay and a warning says so.
+- **`requires`.** A technology is reported only if one of the technologies it requires was
+  found (or is implied by one that was); a category requirement is met by another found
+  technology in that category. With several required technologies, **one** is enough: I did
+  not find a source that says whether Wappalyzer means "one" or "all", and "one" holds back
+  less.
+- **`implies`** is used for that check only: implied technologies are **not added** to the
+  result yet.
+
+I could not read Wappalyzer's own JavaScript for these rules (its source was not at the
+addresses I tried), and the two `wappalyzergo` files I read say nothing about `excludes` or
+`requires`. So the semantics above are the ones of the Wappalyzer data-format description as
+I know it, not checked against an engine, and the relationships are only as good as the
+sources that wrote them.
+
+On `pirelli.com` with `--browser`, `Underscore.js` (reported before with Lodash's version
+3.8.0 and confidence 0.00) is now `excluded by Lodash`.
+
 ## Friend domains (`--friends`, `owfscan friends`)
 
 A **friend** is a domain that the target's home page links to and whose own home page

@@ -271,6 +271,50 @@
           "description": "How many of the global variables looked for exist on the page."
         }
       }
+    },
+    "suppressed": {
+      "type": "array",
+      "description": "Technologies that a rule matched but that are not reported: the registry says another detected technology excludes them, or something they need is missing.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "slug",
+          "name",
+          "reason",
+          "by",
+          "confidence"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "reason": {
+            "enum": [
+              "excluded",
+              "requirement_not_met"
+            ]
+          },
+          "by": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "confidence": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      }
     }
   },
   "$defs": {

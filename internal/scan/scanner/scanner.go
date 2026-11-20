@@ -212,15 +212,15 @@ func Scan(ctx context.Context, opt Options, target string) (*scan.Result, error)
 		outs = append(outs, opt.Registry.Engine.Run(in, engine.Options{MinHealth: opt.MinHealth}))
 	}
 	ex := web.Extract(pages, final.Hostname())
-	out := engine.Merge(outs, 0)
+	out := opt.Registry.Engine.Resolve(engine.Merge(outs, 0))
 	ex.Warnings = append(append(append([]scan.Warning{}, crawl.Warnings...), browserWarn...), ex.Warnings...)
 
 	res := &scan.Result{
 		Schema: "https://github.com/matteoredaelli/open-web-fingerprints/schemas/scan-result.schema.json", SchemaVersion: scan.SchemaVersion,
 		ScannedAt: started, Scanner: "owfscan " + opt.Version,
 		Target:       scan.Target{Input: target, URL: ob.Page.FinalURL, Host: final.Hostname(), RegistrableDomain: web.RegistrableDomain(final.Hostname())},
-		Technologies: out.Technologies,
-		Links:        ex.Links, Domains: ex.Domains, Socials: ex.Socials, Contacts: ex.Contacts,
+		Technologies: out.Technologies, Suppressed: out.Suppressed,
+		Links: ex.Links, Domains: ex.Domains, Socials: ex.Socials, Contacts: ex.Contacts,
 		Coverage: out.Coverage, Registry: opt.Registry.Ref,
 		Warnings: append(append([]scan.Warning{}, ex.Warnings...), out.Warnings...),
 	}

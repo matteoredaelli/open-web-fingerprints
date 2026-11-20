@@ -26,6 +26,7 @@ const doc = `{
      "confidence": 0.5, "sources": ["enthec-webappanalyzer"],
      "evidence": [{"rule_id": "fp_01a1f9ac-6969-7e6f-a646-cbae610161c6", "observation": "meta_tag", "target": "generator", "matched": "Hugo 0.119.0", "health": "unknown", "source": "enthec-webappanalyzer"}]}
   ],
+  "suppressed": [{"id": "tech_01a1f9ac-67ad-7aa2-9ef9-43d88dc74a4f", "slug": "underscore-js", "name": "Underscore.js", "reason": "excluded", "by": ["Lodash"], "confidence": 0}],
   "links": [], "domains": [], "socials": [{"platform": "github", "kind": "account", "handle": "example", "url": "https://github.com/example", "found": [{"page": "https://www.example.org/", "via": "a"}]}],
   "contacts": [],
   "friends": {"candidates": 2, "checked": 2, "domains": [
@@ -78,4 +79,16 @@ func TestExampleDocumentIsValid(t *testing.T) {
 	if err := schemas.ValidateScanResult([]byte(doc)); err != nil {
 		t.Fatal(err)
 	}
+}
+
+func ExampleSuppressed() {
+	var r scan.Result
+	if err := json.Unmarshal([]byte(doc), &r); err != nil {
+		panic(err)
+	}
+	// A technology can match and still not be reported: the registry says another one excludes it.
+	for _, s := range r.Suppressed {
+		fmt.Printf("%s: %s by %s\n", s.Name, s.Reason, s.By[0])
+	}
+	// Output: Underscore.js: excluded by Lodash
 }

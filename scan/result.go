@@ -48,6 +48,10 @@ type Result struct {
 	Domains       []Domain     `json:"domains"`
 	Socials       []Social     `json:"socials"`
 	Contacts      []Contact    `json:"contacts"`
+	// Suppressed lists technologies that a rule matched but that are not reported, and why:
+	// the registry says another detected technology excludes them, or something they need
+	// is missing. Nothing is dropped without being listed here.
+	Suppressed []Suppressed `json:"suppressed,omitempty"`
 	// Friends is present only when friend detection was asked for.
 	Friends *Friends `json:"friends,omitempty"`
 	// Browser is present only when the first page was also run in a browser.
@@ -158,6 +162,26 @@ type Domain struct {
 	Links    int      `json:"links"`
 	Examples []string `json:"examples,omitempty"`
 }
+
+// Suppressed is a technology that matched but is not in Technologies.
+type Suppressed struct {
+	ID   string `json:"id"`
+	Slug string `json:"slug"`
+	Name string `json:"name"`
+	// Reason is SuppressedExcluded or SuppressedRequirement.
+	Reason string `json:"reason"`
+	// By names the technologies that exclude it, or, for a missing requirement, the ones
+	// (or categories) of which one was needed.
+	By []string `json:"by"`
+	// Confidence is what it would have had.
+	Confidence float64 `json:"confidence"`
+}
+
+// Reasons a technology is suppressed.
+const (
+	SuppressedExcluded    = "excluded"
+	SuppressedRequirement = "requirement_not_met"
+)
 
 // Browser says that the first page was opened in a headless browser, and how that went.
 // With it the page's global variables and XHR calls are known (the rules that need them are
