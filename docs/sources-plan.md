@@ -39,7 +39,7 @@ count, and whether OpenTechalyzer's fingerprints really are independent of the W
    need a new observation type and the scanner does not fetch scripts yet: **kept in `raw`, not
    imported**, and counted as skipped. Expected size is small (hundreds of rules), so the overlap
    measurement is quick.
-2. **OpenTechalyzer.** MIT, newest data model, 588 fingerprints, and it has an observation the
+2. **OpenTechalyzer** (measured: see below; better than Retire.js). MIT, newest data model, 588 fingerprints, and it has an observation the
    registry lacks, `requestHost` (the host of a request the page makes), which fits the XHR work. The
    work is the **format**: the rules are TypeScript source, not JSON. The extractor is a pure Go
    reader, so it needs a parser for the subset of TypeScript object literals used (strings, arrays,
@@ -118,3 +118,48 @@ Measured against the registry of this repository (four sources, 9694 technologie
   as a small import (URL rules, `func` paths, new libraries) if cheap. It is not the best next
   source on this evidence; OpenTechalyzer (588 fingerprints, independent database) should be
   measured next. The licence (Apache-2.0) is not the obstacle.
+
+### OpenTechalyzer (2026-11-20, `Houseofmvps/opentechalyzer` @ `a3d30e479c91c06732ef88867d69b7feef8f3f35`, `src/fingerprints/*.ts`)
+
+The ten fingerprint files were loaded as data (Node with the permission model on: read of `/tmp`
+only, no network, no write outside a scratch directory) to count them; the files turned out to be
+plain data, no code. A Go extractor would need its own reader for that subset of TypeScript.
+
+- **588 fingerprints, 1455 patterns.** By signal: `scriptSrc` 376, `html` 328, `js` 180,
+  `npmDep` 148, `requestHost` 143, `headers` 130, `cookies` 49, `meta` 25, `probe` 27, DNS (TXT, NS,
+  MX, CNAME) 26, `stylesheetSrc` 10, `cssContent` 7, `url` 4, `robots` 2. Plus `implies` on 115
+  fingerprints and `requires` on 9 (relationships).
+- **What the scanner can use.** About 984 patterns (68%) are observations it already has: script
+  URLs, HTML, headers, cookies, meta tags, DNS, CSS, page URL, robots and the 27 probes (imported
+  as drafts with a pending review). 323 (22%) need `--browser` (`js` global variables, and
+  `requestHost`, the host of any request the page makes, which is a new observation type; the
+  existing `xhr` covers only fetch and XHR calls). 148 (10%) are `npmDep`, a signal the scanner does
+  not have (a package name inside JavaScript bundles or package manifests) and would be kept in
+  `raw`.
+- **RE2.** None of the 1072 regular expressions I checked uses look-around or back-references, so
+  none would be skipped for the engine.
+- **Extras in the format.** 34 patterns carry a version (`version: '$1'`) and 10 an extracted
+  *identifier* (`id: '$1'`, for example a Google Analytics measurement ID). The registry has no
+  field for an identifier; they would go to `raw` until one is decided.
+- **Overlap.** 439 of 588 fingerprints (75%) have a technology in the registry with the same name
+  or slug (case, spaces and punctuation ignored, `.js` and `js` equal); 149 do not, which
+  overstates how many are new, because the names differ (Meta Pixel / Facebook Pixel, Matomo /
+  Matomo Analytics). **The patterns are mostly different**: of 559 `scriptSrc` and `html` patterns
+  of technologies the registry already has, only 49 (9%) are identical to an existing rule, in 47
+  technologies. So it is not a copy of the Wappalyzer sets, which agrees with the README.
+- **What is new for real.** The categories of the 149 unmatched names: e-commerce apps (27), payment
+  providers (17), JavaScript libraries (16), authentication (9), analytics (8), DevOps (8),
+  advertising (7), shipping (7), hosting (7), databases (7); among them regional payment providers
+  (Paystack, Flutterwave, PhonePe, Paytm, Mercado Pago, PayU, Xendit, dLocal) that I did not see in
+  the other sources.
+- **Value.** Higher than Retire.js: about 980 patterns that work today, mostly independent of what
+  the registry has, and a set of newer technologies. The work is the reader for the TypeScript
+  subset (strings, arrays, objects, `{ re, id, version, caseSensitive, note }` entries, comments);
+  the alternative is to ask the author for a JSON export. Whether a pattern is case-sensitive
+  (`caseSensitive`) has to be mapped to a flag the registry can carry, which I have not checked.
+- **Licence.** MIT for the built-in database, as the README states (and `LICENSE` is MIT per the
+  GitHub API). The project also offers an *optional* external database import that vendors the
+  GPL-3.0 Wappalyzer set; that is not part of the files measured and would not be imported.
+- **Recommendation.** Worth doing, and before Retire.js. The first step is the reader; the second
+  is deciding how to carry `id` (identifier) and `caseSensitive`; the third, the usual: fixtures,
+  contract test, catalogue entry, a survey in `sources.md`.
