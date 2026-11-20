@@ -486,3 +486,67 @@ func TestGroupCasesThroughTheCLI(t *testing.T) {
 		t.Errorf("only the two members of the tested group are ok:\n%s", list)
 	}
 }
+
+func TestExportManifestAndVerify(t *testing.T) {
+	nowFunc = func() time.Time { return time.Date(2026, 11, 17, 12, 0, 0, 0, time.UTC) }
+	db := filepath.Join(t.TempDir(), "owf.db")
+	mustRun(t, db, "init")
+	mustRun(t, db, "import", "enthec-webappanalyzer", "--snapshot", fixture, "--revision", "9e52f10")
+	mustRun(t, db, "source", "review", "enthec-webappanalyzer", "--redistributable", "yes", "--note", "test")
+	dir := t.TempDir()
+	file := filepath.Join(dir, "registry.json")
+	mustRun(t, db, "export", "-o", file)
+
+	out := mustRun(t, db, "verify", file)
+	for _, want := range []string{"ok: schema 0.2.0", "sha256:", "22 technologies", "source enthec-webappanalyzer (GPL-3.0-only, redistributable: yes) @ 9e52f10"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("verify lacks %q:\n%s", want, out)
+		}
+	}
+	b, err := os.ReadFile(file) //nolint:gosec // test temp file
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// The same data exported later has the same hash; only the time differs.
+	nowFunc = func() time.Time { return time.Date(2027, 1, 1, 0, 0, 0, 0, time.UTC) }
+	file2 := filepath.Join(dir, "later.json")
+	mustRun(t, db, "export", "-o", file2)
+	b2, _ := os.ReadFile(file2) //nolint:gosec // test temp file
+	hash := func(b []byte) string {
+		i := strings.Index(string(b), `"content_sha256"`)
+		return string(b[i : i+100])
+	}
+	if hash(b) != hash(b2) || string(b) == string(b2) {
+		t.Errorf("hash must be equal and the files different (generated_at)")
+	}
+
+	// Tampering is noticed, in the data and in the counts.
+	tamper := func(name, from, to string) string {
+		p := filepath.Join(dir, name)
+		if !strings.Contains(string(b), from) {
+			t.Fatalf("%q not in the export", from)
+		}
+		if err := os.WriteFile(p, []byte(strings.Replace(string(b), from, to, 1)), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		return p
+	}
+	if _, err := run(t, db, "verify", tamper("t1.json", `"name": "A-Frame"`, `"name": "B-Frame"`)); err == nil ||
+		!strings.Contains(err.Error(), "content hash") {
+		t.Errorf("a changed record must fail verification: %v", err)
+	}
+	if _, err := run(t, db, "verify", tamper("t2.json", `"technologies": 22`, `"technologies": 23`)); err == nil {
+		t.Error("changed counts must fail")
+	}
+	if _, err := run(t, db, "verify", filepath.Join(dir, "missing.json")); err == nil {
+		t.Error("missing file must fail")
+	}
+	// An unreviewed export says so when verified.
+	mustRun(t, db, "source", "review", "enthec-webappanalyzer", "--redistributable", "unreviewed")
+	file3 := filepath.Join(dir, "internal.json")
+	mustRun(t, db, "export", "--include-unreviewed", "-o", file3)
+	if out := mustRun(t, db, "verify", file3); !strings.Contains(out, "NOTICE:") {
+		t.Errorf("verify must repeat the notice:\n%s", out)
+	}
+}

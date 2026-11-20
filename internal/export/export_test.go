@@ -236,3 +236,61 @@ func TestEmptyRegistryExports(t *testing.T) {
 		t.Errorf("empty export: %v", err)
 	}
 }
+
+func TestManifest(t *testing.T) {
+	ctx := context.Background()
+	r := world(t)
+	a, err := Build(ctx, r, now, Options{IncludeUnreviewed: true, Generator: "owf test"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	later := now.Add(48 * time.Hour)
+	b, err := Build(ctx, r, later, Options{IncludeUnreviewed: true, Generator: "owf other"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	m := a.Manifest
+	if m == nil || m.Generator != "owf test" || !strings.HasPrefix(m.ContentSHA256, "sha256:") || len(m.ContentSHA256) != 71 {
+		t.Fatalf("manifest: %+v", m)
+	}
+	// The hash is of the data: neither the time nor the generator is part of it.
+	if m.ContentSHA256 != b.Manifest.ContentSHA256 {
+		t.Error("the same data must have the same content hash")
+	}
+	want := domain.ManifestCounts{Sources: 2, Vendors: 2, Categories: 2, Technologies: 2, Fingerprints: 2, Relationships: 2}
+	if m.Counts != want {
+		t.Errorf("counts = %+v, want %+v", m.Counts, want)
+	}
+	if len(m.Sources) != 2 || m.Sources[0].Slug != "ok" || m.Sources[0].Revision != "r" ||
+		!strings.HasPrefix(m.Sources[0].SnapshotChecksum, "sha256:") || m.Sources[1].Redistributable != "unreviewed" {
+		t.Errorf("manifest sources: %+v", m.Sources)
+	}
+	h, err := ContentHash(a)
+	if err != nil || h != m.ContentSHA256 {
+		t.Errorf("ContentHash = %s, %v", h, err)
+	}
+
+	// Changing any record changes the hash.
+	a.Technologies[0].Name = "changed"
+	if h2, _ := ContentHash(a); h2 == h {
+		t.Error("a changed record must change the hash")
+	}
+	// A different export of the same registry (the guard's choices) differs.
+	c, err := Build(ctx, r, now, Options{IncludeUnreviewed: true})
+	if err != nil || c.Manifest.Generator != "owf" {
+		t.Fatalf("default generator: %+v err=%v", c.Manifest, err)
+	}
+	if empty, _ := Build(ctx, memory.New(), now, Options{}); empty.Manifest == nil || empty.Manifest.Sources == nil {
+		t.Error("an empty export still has a manifest with an empty source list")
+	}
+}
+
+func TestVerifyRejectsWhatItCannotCheck(t *testing.T) {
+	if _, err := Verify([]byte("{")); err == nil {
+		t.Error("garbage must fail")
+	}
+	if _, err := Verify([]byte(`{"schema_version":"0.1.0","sources":[],"technologies":[],"fingerprints":[]}`)); err == nil ||
+		!strings.Contains(err.Error(), "no manifest") {
+		t.Errorf("an old export has nothing to verify: %v", err)
+	}
+}

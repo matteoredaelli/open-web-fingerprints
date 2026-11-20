@@ -19,7 +19,7 @@ import (
 )
 
 // SchemaVersion is the version of the export format written by this build.
-const SchemaVersion = "0.1.0"
+const SchemaVersion = "0.2.0"
 
 // SchemaURL identifies the schema in exported documents.
 const SchemaURL = "https://github.com/matteoredaelli/open-web-fingerprints/schemas/registry.schema.json"
@@ -30,6 +30,9 @@ type Options struct {
 	// redistribution status is "unreviewed". Sources marked "no" are never
 	// exported.
 	IncludeUnreviewed bool
+	// Generator names the tool and its version in the manifest, for example
+	// "owf v0.1.0".
+	Generator string
 }
 
 // BlockedError means the export was refused because some sources have
@@ -94,6 +97,10 @@ func Build(ctx context.Context, repo repository.Repository, now time.Time, opt O
 		}
 		return a.RetrievedAt.Before(b.RetrievedAt)
 	})
+	reg.Manifest, err = buildManifest(reg, opt.Generator)
+	if err != nil {
+		return domain.Registry{}, err
+	}
 	return reg, nil
 }
 

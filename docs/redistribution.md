@@ -60,3 +60,17 @@ reviewer: a later import or refresh does not reset it. `owf source info` and
   have different licenses needs splitting into several catalogue entries.
 - Nothing stops someone from copying the database file itself. The guard is on
   the export path.
+
+## Manifest and verification (schema 0.2.0)
+
+Every export has a `manifest`: the generator (`owf` and the build's commit), the
+counts of each collection, for each exported source its license, redistribution
+status, last imported revision and snapshot checksum, and `content_sha256`. The
+hash covers the whole document except `generated_at` and the manifest, so the
+same data gives the same hash whenever it is exported. `owf verify <file>`
+checks the schema, the hash and the counts without a database, and repeats the
+notice of an internal export. It detects accidental damage and edits; it is not
+a signature, because anyone can recompute the hash after editing.
+
+Conflicts and aliases are still not exported: they are review state, and
+exporting them would need the same exclusion rules as records.

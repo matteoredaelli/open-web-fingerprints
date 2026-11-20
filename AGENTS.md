@@ -83,7 +83,8 @@ are an open set. Details: `docs/domain-model.md`.
 
 IDs are opaque and stable (`tech_<uuidv7>`); slugs are unique and never change
 once assigned. The registry is SQLite; the public contract is the JSON export
-(schema `0.1.0`, draft). Conflicts, aliases and a manifest are not exported yet.
+(schema `0.2.0`, draft, with a manifest and content hash). Conflicts and aliases
+are not exported.
 
 ## Sources (all `unreviewed`)
 
@@ -103,7 +104,7 @@ before claiming value. Prefer sources with different data and clear licences.
 
 `init`, `source list|info|refresh|review`, `import`, `technology list|show`,
 `vendor list|show|set`, `fingerprint list|validate|test|lint`,
-`conflict list|show|resolve`, `export`, `stats`. `refresh` fetches one commit
+`conflict list|show|resolve`, `export`, `verify`, `stats`. `refresh` fetches one commit
 with `git` (sparse, pinned by SHA) and imports it; `--dry-run` first.
 
 ## Working conventions
@@ -133,9 +134,9 @@ Open, roughly in order:
 1. Write cases for groups and rules of the Wappalyzer-format and nuclei sources
    (only 16 and a few groups have evidence; Recog has upstream examples).
 2. Review the 281 candidate conflicts; legal review of every source.
-3. Export 0.2: conflicts, aliases, test evidence, manifest with revisions and
-   checksums; semantic versioning and releases (always explicit, never
-   automatic).
+3. Releases: semantic versioning of the data, a published schema URL, release
+   notes (always explicit, never automatic); export of conflicts and aliases if
+   a consumer needs them.
 4. Separate repositories for the detection engine and the public site.
 
 Docs: `docs/domain-model.md`, `sources.md`, `dedup-design.md`, `validation.md`,

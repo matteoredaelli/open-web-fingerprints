@@ -52,7 +52,7 @@ func newRootCmdWith(o *options) *cobra.Command {
 	root.PersistentFlags().StringVar(&o.db, "db", def, "path to the SQLite registry (env OWF_DB)")
 	root.AddCommand(
 		newInitCmd(o), newSourceCmd(o), newImportCmd(o), newTechnologyCmd(o),
-		newFingerprintCmd(o), newVendorCmd(o), newConflictCmd(o), newExportCmd(o), newStatsCmd(o),
+		newFingerprintCmd(o), newVendorCmd(o), newConflictCmd(o), newExportCmd(o), newVerifyCmd(), newStatsCmd(o),
 	)
 	return root
 }

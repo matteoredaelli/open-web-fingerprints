@@ -96,6 +96,99 @@
           "type": "string"
         }
       }
+    },
+    "manifest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "generator",
+        "content_sha256",
+        "counts",
+        "sources"
+      ],
+      "description": "Lets a consumer reproduce and verify the export.",
+      "properties": {
+        "generator": {
+          "type": "string"
+        },
+        "content_sha256": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "description": "Hash of the document without generated_at and manifest, as JSON with sorted collections."
+        },
+        "counts": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "sources",
+            "vendors",
+            "categories",
+            "technologies",
+            "fingerprints",
+            "relationships"
+          ],
+          "properties": {
+            "sources": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "vendors": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "categories": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "technologies": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "fingerprints": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "relationships": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        "sources": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "slug",
+              "license",
+              "redistributable"
+            ],
+            "properties": {
+              "slug": {
+                "type": "string"
+              },
+              "license": {
+                "type": "string"
+              },
+              "redistributable": {
+                "enum": [
+                  "yes",
+                  "no",
+                  "unreviewed"
+                ]
+              },
+              "revision": {
+                "type": "string"
+              },
+              "snapshot_checksum": {
+                "type": "string",
+                "pattern": "^sha256:[0-9a-f]{64}$"
+              }
+            }
+          }
+        }
+      }
     }
   },
   "$defs": {

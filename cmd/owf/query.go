@@ -6,6 +6,8 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"os"
+	"runtime/debug"
 	"sort"
 	"strings"
 	"text/tabwriter"
@@ -425,7 +427,7 @@ func newExportCmd(o *options) *cobra.Command {
 				return err
 			}
 			defer func() { _ = r.Close() }()
-			reg, err := export.Build(cmd.Context(), r, nowFunc(), export.Options{IncludeUnreviewed: includeUnreviewed})
+			reg, err := export.Build(cmd.Context(), r, nowFunc(), export.Options{IncludeUnreviewed: includeUnreviewed, Generator: generator()})
 			if err != nil {
 				return err
 			}
@@ -551,6 +553,52 @@ func newStatsCmd(o *options) *cobra.Command {
 			}
 			if removed > 0 {
 				fmt.Fprintf(out, "fingerprints removed upstream (to review): %d\n", removed)
+			}
+			return nil
+		},
+	}
+}
+
+// generator names this build in export manifests.
+func generator() string {
+	rev := ""
+	if bi, ok := debug.ReadBuildInfo(); ok {
+		for _, s := range bi.Settings {
+			if s.Key == "vcs.revision" && len(s.Value) >= 12 {
+				rev = " " + s.Value[:12]
+			}
+		}
+	}
+	return "owf" + rev
+}
+
+func newVerifyCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "verify <export.json>",
+		Short: "Check an exported file against the schema and its manifest",
+		Long: "verify checks that a file written by `owf export` satisfies the published schema,\n" +
+			"that its content hash and counts match the manifest, and prints what it contains.\n" +
+			"It does not need a registry database.",
+		Args: cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			b, err := os.ReadFile(args[0])
+			if err != nil {
+				return err
+			}
+			reg, err := export.Verify(b)
+			if err != nil {
+				return err
+			}
+			m := reg.Manifest
+			out := cmd.OutOrStdout()
+			fmt.Fprintf(out, "ok: schema %s, %s\n  %s\n  %d technologies, %d fingerprints, %d relationships, %d vendors, %d categories\n",
+				reg.SchemaVersion, m.Generator, m.ContentSHA256, m.Counts.Technologies, m.Counts.Fingerprints,
+				m.Counts.Relationships, m.Counts.Vendors, m.Counts.Categories)
+			for _, s := range m.Sources {
+				fmt.Fprintf(out, "  source %s (%s, redistributable: %s) @ %s\n", s.Slug, s.License, s.Redistributable, s.Revision)
+			}
+			if reg.Export != nil && reg.Export.IncludeUnreviewed {
+				fmt.Fprintf(out, "  NOTICE: %s\n", reg.Export.Notice)
 			}
 			return nil
 		},

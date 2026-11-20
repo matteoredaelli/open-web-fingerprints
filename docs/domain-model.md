@@ -369,3 +369,10 @@ the semantic key and of the public schema. Validation cases select such a rule
 with `"role": "version"` in the selector; a selector without a role selects
 detection rules only. Detection rules that carry `version_extract` (Wappalyzer,
 Recog) are unchanged.
+
+## Export 0.2 (implemented)
+
+Schema `0.2.0` adds the optional `manifest` (generator, counts, per-source
+revision and snapshot checksum, `content_sha256`), plus what earlier steps added:
+`role`, `curated`, `origin` and `expect` on test runs, the `export` section and
+source review fields. Test evidence is exported with each rule's `validation`.

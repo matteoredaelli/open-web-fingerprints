@@ -84,6 +84,36 @@ type Registry struct {
 	Fingerprints  []Fingerprint  `json:"fingerprints"`
 	Relationships []Relationship `json:"relationships,omitempty"`
 	Export        *ExportInfo    `json:"export,omitempty"`
+	Manifest      *Manifest      `json:"manifest,omitempty"`
+}
+
+// Manifest describes an export so that it can be reproduced and verified.
+// ContentSHA256 is the hash of the document without generated_at and without
+// the manifest itself, so two exports of the same data have the same hash.
+type Manifest struct {
+	Generator     string           `json:"generator"`
+	ContentSHA256 string           `json:"content_sha256"`
+	Counts        ManifestCounts   `json:"counts"`
+	Sources       []ManifestSource `json:"sources"`
+}
+
+// ManifestCounts are the sizes of the exported collections.
+type ManifestCounts struct {
+	Sources       int `json:"sources"`
+	Vendors       int `json:"vendors"`
+	Categories    int `json:"categories"`
+	Technologies  int `json:"technologies"`
+	Fingerprints  int `json:"fingerprints"`
+	Relationships int `json:"relationships"`
+}
+
+// ManifestSource names the snapshot each exported source was last imported from.
+type ManifestSource struct {
+	Slug             string `json:"slug"`
+	License          string `json:"license"`
+	Redistributable  string `json:"redistributable"`
+	Revision         string `json:"revision,omitempty"`
+	SnapshotChecksum string `json:"snapshot_checksum,omitempty"`
 }
 
 // ExportInfo describes what an export contains and what was left out.
