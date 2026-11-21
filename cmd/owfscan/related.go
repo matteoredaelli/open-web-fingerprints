@@ -35,7 +35,7 @@ type tldFlags struct {
 }
 
 func (t *tldFlags) add(c *cobra.Command) {
-	c.Flags().BoolVar(&t.on, "related-tlds", false, "also try the target's name under other TLDs ("+strings.Join(scanner.DefaultRelatedTLDs, ", ")+"): looks the names up in DNS and reads the home page of those that exist")
+	c.Flags().BoolVar(&t.on, "related-tlds", false, "also try the target's name under other TLDs ("+strings.Join(cfg.Related.TLDs, ", ")+"): looks the names up in DNS and reads the home page of those that exist")
 	c.Flags().StringVar(&t.list, "related-tlds-list", "", "comma-separated TLDs to try instead of the default list (implies --related-tlds)")
 }
 
@@ -51,7 +51,7 @@ func (t *tldFlags) tlds() []string {
 		return out
 	}
 	if t.on {
-		return scanner.DefaultRelatedTLDs
+		return append([]string(nil), cfg.Related.TLDs...)
 	}
 	return nil
 }
@@ -89,9 +89,9 @@ func newRelatedCmd() *cobra.Command {
 		},
 	}
 	n.add(c)
-	c.Flags().DurationVar(&n.delay, "delay", scanner.DefaultDelay, "pause before each request to another site")
+	c.Flags().DurationVar(&n.delay, "delay", cfg.Crawl.Delay.D(), "pause before each request to another site")
 	tf.add(c)
-	c.Flags().IntVar(&max, "related-max", scanner.DefaultMaxRelated, "most candidate domains to read")
+	c.Flags().IntVar(&max, "related-max", cfg.Related.Max, "most candidate domains to read")
 	return c
 }
 

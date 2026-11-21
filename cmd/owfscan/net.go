@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
-	"os"
 	"text/tabwriter"
 	"time"
 
@@ -36,9 +35,9 @@ type netFlags struct {
 }
 
 func (n *netFlags) add(c *cobra.Command) {
-	c.Flags().StringVar(&n.cacheDir, "cache-dir", os.Getenv("OWFSCAN_CACHE"), "cache responses on disk here (env OWFSCAN_CACHE)")
-	c.Flags().DurationVar(&n.maxAge, "max-age", fetch.DefaultMaxAge, "how long a cached response is reused")
-	c.Flags().DurationVar(&n.timeout, "timeout", fetch.DefaultTimeout, "timeout of each request")
+	c.Flags().StringVar(&n.cacheDir, "cache-dir", envOr("OWFSCAN_CACHE", cfg.Fetch.CacheDir), "cache responses on disk here (env OWFSCAN_CACHE, or fetch.cache_dir of the config file)")
+	c.Flags().DurationVar(&n.maxAge, "max-age", cfg.Fetch.MaxAge.D(), "how long a cached response is reused")
+	c.Flags().DurationVar(&n.timeout, "timeout", cfg.Fetch.Timeout.D(), "timeout of each request")
 	c.Flags().BoolVar(&n.allowPrivate, "allow-private", false, "allow private and local addresses (your own network)")
 	c.Flags().BoolVar(&n.insecure, "insecure", false, "accept invalid TLS certificates")
 	c.Flags().BoolVar(&n.asJSON, "json", false, "output JSON")
@@ -47,15 +46,16 @@ func (n *netFlags) add(c *cobra.Command) {
 // addCrawl adds the flags that make a command follow links to other pages.
 func (n *netFlags) addCrawl(c *cobra.Command) {
 	c.Flags().IntVar(&n.depth, "depth", 0, "follow links this many levels to pages likely to list contacts and profiles (contact, about, press, legal, ...); 0 reads only the page given")
-	c.Flags().IntVar(&n.maxPages, "max-pages", scanner.DefaultMaxPages, "most pages fetched in total, the first included")
-	c.Flags().DurationVar(&n.delay, "delay", scanner.DefaultDelay, "pause before each further page (a larger Crawl-delay in robots.txt wins)")
+	c.Flags().IntVar(&n.maxPages, "max-pages", cfg.Crawl.MaxPages, "most pages fetched in total, the first included")
+	c.Flags().DurationVar(&n.delay, "delay", cfg.Crawl.Delay.D(), "pause before each further page (a larger Crawl-delay in robots.txt wins)")
 	c.Flags().BoolVar(&n.ignoreRobots, "ignore-robots", false, "fetch pages that robots.txt asks crawlers to avoid (the page given is always fetched)")
 }
 
 func (n *netFlags) crawlOptions(dns, favicon bool) scanner.CrawlOptions {
 	o := scanner.CrawlOptions{
-		Fetch:     fetch.Options{Timeout: n.timeout, AllowPrivate: n.allowPrivate, Insecure: n.insecure, CacheDir: n.cacheDir, MaxAge: n.maxAge},
+		Fetch:     n.fetchOptions(),
 		NoFavicon: !favicon, Depth: n.depth, MaxPages: n.maxPages, Delay: n.delay, IgnoreRobots: n.ignoreRobots,
+		MaxDelay: cfg.Crawl.MaxDelay.D(),
 	}
 	if dns {
 		o.Resolver = observe.SystemResolver{}
@@ -63,12 +63,16 @@ func (n *netFlags) crawlOptions(dns, favicon bool) scanner.CrawlOptions {
 	return o
 }
 
-func (n *netFlags) fetcher() *fetch.Fetcher {
-	return fetch.New(fetch.Options{
+// fetchOptions combines the flags with the limits of the configuration that have no flag.
+func (n *netFlags) fetchOptions() fetch.Options {
+	return fetch.Options{
 		Timeout: n.timeout, AllowPrivate: n.allowPrivate, Insecure: n.insecure,
 		CacheDir: n.cacheDir, MaxAge: n.maxAge,
-	})
+		MaxBody: cfg.Fetch.MaxBodyBytes, MaxRedirects: cfg.Fetch.MaxRedirects, UserAgent: cfg.Fetch.UserAgent,
+	}
 }
+
+func (n *netFlags) fetcher() *fetch.Fetcher { return fetch.New(n.fetchOptions()) }
 
 const netNotice = "\nIt makes one request to the page (plus the favicon with `observe` and `scan`) and\n" +
 	"follows its redirects. With --depth it also reads a few pages of the same site (contact,\n" +

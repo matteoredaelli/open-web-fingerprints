@@ -146,8 +146,18 @@ type Options struct {
 	Browser        bool
 	BrowserPath    string
 	BrowserTimeout time.Duration
-	FriendsMax     int
-	MinHealth      string
+	// BrowserSettle is the wait after the load for late scripts, and BrowserMaxRequests
+	// bounds the requests the page may make (0: the browser package's defaults).
+	BrowserSettle      time.Duration
+	BrowserMaxRequests int
+	// MaxDelay caps a robots.txt Crawl-delay; ActiveMaxBody is how much of a probe answer
+	// is kept; MaxEvidence is how many matching rules are listed for a technology
+	// (0: the defaults of each).
+	MaxDelay      time.Duration
+	ActiveMaxBody int
+	MaxEvidence   int
+	FriendsMax    int
+	MinHealth     string
 	// Version names the scanner in the result.
 	Version string
 	Now     func() time.Time
@@ -168,7 +178,7 @@ func Scan(ctx context.Context, opt Options, target string) (*scan.Result, error)
 	started := now().UTC()
 	crawl, err := Crawl(ctx, CrawlOptions{
 		Fetch: opt.Fetch, Resolver: opt.Resolver, NoFavicon: opt.NoFavicon,
-		Depth: opt.Depth, MaxPages: opt.MaxPages, Delay: opt.Delay, IgnoreRobots: opt.IgnoreRobots,
+		Depth: opt.Depth, MaxPages: opt.MaxPages, Delay: opt.Delay, IgnoreRobots: opt.IgnoreRobots, MaxDelay: opt.MaxDelay,
 	}, target)
 	if err != nil {
 		return nil, err
@@ -185,7 +195,7 @@ func Scan(ctx context.Context, opt Options, target string) (*scan.Result, error)
 			probed = &Probed{Warnings: []scan.Warning{{Code: "no_approved_probes",
 				Message: "--active was given but no probe is approved in this registry (see `owf probe list`)"}}}
 		} else {
-			probed = RunProbes(ctx, ActiveOptions{Fetch: opt.Fetch, Max: opt.ActiveMax, Delay: opt.Delay}, final, web.RegistrableDomain(final.Hostname()), plan)
+			probed = RunProbes(ctx, ActiveOptions{Fetch: opt.Fetch, Max: opt.ActiveMax, Delay: opt.Delay, MaxBody: opt.ActiveMaxBody}, final, web.RegistrableDomain(final.Hostname()), plan)
 			ob.Observation.Probes = probed.Responses
 		}
 	}
@@ -197,7 +207,7 @@ func Scan(ctx context.Context, opt Options, target string) (*scan.Result, error)
 			ua = fetch.DefaultUserAgent
 		}
 		br, err := browser.Run(ctx, browser.Options{
-			ChromePath: opt.BrowserPath, Timeout: opt.BrowserTimeout, AllowPrivate: opt.Fetch.AllowPrivate,
+			ChromePath: opt.BrowserPath, Timeout: opt.BrowserTimeout, Settle: opt.BrowserSettle, MaxRequests: opt.BrowserMaxRequests, AllowPrivate: opt.Fetch.AllowPrivate,
 			Paths: opt.Registry.Engine.JSGlobals(), UserAgent: ua,
 		}, ob.Page.FinalURL)
 		switch {
@@ -234,7 +244,7 @@ func Scan(ctx context.Context, opt Options, target string) (*scan.Result, error)
 		outs = append(outs, opt.Registry.Engine.Run(in, engine.Options{MinHealth: opt.MinHealth}))
 	}
 	ex := web.Extract(pages, final.Hostname())
-	out := opt.Registry.Engine.Resolve(engine.Merge(outs, 0))
+	out := opt.Registry.Engine.Resolve(engine.Merge(outs, opt.MaxEvidence))
 	ex.Warnings = append(append(append(append([]scan.Warning{}, crawl.Warnings...), browserWarn...), probedWarnings(probed)...), ex.Warnings...)
 
 	res := &scan.Result{

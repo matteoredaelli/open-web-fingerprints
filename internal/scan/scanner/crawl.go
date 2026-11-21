@@ -33,6 +33,8 @@ type CrawlOptions struct {
 	// IgnoreRobots fetches pages that robots.txt asks crawlers to avoid. The page
 	// the user names is always fetched.
 	IgnoreRobots bool
+	// MaxDelay caps a robots.txt Crawl-delay (default MaxDelay).
+	MaxDelay time.Duration
 }
 
 // Defaults for a crawl.
@@ -72,6 +74,10 @@ func Crawl(ctx context.Context, opt CrawlOptions, target string) (*Crawled, erro
 	}
 	if opt.MaxPages <= 0 {
 		opt.MaxPages = DefaultMaxPages
+	}
+	maxDelay := opt.MaxDelay
+	if maxDelay <= 0 {
+		maxDelay = MaxDelay
 	}
 	final, err := url.Parse(main.Page.FinalURL)
 	if err != nil {
@@ -140,8 +146,8 @@ func Crawl(ctx context.Context, opt CrawlOptions, target string) (*Crawled, erro
 			if h.rules != nil && h.rules.CrawlDelay > wait {
 				wait = h.rules.CrawlDelay
 			}
-			if wait > MaxDelay {
-				wait = MaxDelay
+			if wait > maxDelay {
+				wait = maxDelay
 			}
 			if !sleep(ctx, wait) {
 				break

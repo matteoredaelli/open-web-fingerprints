@@ -53,8 +53,8 @@ func newFriendsCmd() *cobra.Command {
 		},
 	}
 	n.add(c)
-	c.Flags().DurationVar(&n.delay, "delay", scanner.DefaultDelay, "pause before each request to another site")
-	c.Flags().IntVar(&max, "friends-max", scanner.DefaultMaxFriends, "most candidate domains to look at")
+	c.Flags().DurationVar(&n.delay, "delay", cfg.Crawl.Delay.D(), "pause before each request to another site")
+	c.Flags().IntVar(&max, "friends-max", cfg.Friends.Max, "most candidate domains to look at")
 	return c
 }
 

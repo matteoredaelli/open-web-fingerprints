@@ -16,6 +16,7 @@ import (
 func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()
+	cfg, cfgPath, cfgErr = loadConfig(os.Args[1:])
 	if err := newRootCmd().ExecuteContext(ctx); err != nil {
 		fmt.Fprintln(os.Stderr, "owfscan:", err)
 		os.Exit(1)

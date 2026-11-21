@@ -21,6 +21,13 @@ import (
 	"github.com/chromedp/chromedp"
 )
 
+// Defaults of a run.
+const (
+	DefaultTimeout     = 30 * time.Second
+	DefaultSettle      = 2 * time.Second
+	DefaultMaxRequests = 300
+)
+
 // Options configure one browser run.
 type Options struct {
 	// ChromePath is the Chrome or Chromium executable; empty looks for a standard one.
@@ -88,13 +95,13 @@ func Run(ctx context.Context, opt Options, target string) (*Result, error) {
 		return nil, fmt.Errorf("browser: %q is not an http(s) URL", target)
 	}
 	if opt.Timeout <= 0 {
-		opt.Timeout = 30 * time.Second
+		opt.Timeout = DefaultTimeout
 	}
 	if opt.Settle <= 0 {
-		opt.Settle = 2 * time.Second
+		opt.Settle = DefaultSettle
 	}
 	if opt.MaxRequests <= 0 {
-		opt.MaxRequests = 300
+		opt.MaxRequests = DefaultMaxRequests
 	}
 	px, err := newProxy(opt.AllowPrivate, opt.MaxRequests)
 	if err != nil {

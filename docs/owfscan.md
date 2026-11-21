@@ -617,6 +617,41 @@ What it costs, because it contacts sites you did not name:
 On `mr70.eu` (my own site) it found 2 candidates (creativecommons.org, fosstodon.org),
 neither linking back: 0 friends. That is the honest result, not a sample of a busy site.
 
+## Configuration file (`owfscan config`)
+
+The limits and lists that owfscan uses (timeouts, the most pages, friends, related domains
+and probes, the browser's limits, the TLDs to try) can be changed in a TOML file instead of
+on every command line.
+
+```sh
+owfscan config init            # writes ~/.config/owf/owfscan.toml with every default, commented
+owfscan config init -o my.toml # or elsewhere; --force overwrites, --stdout only prints
+owfscan config show            # the values in force, and the file they come from
+owfscan config show --ceilings # also the largest value each one may have
+owfscan config path
+```
+
+- **Where.** `--config FILE`, else `OWFSCAN_CONFIG`, else `$XDG_CONFIG_HOME/owf/owfscan.toml`,
+  else `$HOME/.config/owf/owfscan.toml` (also on macOS). No file: the built-in values, which are
+  what `config init` writes.
+- **Order.** A flag beats the file, the file beats the built-in value. The flag defaults shown by
+  `--help` are the ones of the file. Of the two environment variables that already existed,
+  `OWFSCAN_CACHE` and `OWFSCAN_CHROME` beat the file too.
+- **Sections.** `[fetch]` (timeout, max_body_bytes, max_redirects, max_age, cache_dir,
+  user_agent), `[crawl]` (max_pages, delay, max_delay), `[friends]` (max), `[related]` (max,
+  tlds), `[active]` (max, max_body_bytes), `[browser]` (timeout, settle, max_requests,
+  chrome_path), `[result]` (max_evidence). Durations are text: `"500ms"`, `"20s"`, `"24h"`.
+  A list in the file replaces the default list (`related.tlds`); a key left out keeps its default.
+- **Strict.** A key or section that does not exist is an error (it is probably a typo), every
+  value has a range and a ceiling, all problems are reported together, and a file that exists but
+  is wrong stops every command except `config` (so you can fix it); it is never ignored silently.
+  The ceilings catch typos such as ten million pages; they are not a policy, and `crawl.delay`
+  cannot go below 100 ms.
+- **What the file cannot do.** It does not turn on `--browser`, `--friends`, `--related`,
+  `--active` or `--related-tlds`, and it cannot lift the guards `--allow-private`, `--insecure`
+  or `--ignore-robots`: a file copied from somewhere else must not change whom a run contacts.
+  `related.tlds` is only the list that `--related-tlds` uses.
+
 ## Loading the registry
 
 `scan` checks the export against its schema and manifest before use. For a registry of

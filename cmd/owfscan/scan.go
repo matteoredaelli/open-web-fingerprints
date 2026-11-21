@@ -16,7 +16,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/matteoredaelli/open-web-fingerprints/internal/scan/engine"
-	"github.com/matteoredaelli/open-web-fingerprints/internal/scan/fetch"
 	"github.com/matteoredaelli/open-web-fingerprints/internal/scan/observe"
 	"github.com/matteoredaelli/open-web-fingerprints/internal/scan/scanner"
 	"github.com/matteoredaelli/open-web-fingerprints/scan"
@@ -66,15 +65,15 @@ func newScanCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			opt := scanner.Options{
-				Registry: reg, NoFavicon: noFavicon, MinHealth: minHealth, Version: version(),
-				Depth: n.depth, MaxPages: n.maxPages, Delay: n.delay, IgnoreRobots: n.ignoreRobots,
-				Friends: friends, FriendsMax: friendsMax,
-				Related: related, RelatedMax: relatedMax, RelatedTLDs: tf.tlds(),
-				Active: active, ActiveMax: activeMax,
-				Browser: useBrowser, BrowserPath: chrome, BrowserTimeout: browserTimeout,
-				Fetch: fetch.Options{Timeout: n.timeout, AllowPrivate: n.allowPrivate, Insecure: n.insecure, CacheDir: n.cacheDir, MaxAge: n.maxAge},
-			}
+			var opt scanner.Options
+			cfg.Apply(&opt) // the limits without a flag; the flags below override the rest
+			opt.Registry, opt.NoFavicon, opt.MinHealth, opt.Version = reg, noFavicon, minHealth, version()
+			opt.Depth, opt.MaxPages, opt.Delay, opt.IgnoreRobots = n.depth, n.maxPages, n.delay, n.ignoreRobots
+			opt.Friends, opt.FriendsMax = friends, friendsMax
+			opt.Related, opt.RelatedMax, opt.RelatedTLDs = related, relatedMax, tf.tlds()
+			opt.Active, opt.ActiveMax = active, activeMax
+			opt.Browser, opt.BrowserPath, opt.BrowserTimeout = useBrowser, chrome, browserTimeout
+			opt.Fetch = n.fetchOptions()
 			if !noDNS {
 				opt.Resolver = observe.SystemResolver{}
 			}
@@ -103,13 +102,13 @@ func newScanCmd() *cobra.Command {
 	c.Flags().BoolVar(&friends, "friends", false, "also look for friend domains: linked from the home page and linking back to it (contacts other sites; see `owfscan friends --help`)")
 	c.Flags().BoolVar(&related, "related", false, "also look for domains that may belong to the same owner, with the evidence (contacts other sites; see `owfscan related --help`)")
 	tf.add(c)
-	c.Flags().IntVar(&relatedMax, "related-max", scanner.DefaultMaxRelated, "most candidate domains to read with --related")
+	c.Flags().IntVar(&relatedMax, "related-max", cfg.Related.Max, "most candidate domains to read with --related")
 	c.Flags().BoolVar(&active, "active", false, "also send the probes a reviewer approved (GET to fixed paths of the site, robots.txt honoured; see `owf probe --help`)")
-	c.Flags().IntVar(&activeMax, "active-max", scanner.DefaultActiveMax, "most probe requests to send with --active")
+	c.Flags().IntVar(&activeMax, "active-max", cfg.Active.Max, "most probe requests to send with --active")
 	c.Flags().BoolVar(&useBrowser, "browser", false, "also open the first page in headless Chrome, to see global variables, XHR calls and the DOM after scripts ran (runs the page's JavaScript; see docs/owfscan.md)")
-	c.Flags().StringVar(&chrome, "chrome", os.Getenv("OWFSCAN_CHROME"), "Chrome or Chromium executable for --browser (env OWFSCAN_CHROME; default: the usual places)")
-	c.Flags().DurationVar(&browserTimeout, "browser-timeout", 30*time.Second, "time allowed to the browser for the page")
-	c.Flags().IntVar(&friendsMax, "friends-max", scanner.DefaultMaxFriends, "most candidate domains to look at with --friends")
+	c.Flags().StringVar(&chrome, "chrome", envOr("OWFSCAN_CHROME", cfg.Browser.ChromePath), "Chrome or Chromium executable for --browser (env OWFSCAN_CHROME; default: the usual places)")
+	c.Flags().DurationVar(&browserTimeout, "browser-timeout", cfg.Browser.Timeout.D(), "time allowed to the browser for the page")
+	c.Flags().IntVar(&friendsMax, "friends-max", cfg.Friends.Max, "most candidate domains to look at with --friends")
 	c.Flags().StringVar(&verifyCache, "verify-cache", "", "where to remember that a registry file was verified (default: the user cache directory; \"off\" verifies every time)")
 	c.Flags().StringVar(&registry, "registry", os.Getenv("OWFSCAN_REGISTRY"), "registry export to apply (env OWFSCAN_REGISTRY)")
 	c.Flags().StringVar(&minHealth, "min-health", "", "use only rules at least this healthy: broken (all, default), degraded, unknown, ok")

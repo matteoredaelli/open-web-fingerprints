@@ -24,13 +24,15 @@ type ActiveOptions struct {
 	Max int
 	// Delay is the pause before each request.
 	Delay time.Duration
+	// MaxBody is how much of an answer is kept for the rules (default DefaultMaxProbeBody).
+	MaxBody int
 }
 
 // DefaultActiveMax bounds the requests one scan sends to the site beyond the page it was asked for.
 const DefaultActiveMax = 30
 
-// maxProbeBody is how much of an answer is kept for the rules.
-const maxProbeBody = 1 << 20
+// DefaultMaxProbeBody is how much of an answer is kept for the rules.
+const DefaultMaxProbeBody = 1 << 20
 
 // Probed is what the probes found.
 type Probed struct {
@@ -55,6 +57,9 @@ type Probed struct {
 func RunProbes(ctx context.Context, opt ActiveOptions, origin *url.URL, site string, plan []engine.ProbePlan) *Probed {
 	if opt.Max <= 0 {
 		opt.Max = DefaultActiveMax
+	}
+	if opt.MaxBody <= 0 {
+		opt.MaxBody = DefaultMaxProbeBody
 	}
 	out := &Probed{Responses: map[string]matcher.ProbeResponse{}, Sent: map[string]bool{}}
 	rep := &out.Report
@@ -100,8 +105,8 @@ func RunProbes(ctx context.Context, opt ActiveOptions, origin *url.URL, site str
 			continue
 		}
 		body := resp.Body
-		if len(body) > maxProbeBody {
-			body = body[:maxProbeBody]
+		if len(body) > opt.MaxBody {
+			body = body[:opt.MaxBody]
 		}
 		hdr := map[string]string{}
 		for k, vs := range resp.Header {
