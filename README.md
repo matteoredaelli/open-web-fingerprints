@@ -1,6 +1,6 @@
 # open-web-fingerprints
 
-![OWF](docs/images/owf.svg)
+![OWF](docs/assets/owf.svg)
 
 Open registry and toolkit for cataloguing web technologies and infrastructure
 and the fingerprints used to identify them.
