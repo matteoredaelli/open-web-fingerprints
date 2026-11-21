@@ -306,6 +306,23 @@ A technology's first usable CPE 2.3 string gives its vendor
 - Real data (Enthec + HTTP Archive, merged): 407 vendors, 468 of 7743
   technologies have one (only 6% of technologies carry a CPE), export valid.
 
+### Curating a technology's website, description and vendor
+
+```sh
+owf technology set react --website https://react.dev
+owf technology set jquery-ui --vendor jquery
+owf technology set x --clear-website        # or --clear-vendor, --description "..."
+```
+
+A technology's fields come from its first source, and a refresh from that source
+overwrites them. `technology set` records the fields a reviewer chose in
+`curated` (`website`, `description`, `vendor`; in the export too) and refreshes keep
+exactly those, while every other field still follows the source. The name, slug,
+categories and rules are not editable here. The vendor must exist (`owf vendor list`).
+Used for the sites that moved (angular.io to angular.dev); conflicts that only
+disagreed on a website were closed as reviewed, and the chosen site is set with this
+command.
+
 ### Curating vendors
 
 ```sh

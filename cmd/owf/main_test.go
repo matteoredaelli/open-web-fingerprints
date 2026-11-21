@@ -117,12 +117,26 @@ func TestEndToEnd(t *testing.T) {
 	if out := mustRun(t, db, "technology", "show", "php"); !strings.Contains(out, "vendor:   The PHP Group (cpe: php)") {
 		t.Errorf("curated name must survive:\n%s", out)
 	}
+	out = mustRun(t, db, "technology", "set", "php", "--website", "https://www.php.net", "--vendor", "php")
+	if !strings.Contains(out, `curated [vendor, website]`) {
+		t.Errorf("technology set:\n%s", out)
+	}
+	if out := mustRun(t, db, "import", "enthec-webappanalyzer", "--snapshot", fixture, "--revision", "9e52f10"); !strings.Contains(out, "no changes") {
+		t.Errorf("re-import after curating a technology:\n%s", out)
+	}
+	if out := mustRun(t, db, "technology", "show", "php"); !strings.Contains(out, "https://www.php.net") {
+		t.Errorf("curated website must survive:\n%s", out)
+	}
 	for name, args := range map[string][]string{
-		"nothing to change":  {"vendor", "set", "php"},
-		"unknown vendor":     {"vendor", "set", "nope", "--name", "x"},
-		"bad website":        {"vendor", "set", "php", "--website", "php.net"},
-		"empty name":         {"vendor", "set", "php", "--name", ""},
-		"both website flags": {"vendor", "set", "php", "--website", "https://a.example", "--clear-website"},
+		"technology: nothing to change": {"technology", "set", "php"},
+		"technology: unknown":           {"technology", "set", "nope", "--website", "https://a.example"},
+		"technology: both flags":        {"technology", "set", "php", "--website", "https://a.example", "--clear-website"},
+		"technology: unknown vendor":    {"technology", "set", "php", "--vendor", "nope"},
+		"nothing to change":             {"vendor", "set", "php"},
+		"unknown vendor":                {"vendor", "set", "nope", "--name", "x"},
+		"bad website":                   {"vendor", "set", "php", "--website", "php.net"},
+		"empty name":                    {"vendor", "set", "php", "--name", ""},
+		"both website flags":            {"vendor", "set", "php", "--website", "https://a.example", "--clear-website"},
 	} {
 		if _, err := run(t, db, args...); err == nil {
 			t.Errorf("%s: expected an error", name)

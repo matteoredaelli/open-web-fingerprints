@@ -126,8 +126,8 @@ before claiming value. Prefer sources with different data and clear licences.
 
 ## CLI
 
-`init`, `source list|info|refresh|review`, `import`, `technology list|show`,
-`vendor list|show|set`, `fingerprint list|validate|test|lint|correct`, `probe list|review`,
+`init`, `source list|info|refresh|review`, `import`, `technology list|show|set`,
+ `vendor list|show|set`, `fingerprint list|validate|test|lint|correct`, `probe list|review`,
 `conflict list|show|resolve`, `export`, `verify`, `stats`. `owfscan`:
 `scan`, `extract`, `links`, `social`, `observe`. `refresh` fetches one commit
 with `git` (sparse, pinned by SHA) and imports it; `--dry-run` first.

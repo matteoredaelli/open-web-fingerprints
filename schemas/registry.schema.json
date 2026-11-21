@@ -468,6 +468,18 @@
         "vendor_id": {
           "$ref": "#/$defs/id_vendor"
         },
+        "curated": {
+          "description": "Fields a reviewer set; refreshes keep them.",
+          "type": "array",
+          "items": {
+            "enum": [
+              "website",
+              "description",
+              "vendor"
+            ]
+          },
+          "uniqueItems": true
+        },
         "cpe": {
           "type": "array",
           "items": {

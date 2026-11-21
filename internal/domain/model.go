@@ -197,7 +197,10 @@ type Technology struct {
 	OpenSource  *bool        `json:"open_source,omitempty"`
 	SaaS        *bool        `json:"saas,omitempty"`
 	Status      Status       `json:"status"`
-	Provenance  []Provenance `json:"provenance"`
+	// Curated names the fields a reviewer set (website, description, vendor).
+	// Refreshes keep them, whatever the source says.
+	Curated    []string     `json:"curated,omitempty"`
+	Provenance []Provenance `json:"provenance"`
 }
 
 // Fingerprint is one observation rule for one technology.

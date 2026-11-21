@@ -162,7 +162,7 @@ func newTechnologyCmd(o *options) *cobra.Command {
 		},
 	}
 	show.Flags().BoolVar(&asJSON, "json", false, "output JSON")
-	c.AddCommand(list, show)
+	c.AddCommand(list, show, newTechnologySetCmd(o))
 	return c
 }
 
@@ -281,6 +281,62 @@ func newVendorShowCmd(o *options) *cobra.Command {
 			return nil
 		},
 	}
+}
+
+func newTechnologySetCmd(o *options) *cobra.Command {
+	var website, description, vendor string
+	var clearWebsite, clearVendor bool
+	c := &cobra.Command{
+		Use:   "set <slug>",
+		Short: "Set a technology's website, description or vendor",
+		Long: "set records a reviewer's choice for a technology. The fields set this way are\n" +
+			"listed in `curated` and refreshes keep them, whatever the sources say. The name,\n" +
+			"slug, categories and rules are not changed here. Do not run it while an import is\n" +
+			"running.",
+		Args: cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			var p curate.TechnologyPatch
+			f := cmd.Flags()
+			empty := ""
+			switch {
+			case f.Changed("website") && clearWebsite:
+				return fmt.Errorf("use either --website or --clear-website")
+			case f.Changed("website"):
+				p.Website = &website
+			case clearWebsite:
+				p.Website = &empty
+			}
+			switch {
+			case f.Changed("vendor") && clearVendor:
+				return fmt.Errorf("use either --vendor or --clear-vendor")
+			case f.Changed("vendor"):
+				p.VendorSlug = &vendor
+			case clearVendor:
+				p.VendorSlug = &empty
+			}
+			if f.Changed("description") {
+				p.Description = &description
+			}
+			r, err := o.open(cmd.Context())
+			if err != nil {
+				return err
+			}
+			defer func() { _ = r.Close() }()
+			t, err := curate.Technology(cmd.Context(), r, args[0], p)
+			if err != nil {
+				return err
+			}
+			fmt.Fprintf(cmd.OutOrStdout(), "%s: website %q, vendor %q, curated [%s]\n",
+				t.Slug, t.Website, t.VendorID, strings.Join(t.Curated, ", "))
+			return nil
+		},
+	}
+	c.Flags().StringVar(&website, "website", "", "website (http or https URL)")
+	c.Flags().BoolVar(&clearWebsite, "clear-website", false, "remove the website")
+	c.Flags().StringVar(&description, "description", "", "description")
+	c.Flags().StringVar(&vendor, "vendor", "", "vendor slug (see `owf vendor list`)")
+	c.Flags().BoolVar(&clearVendor, "clear-vendor", false, "remove the vendor")
+	return c
 }
 
 func newVendorSetCmd(o *options) *cobra.Command {

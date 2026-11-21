@@ -226,6 +226,7 @@ var (
 				dst.Provenance = prov
 				return
 			}
+			defer keepCurated(dst, old)
 			dst.Status = old.Status
 			if multiSource(prov) {
 				// What other sources contributed through a merge is kept: extra
@@ -333,4 +334,19 @@ func fieldOf(f *domain.Fingerprint, name string) *string {
 		return &f.Pattern
 	}
 	return nil
+}
+
+// keepCurated restores the fields a reviewer set on a technology.
+func keepCurated(dst *domain.Technology, old domain.Technology) {
+	dst.Curated = old.Curated
+	for _, f := range old.Curated {
+		switch f {
+		case "website":
+			dst.Website = old.Website
+		case "description":
+			dst.Description = old.Description
+		case "vendor":
+			dst.VendorID = old.VendorID
+		}
+	}
 }
