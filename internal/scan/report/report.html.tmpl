@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<meta name="color-scheme" content="light dark">
+<title>{{.Title}} — technology report</title>
+<style>
+:root{--bg:#f4f6fb;--card:#fff;--ink:#16202e;--mute:#5b6678;--line:#e3e8f1;--track:#e9edf5;--accent:#4f46e5;--accent2:#06b6d4;--ok:#16a34a;--soon:#d97706;--bad:#dc2626;--shadow:0 1px 2px rgba(16,24,40,.05),0 8px 24px rgba(16,24,40,.06)}
+@media (prefers-color-scheme:dark){:root{--bg:#0d1220;--card:#151c2e;--ink:#e8edf7;--mute:#9aa6bd;--line:#243049;--track:#222c42;--shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35)}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+code,.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.88em}
+.wrap{max-width:1120px;margin:0 auto;padding:0 20px}
+.hero{background:radial-gradient(1200px 400px at 85% -20%,rgba(6,182,212,.55),transparent 60%),radial-gradient(900px 500px at 0% 0%,rgba(124,58,237,.6),transparent 55%),linear-gradient(135deg,#1e1b4b,#312e81 55%,#0e7490);color:#fff;padding:44px 0 90px}
+.eyebrow{letter-spacing:.14em;text-transform:uppercase;font-size:12px;opacity:.75;font-weight:600}
+.hero h1{margin:6px 0 4px;font-size:clamp(30px,5vw,50px);line-height:1.1;letter-spacing:-.02em;word-break:break-word}
+.hero .url{opacity:.8;word-break:break-all}
+.meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:4px 11px;border-radius:99px;background:rgba(255,255,255,.14);font-size:13px;backdrop-filter:blur(4px)}
+.dot{width:8px;height:8px;border-radius:50%;background:currentColor;display:inline-block}
+.pill.ok .dot{color:#4ade80}.pill.soon .dot{color:#fbbf24}.pill.bad .dot{color:#f87171}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-top:-56px}
+.stat{background:var(--card);border-radius:16px;padding:16px 18px;box-shadow:var(--shadow);border:1px solid var(--line)}
+.stat b{display:block;font-size:30px;line-height:1.1;letter-spacing:-.02em;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent}
+.stat span{color:var(--mute);font-size:13px}
+.banner{margin:22px 0 0;padding:12px 16px;border-radius:12px;background:rgba(217,119,6,.12);border:1px solid rgba(217,119,6,.45);color:var(--ink);font-size:14px}
+.banner b{color:var(--soon)}
+section{margin-top:44px}
+h2{font-size:22px;margin:0 0 4px;letter-spacing:-.01em}
+.sub{color:var(--mute);margin:0 0 18px;max-width:78ch}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:20px}
+.glance{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.glance div{padding:12px 14px;border-radius:12px;background:var(--card);border:1px solid var(--line);box-shadow:var(--shadow)}
+.glance small{display:block;color:var(--mute);font-size:12px;text-transform:uppercase;letter-spacing:.08em}
+.glance strong{font-size:16px}
+.tech-top{display:grid;grid-template-columns:minmax(220px,300px) 1fr;gap:24px;align-items:center}
+.donut{width:100%;max-width:280px;margin:auto;display:block}
+.donut-n{font-size:34px;font-weight:700;fill:var(--ink)}.donut-l{font-size:11px;fill:var(--mute);letter-spacing:.08em;text-transform:uppercase}
+.legend{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:6px 18px}
+.legend li{display:flex;align-items:center;gap:9px}
+.sw{--c:hsl(var(--h) 65% 52%);width:12px;height:12px;border-radius:4px;background:var(--c);flex:none}
+.legend em{margin-left:auto;font-style:normal;color:var(--mute);font-variant-numeric:tabular-nums}
+.grp{margin-top:28px}
+.grp h3{display:flex;align-items:center;gap:9px;margin:0 0 12px;font-size:16px}
+.grp h3 small{color:var(--mute);font-weight:500}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:14px}
+.tech{--c:hsl(var(--h) 65% 52%);background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;box-shadow:var(--shadow);border-top:3px solid var(--c)}
+.t-head{display:flex;gap:12px;align-items:center}
+.logo{width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,var(--c),hsl(calc(var(--h) + 40) 70% 45%));color:#fff;display:grid;place-items:center;font-weight:700;font-size:18px;flex:none}
+.t-name{font-weight:650;font-size:16px;line-height:1.2;word-break:break-word}
+.t-name small{color:var(--mute);font-weight:500}
+.t-vendor{color:var(--mute);font-size:12.5px}
+.conf{display:flex;align-items:center;gap:10px;margin:12px 0 4px;font-size:12.5px;color:var(--mute)}
+.bar{flex:1;height:7px;border-radius:99px;background:var(--track);overflow:hidden}
+.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--c,var(--accent)),var(--accent2));border-radius:99px}
+.badge{display:inline-block;padding:1px 8px;border-radius:99px;font-size:11.5px;border:1px solid var(--line);color:var(--mute);white-space:nowrap}
+.badge.ok{color:var(--ok);border-color:currentColor}.badge.degraded,.badge.soon{color:var(--soon);border-color:currentColor}.badge.broken,.badge.bad{color:var(--bad);border-color:currentColor}
+details{margin-top:8px}
+summary{cursor:pointer;color:var(--mute);font-size:13px;list-style:none}
+summary::-webkit-details-marker{display:none}
+summary::before{content:"▸ ";color:var(--accent)}details[open] summary::before{content:"▾ "}
+.ev{margin:8px 0 0;padding:0;list-style:none;display:grid;gap:6px}
+.ev li{padding:8px 10px;border-radius:10px;background:var(--bg);font-size:12.5px;word-break:break-word}
+.ev .k{color:var(--accent);font-weight:600}
+.ev .m{display:block;color:var(--mute);margin-top:2px}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{text-align:left;color:var(--mute);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.07em;padding:6px 10px 6px 0}
+td{padding:7px 10px 7px 0;border-top:1px solid var(--line);vertical-align:top;word-break:break-word}
+.sec{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px}
+.sec div{padding:11px 13px;border-radius:12px;border:1px solid var(--line);background:var(--card)}
+.sec .y{border-left:4px solid var(--ok)}.sec .n{border-left:4px solid var(--track);opacity:.8}
+.sec b{display:block}.sec small{color:var(--mute)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{display:inline-flex;align-items:center;gap:8px;padding:6px 12px 6px 6px;border-radius:99px;background:var(--card);border:1px solid var(--line);box-shadow:var(--shadow)}
+.chip .logo{width:26px;height:26px;border-radius:50%;font-size:12px}
+.chip small{color:var(--mute)}
+.bars{display:grid;gap:7px}
+.bars div{display:grid;grid-template-columns:minmax(120px,230px) 1fr 38px;gap:10px;align-items:center;font-size:13.5px}
+.bars .l{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bars .n{text-align:right;color:var(--mute);font-variant-numeric:tabular-nums}
+.graph{width:100%;height:auto}
+.edge{stroke:var(--line);stroke-width:1.5}.edge.friend{stroke:var(--ok)}.edge.probable{stroke:var(--accent)}
+.node circle{fill:var(--mute)}.node.friend circle{fill:var(--ok)}.node.probable circle{fill:var(--accent)}
+.node.center circle{fill:var(--accent)}
+.node text{font-size:11.5px;fill:var(--ink)}.node.center text{fill:#fff;font-size:10.5px;font-weight:700}
+.key{display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--mute);margin-top:8px}
+.key i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;background:var(--mute)}.key .f i{background:var(--ok)}.key .p i{background:var(--accent)}
+.rel{border-top:1px solid var(--line);padding:11px 0}.rel:first-child{border-top:0}
+.rel b{margin-right:8px}
+.ev-tag{display:inline-block;margin:3px 6px 0 0;padding:1px 9px;border-radius:99px;font-size:12px;background:var(--bg);border:1px solid var(--line)}
+.ev-tag.strong{border-color:var(--accent);color:var(--accent)}.ev-tag.medium{border-color:var(--accent2)}
+.cov{display:grid;grid-template-columns:220px 1fr;gap:24px;align-items:center}
+.ring{--p:0;width:200px;aspect-ratio:1;border-radius:50%;background:conic-gradient(var(--accent) calc(var(--p)*1%),var(--track) 0);display:grid;place-items:center;margin:auto}
+.ring div{width:150px;aspect-ratio:1;border-radius:50%;background:var(--card);display:grid;place-items:center;text-align:center}
+.ring b{font-size:34px;line-height:1}.ring small{color:var(--mute);display:block;font-size:12px}
+.note{border-left:4px solid var(--accent2);background:var(--bg);padding:12px 16px;border-radius:0 12px 12px 0;color:var(--mute);font-size:14px;margin-top:16px}
+.list{margin:0;padding:0;list-style:none}.list li{padding:6px 0;border-top:1px solid var(--line)}.list li:first-child{border-top:0}
+.warn{color:var(--soon)}
+footer{margin:56px 0 40px;color:var(--mute);font-size:13px;border-top:1px solid var(--line);padding-top:18px}
+@media (max-width:760px){.tech-top,.cov{grid-template-columns:1fr}.bars div{grid-template-columns:1fr 1fr 34px}}
+@media print{body{background:#fff;color:#000}.hero{background:#1e1b4b!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}.card,.tech,.stat{box-shadow:none}details>*{display:block}details .ev{display:grid}section{break-inside:avoid-page}}
+</style>
+</head>
+<body>
+<header class="hero"><div class="wrap">
+  <div class="eyebrow">Technology report</div>
+  <h1>{{.Title}}</h1>
+  <div class="url">{{with safe .URL}}<a href="{{.}}" rel="noopener noreferrer nofollow" style="color:inherit">{{.}}</a>{{else}}{{$.URL}}{{end}}</div>
+  <div class="meta">
+    {{if .Status}}<span class="pill {{.StatusClass}}"><i class="dot"></i> HTTP {{.Status}}</span>{{end}}
+    <span class="pill">Scanned {{.ScannedAt}}</span>
+    <span class="pill">{{.Scanner}}</span>
+  </div>
+</div></header>
+
+<main class="wrap">
+  <div class="stats">
+  {{range .Stats}}<div class="stat"><b>{{.Value}}</b><span>{{.Label}}</span></div>{{end}}
+  </div>
+
+  {{if .Notice}}<div class="banner"><b>Internal use.</b> {{.Notice}}</div>{{end}}
+
+  {{if .Glance}}
+  <section>
+    <h2>At a glance</h2>
+    <p class="sub">The main technology found in each of the categories people usually ask about.</p>
+    <div class="glance">{{range .Glance}}<div><small>{{.Label}}</small><strong>{{.Value}}</strong></div>{{end}}</div>
+  </section>
+  {{end}}
+
+  <section>
+    <h2>Technologies</h2>
+    <p class="sub">What the rules of the registry recognised on the pages read. Each card shows the evidence behind it. The bar is the confidence of the best matching rule, <em>not</em> a probability; most rules have not been tested yet, which the health badge says.</p>
+    {{if .Groups}}
+    <div class="card tech-top">
+      <div>{{.Donut}}</div>
+      <ul class="legend">{{range .Groups}}<li><i class="sw" style="{{.Hue}}"></i>{{.Name}}<em>{{.Count}}</em></li>{{end}}</ul>
+    </div>
+    {{range .Groups}}
+    <div class="grp">
+      <h3><i class="sw" style="{{.Hue}}"></i>{{.Name}} <small>{{.Count}}</small></h3>
+      <div class="grid">
+      {{range .Techs}}
+        <article class="tech" style="{{.Hue}}">
+          <div class="t-head">
+            <div class="logo" aria-hidden="true">{{.Initial}}</div>
+            <div>
+              <div class="t-name">{{.Name}}{{if .Version}} <small>{{.Version}}</small>{{end}}</div>
+              {{if .Vendor}}<div class="t-vendor">{{.Vendor}}</div>{{end}}
+            </div>
+          </div>
+          <div class="conf"><div class="bar"><i style="{{.Width}}"></i></div><span>{{.Confidence}}%</span><span class="badge {{.Health}}" title="Health of the best rule: ok needs a passing positive and negative test">{{.Health}}</span></div>
+          <details>
+            <summary>{{len .Evidence}}{{if .Extra}}+{{.Extra}}{{end}} matching {{if eq (len .Evidence) 1}}rule{{else}}rules{{end}} · {{range $i, $s := .Sources}}{{if $i}}, {{end}}{{$s}}{{end}}</summary>
+            <ul class="ev">
+            {{range .Evidence}}<li><span class="k">{{.Observation}}</span>{{if .Target}} <code>{{.Target}}</code>{{end}}{{if .Group}} <span class="badge">group</span>{{end}}{{if .Version}} <span class="badge">version {{.Version}}</span>{{end}}<span class="badge {{.Health}}" style="float:right">{{.Health}}</span>{{if .Matched}}<span class="m mono">{{.Matched}}</span>{{end}}</li>{{end}}
+            {{if .Extra}}<li>… and {{.Extra}} more rules.</li>{{end}}
+            </ul>
+          </details>
+        </article>
+      {{end}}
+      </div>
+    </div>
+    {{end}}
+    {{else}}
+    <div class="card">No technology matched on the pages read. That does not mean none is used: see <a href="#coverage">What was not seen</a>.</div>
+    {{end}}
+
+    {{if .Implied}}
+    <div class="grp"><h3>Implied <small>not seen on the site, but they follow from what was found</small></h3>
+    <div class="chips">{{range .Implied}}<span class="chip"><span class="badge">{{.Conf}}%</span> <span>{{.Name}} <small>implied by {{.By}}</small></span></span>{{end}}</div></div>
+    {{end}}
+    {{if .Suppressed}}
+    <div class="grp"><h3>Matched but not reported <small>the registry says otherwise</small></h3>
+    <div class="chips">{{range .Suppressed}}<span class="chip"><span class="badge">{{.Conf}}%</span> <span>{{.Name}} <small>{{.Why}}</small></span></span>{{end}}</div></div>
+    {{end}}
+  </section>
+
+  {{if or .IPs .DNS .TLS .Security}}
+  <section>
+    <h2>Infrastructure</h2>
+    <p class="sub">Where the site is served from and how it is set up, as seen from outside.</p>
+    <div class="two">
+      {{if or .IPs .DNS}}
+      <div class="card">
+        <h3 style="margin-top:0">Network</h3>
+        {{if .IPs}}<p>{{range $i, $ip := .IPs}}{{if $i}} · {{end}}<code>{{$ip}}</code>{{end}}</p>{{end}}
+        {{if .DNS}}<table><tr><th>Record</th><th>Values</th></tr>{{range .DNS}}<tr><td><b>{{.Type}}</b></td><td>{{range .Values}}<div class="mono">{{.}}</div>{{end}}</td></tr>{{end}}</table>{{end}}
+      </div>
+      {{end}}
+      {{with .TLS}}
+      <div class="card">
+        <h3 style="margin-top:0">Certificate</h3>
+        <table>
+          {{if .Issuer}}<tr><td>Issuer</td><td>{{.Issuer}}</td></tr>{{end}}
+          {{if .Subject}}<tr><td>Subject</td><td>{{.Subject}}</td></tr>{{end}}
+          {{if .Version}}<tr><td>Protocol</td><td>{{.Version}}</td></tr>{{end}}
+          {{if .NotAfter}}<tr><td>Valid until</td><td>{{.NotAfter}} <span class="badge {{.Class}}">{{if lt .DaysLeft 0}}expired{{else}}{{.DaysLeft}} days left{{end}}</span></td></tr>{{end}}
+          {{if .Names}}<tr><td>Names</td><td>{{range .Names}}<div class="mono">{{.}}</div>{{end}}</td></tr>{{end}}
+        </table>
+      </div>
+      {{end}}
+    </div>
+    {{if .Security}}
+    <div class="card" style="margin-top:16px">
+      <h3 style="margin-top:0">Browser-facing headers <small style="color:var(--mute);font-weight:500">{{.SecPresent}} of {{.SecTotal}} present on the first page</small></h3>
+      <div class="sec">{{range .Security}}<div class="{{if .Present}}y{{else}}n{{end}}"><b>{{.Name}}</b><small>{{if .Present}}{{if .Value}}<span class="mono">{{.Value}}</span>{{else}}present{{end}}{{else}}not set · {{.Note}}{{end}}</small></div>{{end}}</div>
+      <p class="note">This lists headers the first response carried, nothing more: it is not a security assessment.{{if .HeadersFiltered}} Headers that change on every call (date, request ids, cookies) are left out of this report.{{end}}</p>
+    </div>
+    {{end}}
+  </section>
+  {{end}}
+
+  {{if or .Socials .Contacts .Domains}}
+  <section>
+    <h2>Presence</h2>
+    <p class="sub">Profiles, contact details and sites the pages link to.</p>
+    {{if .Socials}}
+    <div class="chips" style="margin-bottom:18px">
+      {{range .Socials}}<span class="chip" style="{{.Hue}}"><span class="logo" style="--c:hsl(var(--h) 65% 52%)">{{.Initial}}</span>{{if .URL}}<a href="{{.URL}}" rel="noopener noreferrer nofollow">{{.Handle}}</a>{{else}}{{.Handle}}{{end}} <small>{{.Platform}}{{if .Kind}} · {{.Kind}}{{end}}</small></span>{{end}}
+    </div>
+    {{end}}
+    <div class="two">
+      {{if .Contacts}}
+      <div class="card"><h3 style="margin-top:0">Contacts</h3>
+        <ul class="list">{{range .Contacts}}<li><span class="badge">{{.Kind}}</span> {{if .Href}}<a href="{{.Href}}">{{.Value}}</a>{{else}}{{.Value}}{{end}}</li>{{end}}</ul>
+      </div>
+      {{end}}
+      {{if .Domains}}
+      <div class="card"><h3 style="margin-top:0">Other sites linked to</h3>
+        <div class="bars">{{range .Domains}}<div><span class="l">{{.Domain}}</span><span class="bar"><i style="{{.Width}}"></i></span><span class="n">{{.Links}}</span></div>{{end}}</div>
+        {{if .MoreDomains}}<p class="sub" style="margin:10px 0 0">and {{.MoreDomains}} more.</p>{{end}}
+      </div>
+      {{end}}
+    </div>
+  </section>
+  {{end}}
+
+  {{if .HasNetwork}}
+  <section>
+    <h2>Connected domains</h2>
+    <p class="sub">What two sites have in common, with the evidence. This says nothing about who owns what.</p>
+    <div class="card">
+      {{if .Graph}}{{.Graph}}
+      <div class="key"><span class="f"><i></i>friend: links both ways</span><span class="p"><i></i>probably related</span><span><i></i>candidate: weak signals only</span></div>
+      {{else}}<p>No connected domain was found.</p>{{end}}
+    </div>
+    <div class="two" style="margin-top:16px">
+      {{if .HasFriends}}
+      <div class="card"><h3 style="margin-top:0">Friends <small style="color:var(--mute);font-weight:500">{{.FriendsChecked}} of {{.FriendsCandidates}} candidates read</small></h3>
+        {{range .Friends}}<div class="rel"><b>{{.Domain}}</b>{{if .Detail}}<span class="mono">{{.Detail}}</span>{{end}}</div>{{else}}<p style="color:var(--mute)">None: no linked domain links back.</p>{{end}}
+      </div>
+      {{end}}
+      {{if .HasRelated}}
+      <div class="card"><h3 style="margin-top:0">Related domains <small style="color:var(--mute);font-weight:500">{{.RelatedProbable}} probable · {{.RelatedChecked}} of {{.RelatedCandidates}} read</small></h3>
+        {{range .Related}}<div class="rel"><b>{{.Domain}}</b><span class="badge {{if eq .Level "probable"}}ok{{end}}">{{.Level}}</span><div>{{range .Evidence}}<span class="ev-tag {{.Strength}}" title="{{.Detail}}">{{.Kind}}</span>{{end}}</div></div>{{else}}<p style="color:var(--mute)">None found.</p>{{end}}
+      </div>
+      {{end}}
+    </div>
+  </section>
+  {{end}}
+
+  <section id="coverage">
+    <h2>What was not seen</h2>
+    <p class="sub">A technology missing from this report may still be in use. This is how much of the registry could be applied to what was read.</p>
+    <div class="card cov">
+      <div class="ring" style="--p:{{.Pct}}"><div><span><b>{{.Pct}}%</b><small>{{.Evaluated}} of {{.Total}} rules applied</small></span></div></div>
+      <div>
+        {{if .Skipped}}<div class="bars">{{range .Skipped}}<div><span class="l" title="{{.Reason}}">{{.Reason}}</span><span class="bar"><i style="{{.Width}}"></i></span><span class="n">{{.N}}</span></div>{{end}}</div>{{else}}<p>Every rule could be applied.</p>{{end}}
+        <p class="note">Rules that need a browser, a DNS lookup, approved probes or the favicon are only applied when the scan was asked to do so. Nothing here was exploited, and no login or form was used.</p>
+      </div>
+    </div>
+    {{if .Warnings}}<div class="card" style="margin-top:16px"><h3 style="margin-top:0">Warnings</h3><ul class="list">{{range .Warnings}}<li><span class="warn">{{.Code}}</span> {{.Message}}{{if .Ref}} <span class="mono">{{.Ref}}</span>{{end}}</li>{{end}}</ul></div>{{end}}
+  </section>
+
+  <footer>
+    <div>Pages read: {{range $i, $p := .Pages}}{{if $i}} · {{end}}<span class="badge {{$p.Class}}">{{$p.Status}}</span> <span class="mono">{{$p.URL}}</span>{{end}}</div>
+    {{if .Browser}}<div>Browser: {{.Browser}}</div>{{end}}
+    {{if .Active}}<div>Probes: {{.Active}}</div>{{end}}
+    <div>Registry <span class="mono">{{.RegistryShort}}</span>: {{.RegistrySources}}</div>
+    <div>Generated from a scan result by owfscan report. The page contains no script and loads nothing.</div>
+  </footer>
+</main>
+</body>
+</html>

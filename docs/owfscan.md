@@ -618,6 +618,28 @@ What it costs, because it contacts sites you did not name:
 On `mr70.eu` (my own site) it found 2 candidates (creativecommons.org, fosstodon.org),
 neither linking back: 0 friends. That is the honest result, not a sample of a busy site.
 
+## HTML report (`owfscan report`, `scan --html`)
+
+```sh
+owfscan scan example.com --registry registry.json --depth 1 --friends --related --json > example.json
+owfscan report example.json -o example.html      # or: owfscan scan ... --html example.html
+```
+
+One self-contained page: the numbers at a glance, the stack by category (a ring chart, cards with
+the confidence bar, the health badge and the matching rules as evidence), implied and not-reported
+technologies, the infrastructure (addresses, DNS, certificate with days left, which browser-facing
+headers the first response carried), profiles, contacts and linked sites, a graph of friend and
+related domains, and a section **"What was not seen"** with the share of rules that could be
+applied and why the rest could not. The bar on a card is the confidence of the best rule, not a
+probability, and there is no overall score: most rules have no tests, so a grade would claim
+more than is known. The security-headers block lists what was sent; it is not an assessment.
+
+The page has no script and a Content-Security-Policy that forbids loading anything, uses system
+fonts and follows the light or dark setting of the system; it prints. It is made from the result
+alone (nothing is fetched) and does not read the clock, so the same result gives the same bytes.
+Everything that comes from the site is escaped and only http(s) links are written. `--title` sets
+the heading. The registry's redistribution notice is shown on top when there is one.
+
 ## What is left out of the output
 
 - **The page body** is never part of a `scan` result, and `observe` leaves it out unless you

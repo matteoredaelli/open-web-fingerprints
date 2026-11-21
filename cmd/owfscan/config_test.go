@@ -17,6 +17,7 @@ import (
 	"testing"
 
 	"github.com/matteoredaelli/open-web-fingerprints/internal/scan/config"
+	"github.com/matteoredaelli/open-web-fingerprints/internal/scan/scantest"
 )
 
 // withConfig runs a test with a configuration in force, and puts the previous one back.
@@ -253,5 +254,45 @@ func TestTheListComesFromTheConfiguration(t *testing.T) {
 	}
 	if len(o.Observation.Cookies) == 0 || o.Observation.Cookies["sid"] == "" {
 		t.Errorf("set-cookie is not on this list, so the cookies stay: %v", o.Observation.Cookies)
+	}
+}
+
+func TestReportFromAScanResult(t *testing.T) {
+	dir := t.TempDir()
+	srv := volatileServer(t)
+	t.Setenv("OWFSCAN_REGISTRY", "")
+	reg := filepath.Join(dir, "registry.json")
+	if err := os.WriteFile(reg, scantest.RegistryJSON(t), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	js, err := run(t, "", "scan", "--allow-private", "--no-dns", "--no-favicon", "--verify-cache", "off", "--registry", reg, "--json", srv.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	in := filepath.Join(dir, "r.json")
+	if err := os.WriteFile(in, []byte(js), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	out := filepath.Join(dir, "r.html")
+	if _, err := run(t, "", "report", in, "-o", out); err != nil {
+		t.Fatal(err)
+	}
+	b, _ := os.ReadFile(out)
+	if !strings.HasPrefix(string(b), "<!doctype html>") || !strings.Contains(string(b), "What was not seen") {
+		t.Errorf("report:\n%.300s", b)
+	}
+	// Directly from a scan, and a bad input.
+	out2 := filepath.Join(dir, "s.html")
+	if _, err := run(t, "", "scan", "--allow-private", "--no-dns", "--no-favicon", "--verify-cache", "off", "--registry", reg, "--html", out2, srv.URL); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(out2); err != nil {
+		t.Error("scan --html wrote nothing")
+	}
+	if _, err := run(t, "", "scan", "--html", "-", "--registry", reg, srv.URL); err == nil {
+		t.Error("--html - must be refused on scan")
+	}
+	if _, err := run(t, "{}", "report", "-", "-o", "-"); err == nil {
+		t.Error("a file that is not a scan result must be refused")
 	}
 }

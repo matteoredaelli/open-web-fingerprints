@@ -42,6 +42,7 @@ func newScanCmd() *cobra.Command {
 	var browserTimeout time.Duration
 	var friendsMax int
 	var noDNS, noFavicon, verbose, allHeaders bool
+	var htmlOut string
 	c := &cobra.Command{
 		Use:   "scan <url>",
 		Short: "Scan a site: technologies with their evidence, links, domains, social profiles, contacts",
@@ -91,6 +92,14 @@ func newScanCmd() *cobra.Command {
 			if err := scanner.Validate(res); err != nil {
 				return fmt.Errorf("internal error: the result does not satisfy its schema: %w", err)
 			}
+			if htmlOut == "-" {
+				return fmt.Errorf("--html needs a file name; use `owfscan report result.json -o -` to print the page")
+			}
+			if htmlOut != "" {
+				if err := writeReport(cmd, res, htmlOut, ""); err != nil {
+					return err
+				}
+			}
 			if n.asJSON {
 				return printJSON(cmd, res)
 			}
@@ -115,6 +124,7 @@ func newScanCmd() *cobra.Command {
 	c.Flags().StringVar(&minHealth, "min-health", "", "use only rules at least this healthy: broken (all, default), degraded, unknown, ok")
 	c.Flags().BoolVar(&noDNS, "no-dns", false, "do not look up DNS records")
 	c.Flags().BoolVar(&noFavicon, "no-favicon", false, "do not fetch the favicon")
+	c.Flags().StringVar(&htmlOut, "html", "", "also write an HTML report to this file (\"-\" is not allowed here; see `owfscan report`)")
 	c.Flags().BoolVar(&allHeaders, "all-headers", false, "keep the response headers that change on every call (date, request ids, cache state, ...) in the pages of the result")
 	c.Flags().BoolVarP(&verbose, "evidence", "e", false, "list the matching rules of each technology")
 	return c
