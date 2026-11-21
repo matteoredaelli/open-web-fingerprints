@@ -139,7 +139,7 @@ func TestNetworkCommands(t *testing.T) {
 		t.Errorf("socials=%d contacts=%d", len(doc.Socials), len(doc.Contacts))
 	}
 
-	out, err = run(t, "", "observe", "--allow-private", "--no-dns", "--no-html", "--cache-dir", cache, srv.URL)
+	out, err = run(t, "", "observe", "--allow-private", "--no-dns", "--cache-dir", cache, srv.URL)
 	if err != nil {
 		t.Fatal(err)
 	}

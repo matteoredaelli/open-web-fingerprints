@@ -82,6 +82,14 @@ func Write(w io.Writer, c Config) error {
 	p("[result]")
 	p("# Most matching rules listed for one technology.")
 	p("max_evidence = %d", c.Result.MaxEvidence)
+	p("")
+	p("[output]")
+	p("# Response headers left out of the output (page.headers; for `observe` also the cookie")
+	p("# values when set-cookie is listed) because they change on every call or identify the")
+	p("# caller: two calls to the same site seconds apart then give the same headers. The rules")
+	p("# still see all of them, so a rule on x-amz-cf-id or via keeps matching. A name, or a")
+	p("# prefix ending in * (\"x-envoy-*\"); lower case. `--all-headers` keeps everything.")
+	p("drop_headers = %s", multiline(c.Output.DropHeaders))
 	_, err := io.WriteString(w, b.String())
 	return err
 }
@@ -103,5 +111,26 @@ func Ceilings() [][2]string {
 		{"browser.settle", maxSettle.String()},
 		{"browser.max_requests", fmt.Sprint(maxBrowserReqs)},
 		{"result.max_evidence", fmt.Sprint(maxEvidenceList)},
+		{"output.drop_headers", fmt.Sprintf("%d entries", maxDropHeaders)},
 	}
+}
+
+// multiline writes a list of strings, several to a line.
+func multiline(l []string) string {
+	if len(l) == 0 {
+		return "[]"
+	}
+	var b strings.Builder
+	b.WriteString("[\n")
+	line := "  "
+	for _, s := range l {
+		item := fmt.Sprintf("%q, ", s)
+		if len(line)+len(item) > 88 {
+			b.WriteString(strings.TrimRight(line, " ") + "\n")
+			line = "  "
+		}
+		line += item
+	}
+	b.WriteString(strings.TrimRight(line, " ") + "\n]")
+	return b.String()
 }

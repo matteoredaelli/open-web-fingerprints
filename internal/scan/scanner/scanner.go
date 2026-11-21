@@ -156,8 +156,11 @@ type Options struct {
 	MaxDelay      time.Duration
 	ActiveMaxBody int
 	MaxEvidence   int
-	FriendsMax    int
-	MinHealth     string
+	// DropHeaders lists response headers left out of the result's pages (names, or
+	// prefixes ending in "*"). The rules still see them.
+	DropHeaders []string
+	FriendsMax  int
+	MinHealth   string
 	// Version names the scanner in the result.
 	Version string
 	Now     func() time.Time
@@ -256,13 +259,18 @@ func Scan(ctx context.Context, opt Options, target string) (*scan.Result, error)
 		Coverage: out.Coverage, Registry: opt.Registry.Ref,
 		Warnings: append(append([]scan.Warning{}, ex.Warnings...), out.Warnings...),
 	}
+	redactVolatile(res.Technologies, opt.DropHeaders)
 	res.Browser = browserInfo
 	if probed != nil {
 		r := probed.Report
 		res.Active = &r
 	}
 	for _, p := range crawl.Pages {
-		res.Pages = append(res.Pages, p.Page)
+		pg := p.Page
+		if len(opt.DropHeaders) > 0 {
+			pg.Headers, pg.HeadersFiltered = observe.FilterHeaders(pg.Headers, opt.DropHeaders), true
+		}
+		res.Pages = append(res.Pages, pg)
 	}
 	if opt.Friends {
 		// Only the home page counts: the page that was asked for, not the pages a crawl added.
@@ -312,4 +320,29 @@ func probedWarnings(p *Probed) []scan.Warning {
 // asked for, not on the pages a crawl added.
 func homeLinks(c *Crawled, final *url.URL) []scan.Link {
 	return web.Extract([]web.Page{{URL: c.Main.Page.FinalURL, Body: c.Main.HTML}}, final.Hostname()).Links
+}
+
+// redactVolatile empties the matched value of evidence that comes from a header or cookie
+// on the drop list. The rule did match it (that is the trace), but a request id or a
+// cookie value would make two scans of the same site differ.
+func redactVolatile(techs []scan.Technology, drop []string) {
+	if len(drop) == 0 {
+		return
+	}
+	for i := range techs {
+		ev := techs[i].Evidence
+		for j := range ev {
+			e := &ev[j]
+			switch e.Observation {
+			case "http_header":
+				if observe.Dropped(e.Target, drop) {
+					e.Matched = ""
+				}
+			case "set_cookie", "cookie":
+				if observe.Dropped("set-cookie", drop) {
+					e.Matched = ""
+				}
+			}
+		}
+	}
 }

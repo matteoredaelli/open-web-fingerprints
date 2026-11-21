@@ -88,7 +88,10 @@ type Page struct {
 	Redirects   []Redirect `json:"redirects,omitempty"`
 	// Headers are the response headers of the final response, lower-cased names.
 	Headers map[string]string `json:"headers,omitempty"`
-	Cached  bool              `json:"cached,omitempty"` // read from the response cache, not the network
+	// HeadersFiltered is true when headers that change on every call (date, request ids,
+	// cache hits, cookies, ...) were left out of Headers. The rules still saw them.
+	HeadersFiltered bool `json:"headers_filtered,omitempty"`
+	Cached          bool `json:"cached,omitempty"` // read from the response cache, not the network
 }
 
 // Redirect is one hop of a redirect chain.
@@ -141,7 +144,9 @@ type Evidence struct {
 	RuleID      string `json:"rule_id"` // registry ID, fp_<uuidv7>
 	Observation string `json:"observation"`
 	Target      string `json:"target,omitempty"`
-	// Matched is the observed value, cut to a short length.
+	// Matched is the observed value, cut to a short length. It is empty for a header or
+	// cookie that changes on every call (see Page.HeadersFiltered): the rule matched it, but
+	// the value is not repeated here.
 	Matched string `json:"matched,omitempty"`
 	Version string `json:"version,omitempty"`
 	// Health is the health of the rule in the registry: unknown, ok, degraded or

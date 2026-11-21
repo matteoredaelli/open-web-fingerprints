@@ -410,3 +410,22 @@ func TestScanWithBrowser(t *testing.T) {
 		t.Errorf("--browser without Chrome must fail: %v", err)
 	}
 }
+
+func TestRedactVolatileEvidence(t *testing.T) {
+	techs := []scan.Technology{{Name: "CloudFront", Evidence: []scan.Evidence{
+		{Observation: "http_header", Target: "x-amz-cf-id", Matched: "abc123"},
+		{Observation: "http_header", Target: "Server", Matched: "nginx"},
+		{Observation: "set_cookie", Matched: "sid=1; Path=/"},
+		{Observation: "html", Matched: "<b>"},
+	}}}
+	redactVolatile(techs, []string{"x-amz-*", "set-cookie"})
+	m := []string{techs[0].Evidence[0].Matched, techs[0].Evidence[1].Matched, techs[0].Evidence[2].Matched, techs[0].Evidence[3].Matched}
+	if m[0] != "" || m[1] != "nginx" || m[2] != "" || m[3] != "<b>" {
+		t.Errorf("%q", m)
+	}
+	techs = []scan.Technology{{Evidence: []scan.Evidence{{Observation: "http_header", Target: "x-amz-cf-id", Matched: "abc"}}}}
+	redactVolatile(techs, nil)
+	if techs[0].Evidence[0].Matched != "abc" {
+		t.Error("an empty list changes nothing")
+	}
+}

@@ -50,8 +50,9 @@ so). Add `--json` to any command for machine-readable output.
 | `--allow-private` | off | allow private and local addresses (your own network) |
 | `--insecure` | off | accept invalid TLS certificates (the certificate is still recorded) |
 
-`observe` and `scan` also have `--no-dns` and `--no-favicon`; `observe` has
-`--no-html` (leave the body out of the output). `scan` has `--registry FILE`
+`observe` and `scan` also have `--no-dns`, `--no-favicon` and `--all-headers` (see
+"What is left out of the output"); `observe` has `--html` (include the body; it is left out
+by default). `scan` has `--registry FILE`
 (env `OWFSCAN_REGISTRY`), `--min-health` and `-e/--evidence`. There is a hard cap of 5 MiB per body and at most 10 redirects.
 
 ## Scanning for technologies
@@ -197,7 +198,7 @@ CONTACT  VALUE
 ### The observation
 
 ```
-$ owfscan observe mr70.eu --no-html
+$ owfscan observe mr70.eu            # no body, no headers that change on every call
 { "page":        {... "status": 200, "redirects": [...], "headers": {...}},
   "host":        {"ips": [...], "dns": {"NS": [...]}, "tls": {"issuer": "CN=YE2,O=Let's Encrypt,C=US", ...}},
   "observation": {"headers": {...}, "cookies": {...}, "favicon_hashes": {"md5": "…", "mmh3": "…"}, ...},
@@ -617,6 +618,31 @@ What it costs, because it contacts sites you did not name:
 On `mr70.eu` (my own site) it found 2 candidates (creativecommons.org, fosstodon.org),
 neither linking back: 0 friends. That is the honest result, not a sample of a busy site.
 
+## What is left out of the output
+
+- **The page body** is never part of a `scan` result, and `observe` leaves it out unless you
+  give `--html`.
+- **Headers that change on every call** (`date`, `age`, `etag`, `set-cookie`, request ids,
+  cache state, caller addresses, ...) are left out of `page.headers`, and the page then says
+  `headers_filtered: true`. The list is `output.drop_headers` in the configuration file; a name
+  or a prefix ending in `*` (`x-envoy-*`), lower case; `--all-headers` keeps everything and an
+  empty list turns the filter off. **The rules still see every header**: a rule on `x-amz-cf-id`
+  or `via` keeps matching. What the output does not repeat is the value: the `matched` of such
+  evidence is empty. In `observe`, when `set-cookie` is on the list, the cookie names stay (rules
+  look for them) and their values and the raw `Set-Cookie` lines go.
+- **Why.** Two calls to the same site seconds apart should give the same result. Measured by
+  scanning mr70.eu, pirelli.com, michelin.com and wikipedia.com three times each, one second
+  apart: before the filter `date`, `age`, `set-cookie`, `via`, `server-timing`, `x-amz-cf-id`,
+  `x-azure-ref`, `x-cache`, `x-nf-request-id`, `x-request-id` changed (and `x-client-ip`
+  carried the caller's address), and their values also appeared in the `matched` of the
+  technologies they identified. After it, everything except `scanned_at` and `duration_ms`
+  is identical on mr70.eu, pirelli.com and wikipedia.com. On michelin.com `pages[0].bytes`
+  still varies by a few bytes: the page body itself changes.
+- The default list holds the headers seen changing plus the usual members of the same families
+  (request ids, cache state, validators such as `etag`, `last-modified`); the second group was
+  added in advance, not measured. If a header you need is dropped, take it off the list.
+- For a validation case made from `observe`, give `--html --all-headers`: the rules read both.
+
 ## Configuration file (`owfscan config`)
 
 The limits and lists that owfscan uses (timeouts, the most pages, friends, related domains
@@ -640,7 +666,7 @@ owfscan config path
 - **Sections.** `[fetch]` (timeout, max_body_bytes, max_redirects, max_age, cache_dir,
   user_agent), `[crawl]` (max_pages, delay, max_delay), `[friends]` (max), `[related]` (max,
   tlds), `[active]` (max, max_body_bytes), `[browser]` (timeout, settle, max_requests,
-  chrome_path), `[result]` (max_evidence). Durations are text: `"500ms"`, `"20s"`, `"24h"`.
+  chrome_path), `[result]` (max_evidence), `[output]` (drop_headers). Durations are text: `"500ms"`, `"20s"`, `"24h"`.
   A list in the file replaces the default list (`related.tlds`); a key left out keeps its default.
 - **Strict.** A key or section that does not exist is an error (it is probably a typo), every
   value has a range and a ceiling, all problems are reported together, and a file that exists but

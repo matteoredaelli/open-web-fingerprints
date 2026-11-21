@@ -181,13 +181,17 @@ func newSocialCmd() *cobra.Command {
 
 func newObserveCmd() *cobra.Command {
 	n := &netFlags{}
-	var noDNS, noFavicon, noHTML bool
+	var noDNS, noFavicon, withHTML, allHeaders bool
 	c := &cobra.Command{
 		Use:   "observe <url>",
 		Short: "Fetch a page and print the observation the rules read (JSON)",
 		Long: "observe fetches a page, its favicon and the DNS records and certificate of its host,\n" +
-			"and prints what the rules are applied to: headers, cookies, HTML, favicon hashes, DNS,\n" +
-			"TLS. The output can be saved and used as the input of a validation case." + netNotice,
+			"and prints what the rules are applied to: headers, cookies, favicon hashes, DNS, TLS.\n" +
+			"The page body is left out unless --html is given. Headers that change on every call\n" +
+			"(date, request ids, cache hits, cookies: `owfscan config show`, section output) are left\n" +
+			"out too, so two calls in a row give the same output; --all-headers keeps them. The output\n" +
+			"can be saved and used as the input of a validation case: for that, give --html and\n" +
+			"--all-headers, since the rules read both." + netNotice,
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ob, err := observeURL(cmd.Context(), n, args[0], !noDNS, !noFavicon)
@@ -195,17 +199,41 @@ func newObserveCmd() *cobra.Command {
 				return err
 			}
 			obs := ob.Observation
-			if noHTML {
+			if !withHTML {
 				obs.HTML = ""
 			}
-			return printJSON(cmd, map[string]any{"page": ob.Page, "host": ob.Host, "observation": obs, "warnings": ob.Warnings})
+			page := ob.Page
+			if drop := dropList(allHeaders); len(drop) > 0 {
+				page.Headers, page.HeadersFiltered = observe.FilterHeaders(page.Headers, drop), true
+				obs.Headers = observe.FilterHeaders(obs.Headers, drop)
+				if observe.Dropped("set-cookie", drop) {
+					// The cookie names stay (they are what rules look for); the values and
+					// the raw lines are what changes.
+					obs.SetCookies = nil
+					names := make(map[string]string, len(obs.Cookies))
+					for k := range obs.Cookies {
+						names[k] = ""
+					}
+					obs.Cookies = names
+				}
+			}
+			return printJSON(cmd, map[string]any{"page": page, "host": ob.Host, "observation": obs, "warnings": ob.Warnings})
 		},
 	}
 	n.add(c)
 	c.Flags().BoolVar(&noDNS, "no-dns", false, "do not look up DNS records")
 	c.Flags().BoolVar(&noFavicon, "no-favicon", false, "do not fetch the favicon")
-	c.Flags().BoolVar(&noHTML, "no-html", false, "leave the page body out of the output")
+	c.Flags().BoolVar(&withHTML, "html", false, "include the page body in the output (left out by default)")
+	c.Flags().BoolVar(&allHeaders, "all-headers", false, "keep the headers and cookie values that change on every call")
 	return c
+}
+
+// dropList is the headers to leave out of the output: none with --all-headers.
+func dropList(all bool) []string {
+	if all {
+		return nil
+	}
+	return cfg.Output.DropHeaders
 }
 
 func printJSON(cmd *cobra.Command, v any) error {

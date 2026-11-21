@@ -72,7 +72,7 @@ owf export --include-unreviewed -o registry.json     # the rules (internal use)
 bin/owfscan scan   mr70.eu --registry registry.json -e   # technologies + evidence + the rest
 bin/owfscan links  mr70.eu            # links and linked domains
 bin/owfscan social mr70.eu            # profiles, emails, telephone numbers
-bin/owfscan observe mr70.eu --no-html # what the rules read: headers, cookies, favicon hashes, DNS, TLS
+bin/owfscan observe mr70.eu # what the rules read: headers, cookies, favicon hashes, DNS, TLS
 bin/owfscan extract --url https://example.org/ page.html   # the same on saved HTML, offline
 ```
 

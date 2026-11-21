@@ -59,6 +59,7 @@ type Config struct {
 	Active  Active  `toml:"active"`
 	Browser Browser `toml:"browser"`
 	Result  Result  `toml:"result"`
+	Output  Output  `toml:"output"`
 }
 
 // Fetch limits every HTTP request.
@@ -112,6 +113,29 @@ type Result struct {
 	MaxEvidence int `toml:"max_evidence"`
 }
 
+// Output says what is left out of what owfscan writes.
+type Output struct {
+	// DropHeaders are response headers left out of the output because they change on
+	// every call. The rules still see them. A trailing * makes a prefix.
+	DropHeaders []string `toml:"drop_headers"`
+}
+
+// DefaultDropHeaders are the headers that differ between two calls to the same site
+// made seconds apart, or identify the caller. date, age, set-cookie, via, server-timing,
+// x-amz-cf-id, x-azure-ref, x-cache, x-nf-request-id, x-request-id and x-client-ip were
+// seen changing or personal on mr70.eu, pirelli.com, michelin.com and wikipedia.com;
+// the rest are the usual members of the same families (request ids, cache state, caller
+// addresses, validators) and are listed in advance.
+var DefaultDropHeaders = []string{
+	"date", "age", "expires", "last-modified", "etag", "content-length",
+	"set-cookie", "via", "server-timing", "report-to", "nel",
+	"x-request-id", "x-correlation-id", "x-trace-id", "x-amzn-requestid", "x-amzn-trace-id",
+	"x-amz-cf-id", "x-amz-cf-pop", "x-azure-ref", "x-nf-request-id", "x-vercel-id",
+	"x-github-request-id", "x-served-by", "x-timer", "x-cache", "x-cache-hits", "x-cache-status",
+	"cache-status", "cf-ray", "cf-cache-status", "x-client-ip", "x-forwarded-for", "x-real-ip",
+	"x-runtime", "x-envoy-upstream-service-time", "x-envoy-*", "x-edge-*",
+}
+
 // Default returns the built-in configuration. Its values are the constants of the
 // packages that use them, so there is one source for each.
 func Default() Config {
@@ -126,6 +150,7 @@ func Default() Config {
 		Active:  Active{Max: scanner.DefaultActiveMax, MaxBodyBytes: scanner.DefaultMaxProbeBody},
 		Browser: Browser{Timeout: Duration(browser.DefaultTimeout), Settle: Duration(browser.DefaultSettle), MaxRequests: browser.DefaultMaxRequests},
 		Result:  Result{MaxEvidence: 50},
+		Output:  Output{DropHeaders: append([]string(nil), DefaultDropHeaders...)},
 	}
 }
 
@@ -144,6 +169,7 @@ const (
 	maxBrowserReqs  = 2000
 	maxSettle       = time.Minute
 	maxEvidenceList = 1000
+	maxDropHeaders  = 200
 )
 
 // Validate checks every value against its range and returns all the problems.
@@ -188,10 +214,31 @@ func (c Config) Validate() error {
 			bad("related.tlds", "%q is not a suffix like \"com\" or \"co.uk\" (lower case, no dot at the ends)", t)
 		}
 	}
+	if len(c.Output.DropHeaders) > maxDropHeaders {
+		bad("output.drop_headers", "%d entries, at most %d", len(c.Output.DropHeaders), maxDropHeaders)
+	}
+	for _, h := range c.Output.DropHeaders {
+		if !validHeaderPattern(h) {
+			bad("output.drop_headers", "%q is not a lower-case header name, or a prefix ending in *", h)
+		}
+	}
 	if strings.ContainsAny(c.Fetch.UserAgent, "\r\n") {
 		bad("fetch.user_agent", "must be a single line")
 	}
 	return errors.Join(errs...)
+}
+
+func validHeaderPattern(h string) bool {
+	name := strings.TrimSuffix(h, "*")
+	if name == "" || len(name) > 100 {
+		return false
+	}
+	for _, r := range name {
+		if (r < 'a' || r > 'z') && (r < '0' || r > '9') && r != '-' && r != '_' {
+			return false
+		}
+	}
+	return true
 }
 
 func validTLD(t string) bool {
@@ -313,4 +360,5 @@ func (c Config) Apply(o *scanner.Options) {
 		o.BrowserPath = c.Browser.ChromePath
 	}
 	o.MaxEvidence = c.Result.MaxEvidence
+	o.DropHeaders = append([]string(nil), c.Output.DropHeaders...)
 }

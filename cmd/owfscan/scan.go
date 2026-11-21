@@ -41,7 +41,7 @@ func newScanCmd() *cobra.Command {
 	var chrome string
 	var browserTimeout time.Duration
 	var friendsMax int
-	var noDNS, noFavicon, verbose bool
+	var noDNS, noFavicon, verbose, allHeaders bool
 	c := &cobra.Command{
 		Use:   "scan <url>",
 		Short: "Scan a site: technologies with their evidence, links, domains, social profiles, contacts",
@@ -74,6 +74,7 @@ func newScanCmd() *cobra.Command {
 			opt.Active, opt.ActiveMax = active, activeMax
 			opt.Browser, opt.BrowserPath, opt.BrowserTimeout = useBrowser, chrome, browserTimeout
 			opt.Fetch = n.fetchOptions()
+			opt.DropHeaders = dropList(allHeaders)
 			if !noDNS {
 				opt.Resolver = observe.SystemResolver{}
 			}
@@ -114,6 +115,7 @@ func newScanCmd() *cobra.Command {
 	c.Flags().StringVar(&minHealth, "min-health", "", "use only rules at least this healthy: broken (all, default), degraded, unknown, ok")
 	c.Flags().BoolVar(&noDNS, "no-dns", false, "do not look up DNS records")
 	c.Flags().BoolVar(&noFavicon, "no-favicon", false, "do not fetch the favicon")
+	c.Flags().BoolVar(&allHeaders, "all-headers", false, "keep the response headers that change on every call (date, request ids, cache state, ...) in the pages of the result")
 	c.Flags().BoolVarP(&verbose, "evidence", "e", false, "list the matching rules of each technology")
 	return c
 }

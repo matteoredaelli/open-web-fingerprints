@@ -158,3 +158,32 @@ func TestApplyDoesNotTouchSwitches(t *testing.T) {
 		t.Errorf("the file must not change switches or guards: %+v", o)
 	}
 }
+
+func TestDropHeaders(t *testing.T) {
+	if !reflect.DeepEqual(Default().Output.DropHeaders, DefaultDropHeaders) {
+		t.Error("default list")
+	}
+	for _, h := range []string{"date", "etag", "set-cookie", "x-request-id"} {
+		found := false
+		for _, d := range DefaultDropHeaders {
+			found = found || d == h
+		}
+		if !found {
+			t.Errorf("%s must be on the default list", h)
+		}
+	}
+	for _, bad := range []string{`["Date"]`, `["x y"]`, `[""]`, `["*"]`, `["x:y"]`} {
+		if _, err := Parse(strings.NewReader("[output]\ndrop_headers = " + bad + "\n")); err == nil {
+			t.Errorf("%s must be refused", bad)
+		}
+	}
+	c, err := Parse(strings.NewReader("[output]\ndrop_headers = []\n"))
+	if err != nil || len(c.Output.DropHeaders) != 0 {
+		t.Errorf("an empty list keeps every header: %v %v", err, c.Output.DropHeaders)
+	}
+	var o scanner.Options
+	Default().Apply(&o)
+	if len(o.DropHeaders) != len(DefaultDropHeaders) {
+		t.Error("Apply")
+	}
+}
