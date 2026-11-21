@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" role="img" aria-labelledby="title desc">
+  <title id="title">Open Web Fingerprints</title>
+  <desc id="desc">A fingerprint merged with a globe and circuit traces, representing an open registry of web technologies and infrastructure fingerprints.</desc>
+  <defs>
+    <linearGradient id="ocean" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#21c5ff"/><stop offset=".5" stop-color="#0874d8"/><stop offset="1" stop-color="#132d79"/></linearGradient>
+    <linearGradient id="mint" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#4cf0c0"/><stop offset="1" stop-color="#05a98d"/></linearGradient>
+    <linearGradient id="type" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#102e68"/><stop offset="1" stop-color="#087acb"/></linearGradient>
+    <clipPath id="globe"><circle cx="500" cy="390" r="205"/></clipPath>
+  </defs>
+  <!-- open orbital frame -->
+  <g fill="none" stroke="#0b75c9" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" opacity=".9">
+    <path d="M500 105 C680 105 815 235 815 405"/>
+    <path d="M185 405 C185 235 320 105 500 105"/>
+    <path d="M815 405 C815 575 680 675 500 675" stroke-dasharray="18 22"/>
+  </g>
+  <circle cx="500" cy="390" r="205" fill="url(#ocean)"/>
+  <g clip-path="url(#globe)" fill="none" stroke="#9be9ff" stroke-width="5" opacity=".35">
+    <ellipse cx="500" cy="390" rx="95" ry="205"/><ellipse cx="500" cy="390" rx="165" ry="205"/>
+    <path d="M300 320 Q500 390 700 320 M295 455 Q500 390 705 455 M310 250 Q500 300 690 250 M310 530 Q500 480 690 530"/>
+  </g>
+  <!-- fingerprint: flowing ridges, intentionally open at the bottom -->
+  <g clip-path="url(#globe)" fill="none" stroke="#fff" stroke-width="13" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M500 220 C390 220 330 295 330 385 C330 455 360 500 385 555"/>
+    <path d="M500 255 C410 255 365 315 365 390 C365 450 390 490 410 530"/>
+    <path d="M500 290 C430 290 400 335 400 395 C400 445 420 480 438 510"/>
+    <path d="M500 325 C455 325 435 355 435 400 C435 438 450 465 465 488"/>
+    <path d="M500 220 C610 220 670 295 670 385 C670 455 640 500 615 555"/>
+    <path d="M500 255 C590 255 635 315 635 390 C635 450 610 490 590 530"/>
+    <path d="M500 290 C570 290 600 335 600 395 C600 445 580 480 562 510"/>
+    <path d="M500 325 C545 325 565 355 565 400 C565 438 550 465 535 488"/>
+    <path d="M500 360 C480 360 470 375 470 400 C470 430 485 448 500 462 C515 448 530 430 530 400 C530 375 520 360 500 360Z"/>
+  </g>
+  <!-- circuit terminals -->
+  <g fill="none" stroke="url(#mint)" stroke-width="11" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M300 300 H225 V245 H170"/><path d="M700 300 H775 V245 H830"/>
+    <path d="M300 505 H220 V565 H165"/><path d="M700 505 H780 V565 H835"/>
+    <path d="M500 185 V125"/>
+  </g>
+  <g fill="#4cf0c0"><circle cx="170" cy="245" r="12"/><circle cx="830" cy="245" r="12"/><circle cx="165" cy="565" r="12"/><circle cx="835" cy="565" r="12"/><circle cx="500" cy="125" r="12"/></g>
+  <text x="500" y="790" text-anchor="middle" fill="url(#type)" font-family="Arial,sans-serif" font-size="86" font-weight="800" letter-spacing="-3">OPEN WEB</text>
+  <text x="500" y="875" text-anchor="middle" fill="#0b3e77" font-family="Arial,sans-serif" font-size="76" font-weight="800" letter-spacing="1">FINGERPRINTS</text>
+  <text x="500" y="930" text-anchor="middle" fill="#52718e" font-family="Arial,sans-serif" font-size="24" letter-spacing="3">OPEN REGISTRY • WEB TECHNOLOGIES • INFRASTRUCTURE</text>
+</svg>
