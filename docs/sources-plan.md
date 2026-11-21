@@ -1,6 +1,6 @@
 # Plan: more sources of fingerprints
 
-State of 2026-11-20. Four sources are imported (`sources.md`). This page decides which others
+State of 2026-11-20. Five sources are imported (`sources.md`); OpenTechalyzer was added after the measurement below. This page decides which others
 to add, in what order and what has to be settled first. **Nothing here is imported yet.** What
 was checked is marked; what was not is said.
 

@@ -96,13 +96,9 @@ below needs a legal review before any data is redistributed (see AGENTS.md).
   not an independent source. Use it as a **reference matching engine**
   (regex normalization, performance) for the future detection engine. Do
   not import its data.
-- `opentechalyzer` (MIT, 588 hand-written fingerprints, one commit) has
-  its own TypeScript fingerprint format with confidence scores and
-  evidence. It is useful as a design reference for confidence and
-  evidence. It is young and small, and it explicitly avoids redistributing
-  GPL data, which is the opposite of this project's approach. Its own
-  README notes that mixing GPL data would change the license of the
-  combined work.
+- `opentechalyzer` was a reference here; it is now **imported** (section
+  below). Its README notes that mixing GPL data would change the licence
+  of the combined work, which does not apply to the files imported.
 - `CERN-CERT/WAD` (last push 2023-09) is skipped because it is unmaintained.
 
 ## Consequences for the domain model
@@ -310,3 +306,44 @@ a probe is harmless before its `safety_review` becomes `approved`.
 some derive from other projects; the generated ones that say so are skipped, but
 nothing proves that the others are free of such lineage. The source stays
 `unreviewed`.
+
+## OpenTechalyzer (imported, `houseofmvps-opentechalyzer`)
+
+MIT. The fingerprints are TypeScript object literals in `src/fingerprints/*.ts`
+(9 data files; `index.ts` and `external.ts` are code and ignored). The extractor
+reads them as **data**: a small tokenizer and parser for the subset used (objects,
+arrays, strings with `+`, numbers, booleans, null, comments, JavaScript string
+escapes). Nothing is executed; a file that uses anything else (a spread, a call, a
+template substitution) is skipped whole with an `unparsable_file` warning rather
+than half-read. Measured on revision `a3d30e4` (2026-11-20), on a copy of the
+registry:
+
+- 586 technologies (two skipped, below), 55 categories, 1305 fingerprints, 143
+  relationships (`implies`, `requires`, `excludes`).
+- Observations: `script_url` 376, `html` 328, `js_global` 180, `request_host` 143,
+  `http_header` 130, `set_cookie` 49, `dns_record` 26, `probe_response` 25,
+  `meta_tag` 25, `stylesheet_url` 10, `css_content` 7, `page_url` 4, `robots` 2.
+- **Cookies.** The keys are regular expressions over the name (`^PHPSESSID$`), so they
+  become `set_cookie` rules over the `name=value` line (`^(?:PHPSESSID)=`), as Recog's do.
+- **Case.** The engine matches case-insensitively; a pattern with `caseSensitive` is
+  wrapped in `(?-i:...)`, so `G-XXXXXXXX` does not match `g-recaptcha`.
+- **Versions.** `$1` becomes `\1`. 34 patterns carry one.
+- **Not mapped, counted in warnings and kept in `raw`:** `npmDep` (148, a package name inside
+  a bundle; the scanner has no such observation), pattern identifiers `id` (10, for example a
+  GTM container: the model has no field for one yet).
+- **Out of scope, skipped:** the two technologies whose probes are marked `intrusive`
+  ("Exposed Git repository", "Exposed .env file"): they look for exposed files.
+- **Probes** (25 rules) are drafts with `safety_review: pending`, as always; the accepted
+  status codes stay in `raw` and the matcher reads the body.
+- **Not evaluated yet:** `request_host` (143: the host of any request of the page, which
+  needs the browser's request log) and `css_content` (7: needs the stylesheet files). The
+  scanner reports them as "not supported by the matcher".
+- One upstream `website` is not a URL (`https://rebuyengine\\.com`); it is left out
+  with an `invalid_website` warning.
+- **Overlap** (import on a copy, `owf source refresh`): of 586 technologies, **453** open an
+  `identity_candidate` conflict with an existing one (394 with the same website domain, 34
+  different, 25 unknown) and about 133 are new; 5 category conflicts. Candidates still
+  need a reviewer. On mr70.eu the scan finds the same technologies as before, with
+  more rules matching (Netlify 2 to 4, Hugo 1 to 2, Google Tag Manager 1 to 2) and
+  "Google Analytics 4" appearing next to "Google Analytics" until merged.
+

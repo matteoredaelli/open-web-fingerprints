@@ -12,6 +12,7 @@ import (
 	"github.com/matteoredaelli/open-web-fingerprints/internal/domain"
 	"github.com/matteoredaelli/open-web-fingerprints/internal/extractor"
 	"github.com/matteoredaelli/open-web-fingerprints/internal/extractor/nuclei"
+	"github.com/matteoredaelli/open-web-fingerprints/internal/extractor/opentechalyzer"
 	"github.com/matteoredaelli/open-web-fingerprints/internal/extractor/recog"
 	"github.com/matteoredaelli/open-web-fingerprints/internal/extractor/wappalyzer"
 )
@@ -79,6 +80,16 @@ func Sources() []Entry {
 		IncludeFile: func(p string) bool {
 			return strings.HasPrefix(p, nuclei.Root+"/") && strings.HasSuffix(p, ".yaml")
 		},
+	}, {
+		Source: domain.Source{
+			Slug: "houseofmvps-opentechalyzer", Name: "OpenTechalyzer",
+			URL:         "https://github.com/Houseofmvps/opentechalyzer",
+			License:     "MIT",
+			ExtractorID: opentechalyzer.ID, Redistributable: "unreviewed",
+			Notes: "TypeScript fingerprints under src/fingerprints, read as data (nothing is executed). The README says the built-in database is written for the project and is not a copy of another dataset; only about 9% of its script and html patterns equal a rule already in the registry. npmDep signals and pattern identifiers are kept in Raw. Probes marked intrusive (exposed files) are out of scope. The project's optional import of the GPL-3.0 Wappalyzer set is not part of these files. Needs legal review (docs/sources.md).",
+		},
+		Branch: "main", SparsePaths: []string{opentechalyzer.Root},
+		IncludeFile: opentechalyzer.IsFingerprintFile,
 	}}
 	sort.Slice(out, func(i, j int) bool { return out[i].Source.Slug < out[j].Source.Slug })
 	return out
@@ -97,7 +108,7 @@ func Find(slug string) (Entry, bool) {
 // Extractors returns a registry with every built-in extractor.
 func Extractors() *extractor.Registry {
 	r := extractor.NewRegistry()
-	for _, e := range []extractor.Extractor{wappalyzer.New(), recog.New(), nuclei.New()} {
+	for _, e := range []extractor.Extractor{wappalyzer.New(), recog.New(), nuclei.New(), opentechalyzer.New()} {
 		if err := r.Register(e); err != nil {
 			panic(err) // static registration cannot collide
 		}

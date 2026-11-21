@@ -69,7 +69,7 @@ and plan: `docs/scan.md`.
 cmd/owf/                    thin Cobra CLI; logic lives in internal/
 internal/domain             canonical model, IDs (prefix_UUIDv7), semantic key
 internal/extractor          Extractor contract, registry, contract tests
-  wappalyzer/ recog/ nuclei/  one package per source format
+  wappalyzer/ recog/ nuclei/ opentechalyzer/  one package per source format
 internal/normalizer         extraction -> domain (IDs, slugs, vendors, defaults)
 internal/reconciler         cross-source candidates, alias translation
 internal/merge, review      conflict decisions and record merges (atomic)
@@ -116,6 +116,7 @@ are not exported.
 | `httparchive-wappalyzer` | wappalyzer | fork of the same ancestor, adds ~1.5% |
 | `rapid7-recog` | recog | web databases only; new data (favicon md5, title, cookie) |
 | `projectdiscovery-nuclei-templates` | nuclei | `http/technologies`; groups and probes |
+| `houseofmvps-opentechalyzer` | opentechalyzer | TypeScript literals read as data; `request_host`, probes |
 
 More sources are planned in `docs/sources-plan.md` (order, licences, what to measure
 first; Inoue is excluded: proprietary). Adding a source: extractor package with real fixtures from a pinned revision
@@ -149,7 +150,7 @@ with `git` (sparse, pinned by SHA) and imports it; `--dry-run` first.
 
 ## State and next steps
 
-Done: model and schema, four importers, pinned fetch, reconciliation and merges,
+Done: model and schema, five importers, pinned fetch, reconciliation and merges,
 vendors from CPE, offline matcher and validation harness (case files and
 upstream examples, with the origin of each piece of evidence), redistribution
 guard.
