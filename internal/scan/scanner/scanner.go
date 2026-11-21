@@ -206,7 +206,7 @@ func Scan(ctx context.Context, opt Options, target string) (*scan.Result, error)
 		case err != nil:
 			browserWarn = append(browserWarn, scan.Warning{Code: "browser_failed", Message: err.Error(), Ref: ob.Page.FinalURL})
 		default:
-			ob.Observation.JS, ob.Observation.XHR = br.Globals, br.XHR
+			ob.Observation.JS, ob.Observation.XHR, ob.Observation.RequestHosts = br.Globals, br.XHR, br.Hosts
 			// The document after scripts ran replaces the source for the rules and the extraction.
 			ob.HTML, ob.Observation.HTML = []byte(br.DOM), br.DOM
 			browserInfo = &scan.Browser{Version: br.Version, Requests: br.Requests, Blocked: br.Blocked, TimedOut: br.TimedOut, Globals: len(br.Globals)}

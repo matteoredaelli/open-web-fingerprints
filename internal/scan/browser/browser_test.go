@@ -30,6 +30,7 @@ func needChrome(t *testing.T) {
 
 const testPage = `<!doctype html><html><head><title>t</title></head><body>
 <div id="static">static</div>
+<img src="https://Pixel.Beacon.test/p.gif">
 <script>
   window.myLib = {version: '1.2.3', nested: {deep: 'yes'}, fn: function(){}};
   window.simple = 42;
@@ -82,6 +83,17 @@ func TestBrowserSeesWhatScriptsDo(t *testing.T) {
 	}
 	if len(res.XHR) != 2 || api.Load() != 2 {
 		t.Errorf("xhr=%v api hits=%d", res.XHR, api.Load())
+	}
+	hasHost := func(h string) bool {
+		for _, x := range res.Hosts {
+			if x == h {
+				return true
+			}
+		}
+		return false
+	}
+	if !hasHost("pixel.beacon.test") || !hasHost("127.0.0.1") {
+		t.Errorf("hosts = %v: want the page's own host and the image host, lower-case", res.Hosts)
 	}
 	if !strings.HasPrefix(res.Version, "Chrome/") && !strings.Contains(res.Version, "Chrom") {
 		t.Errorf("version %q", res.Version)

@@ -387,6 +387,9 @@ pause for late scripts:
 - the global variables the rules look for (their dotted paths come from the registry, so
   only those are read, as strings for strings, numbers and booleans);
 - the URLs of the `fetch`/XHR calls the page made;
+- the **host names of every request** the page made (scripts, images, beacons too), for the
+  `request_host` rules of OpenTechalyzer: lower-case, without duplicates, and including requests
+  that the proxy refused, since they say what the page tried to reach;
 - the DOM after the scripts ran. This **replaces** the page source for the rules and for
   the extraction of links, social profiles and contacts, so what scripts add is found
   (and a rule on something that only exists in the source, such as a comment a script

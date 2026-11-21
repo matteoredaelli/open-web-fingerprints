@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"os"
 	"sort"
+	"strings"
 	"sync"
 	"time"
 
@@ -48,6 +49,10 @@ type Result struct {
 	Globals map[string]string
 	// XHR lists the URLs of the fetch and XMLHttpRequest calls the page made.
 	XHR []string
+	// Hosts lists the host names the page asked for, of any kind (documents, scripts,
+	// images, fetch, beacons), lower-case and sorted. A request that the proxy refused is
+	// included: it says what the page tried to reach.
+	Hosts []string
 	// Version is Chrome's version.
 	Version string
 	// Requests and Blocked count what went through the proxy.
@@ -146,13 +151,21 @@ func Run(ctx context.Context, opt Options, target string) (*Result, error) {
 
 	res := &Result{Globals: map[string]string{}}
 	var xhr []string
+	hosts := map[string]bool{}
 	var mu sync.Mutex
 	// Listen starts the browser, so a Chrome that cannot run is found out here.
 	if err := chromedp.Listen(bctx, func(ev any) {
-		if e, ok := ev.(*network.EventRequestWillBeSent); ok && (e.Type == network.ResourceTypeXHR || e.Type == network.ResourceTypeFetch) {
-			mu.Lock()
+		e, ok := ev.(*network.EventRequestWillBeSent)
+		if !ok {
+			return
+		}
+		mu.Lock()
+		defer mu.Unlock()
+		if e.Type == network.ResourceTypeXHR || e.Type == network.ResourceTypeFetch {
 			xhr = append(xhr, e.Request.URL)
-			mu.Unlock()
+		}
+		if h := requestHost(e.Request.URL); h != "" {
+			hosts[h] = true
 		}
 	}); err != nil {
 		return nil, fmt.Errorf("%w: %w", ErrNoChrome, err)
@@ -198,6 +211,10 @@ func Run(ctx context.Context, opt Options, target string) (*Result, error) {
 	res.Requests, res.Blocked = px.stats()
 	mu.Lock()
 	res.XHR = dedupe(xhr)
+	for h := range hosts {
+		res.Hosts = append(res.Hosts, h)
+	}
+	sort.Strings(res.Hosts)
 	mu.Unlock()
 	if v, err := chromedp.CallBrowser(bctx, browser.GetVersion, cdp.Empty{}); err == nil && true {
 		res.Version = v.Product
@@ -215,4 +232,13 @@ func dedupe(l []string) []string {
 		}
 	}
 	return out
+}
+
+// requestHost returns the lower-case host name of an http or https URL, or "".
+func requestHost(raw string) string {
+	u, err := url.Parse(raw)
+	if err != nil || (u.Scheme != "http" && u.Scheme != "https") {
+		return ""
+	}
+	return strings.ToLower(u.Hostname())
 }

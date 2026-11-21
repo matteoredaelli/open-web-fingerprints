@@ -335,9 +335,11 @@ registry:
   ("Exposed Git repository", "Exposed .env file"): they look for exposed files.
 - **Probes** (25 rules) are drafts with `safety_review: pending`, as always; the accepted
   status codes stay in `raw` and the matcher reads the body.
-- **Not evaluated yet:** `request_host` (143: the host of any request of the page, which
-  needs the browser's request log) and `css_content` (7: needs the stylesheet files). The
-  scanner reports them as "not supported by the matcher".
+- **`request_host`** (143) is evaluated with `--browser`: the browser records the host
+  of every request the page makes (documents, scripts, images, fetch, beacons; lower-case,
+  including requests the proxy refused). Without a browser the rules are reported as "needs
+  a browser". On pirelli.com it added one technology (18 to 19). `css_content` (7) is not
+  evaluated yet (needs the stylesheet files): "not supported by the matcher".
 - One upstream `website` is not a URL (`https://rebuyengine\\.com`); it is left out
   with an `invalid_website` warning.
 - **Overlap** (import on a copy, `owf source refresh`): of 586 technologies, **453** open an

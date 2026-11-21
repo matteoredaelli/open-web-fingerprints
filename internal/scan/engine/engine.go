@@ -238,7 +238,7 @@ func (r *run) reason(f domain.Fingerprint) string {
 		return ReasonFlavor
 	}
 	switch f.Observation {
-	case domain.ObsJSGlobal, domain.ObsXHR:
+	case domain.ObsJSGlobal, domain.ObsXHR, "request_host":
 		if !r.in.HasBrowser {
 			return ReasonBrowser
 		}

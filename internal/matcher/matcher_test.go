@@ -28,17 +28,18 @@ const page = `<html><head>
 
 func TestEvaluate(t *testing.T) {
 	o := &Observation{
-		URL:         "https://example.com/blog/",
-		Headers:     map[string]string{"Server": "nginx/1.25.3", "X-Powered-By": "PHP/8.2.1"},
-		Cookies:     map[string]string{"PHPSESSID": "abc"},
-		HTML:        page,
-		JS:          map[string]string{"jQuery.fn.jquery": "3.6.0"},
-		DNS:         map[string][]string{"NS": {"ada.ns.cloudflare.com", "bob.ns.cloudflare.com"}},
-		TLS:         map[string]string{"issuer": "Cloudflare Inc ECC CA-3"},
-		XHR:         []string{"https://api.taboola.com/x"},
-		Robots:      "User-agent: *\n# Powered by Shoporama",
-		Probes:      map[string]ProbeResponse{"/wp-login.php": {Status: 200, Body: "Powered by WordPress"}, "/gone": {Status: 404}},
-		FaviconHash: "f420dc2c7d90d7873a90d82cd7fde315",
+		URL:          "https://example.com/blog/",
+		Headers:      map[string]string{"Server": "nginx/1.25.3", "X-Powered-By": "PHP/8.2.1"},
+		Cookies:      map[string]string{"PHPSESSID": "abc"},
+		HTML:         page,
+		JS:           map[string]string{"jQuery.fn.jquery": "3.6.0"},
+		DNS:          map[string][]string{"NS": {"ada.ns.cloudflare.com", "bob.ns.cloudflare.com"}},
+		TLS:          map[string]string{"issuer": "Cloudflare Inc ECC CA-3"},
+		XHR:          []string{"https://api.taboola.com/x"},
+		RequestHosts: []string{"cdn.shopify.com", "www.google-analytics.com"},
+		Robots:       "User-agent: *\n# Powered by Shoporama",
+		Probes:       map[string]ProbeResponse{"/wp-login.php": {Status: 200, Body: "Powered by WordPress"}, "/gone": {Status: 404}},
+		FaviconHash:  "f420dc2c7d90d7873a90d82cd7fde315",
 	}
 	withVersion := func(f domain.Fingerprint, v string) domain.Fingerprint { f.VersionExtract = v; return f }
 	probe := func(f domain.Fingerprint, path string) domain.Fingerprint {
@@ -77,6 +78,8 @@ func TestEvaluate(t *testing.T) {
 		{"dns other type", rule(domain.ObsDNSRecord, "MX", domain.OpExists, ""), false, ""},
 		{"tls issuer", rule(domain.ObsTLSCert, "issuer", domain.OpContains, "Cloudflare"), true, ""},
 		{"xhr", rule(domain.ObsXHR, "", domain.OpRegex, `\.taboola\.com`), true, ""},
+		{"request host", rule(domain.Observation("request_host"), "", domain.OpRegex, `(?:^|\.)google-analytics\.com$`), true, ""},
+		{"request host miss", rule(domain.Observation("request_host"), "", domain.OpRegex, `^analytics\.google\.com$`), false, ""},
 		{"robots", rule(domain.ObsRobots, "", domain.OpRegex, `Powered by Shoporama`), true, ""},
 		{"favicon hash", rule(domain.ObsFaviconHash, "", domain.OpHashEquals, "f420dc2c7d90d7873a90d82cd7fde315"), true, ""},
 		{"favicon hash miss", rule(domain.ObsFaviconHash, "", domain.OpHashEquals, "00"), false, ""},

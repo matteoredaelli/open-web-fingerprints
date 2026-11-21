@@ -161,6 +161,8 @@ func candidates(f domain.Fingerprint, p *Prepared) (vals []string, present bool,
 		return one(v, ok)
 	case domain.ObsXHR:
 		return many(o.XHR)
+	case "request_host":
+		return many(o.RequestHosts)
 	case domain.ObsRobots:
 		return text(o.Robots)
 	case domain.ObsFaviconHash:

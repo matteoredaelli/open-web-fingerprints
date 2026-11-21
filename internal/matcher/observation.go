@@ -41,12 +41,14 @@ type Observation struct {
 	CSS           string   `json:"css,omitempty"`
 	Text          string   `json:"text,omitempty"`
 	// JS maps a global path such as "jQuery.fn.jquery" to its value.
-	JS          map[string]string   `json:"js,omitempty"`
-	DNS         map[string][]string `json:"dns,omitempty"`
-	TLS         map[string]string   `json:"tls,omitempty"`
-	XHR         []string            `json:"xhr,omitempty"`
-	Robots      string              `json:"robots,omitempty"`
-	FaviconHash string              `json:"favicon_hash,omitempty"`
+	JS  map[string]string   `json:"js,omitempty"`
+	DNS map[string][]string `json:"dns,omitempty"`
+	TLS map[string]string   `json:"tls,omitempty"`
+	XHR []string            `json:"xhr,omitempty"`
+	// RequestHosts are the host names the page asked for (browser only).
+	RequestHosts []string `json:"request_hosts,omitempty"`
+	Robots       string   `json:"robots,omitempty"`
+	FaviconHash  string   `json:"favicon_hash,omitempty"`
 	// FaviconHashes holds hashes by algorithm ("md5"); a rule's target names
 	// the algorithm. FaviconHash is used when the target is empty.
 	FaviconHashes map[string]string `json:"favicon_hashes,omitempty"`
