@@ -259,6 +259,22 @@ func TestInvalidWebsiteIsLeftOut(t *testing.T) {
 	}
 }
 
+func TestCategoryNames(t *testing.T) {
+	res := extract(t)
+	names := map[string]string{}
+	for _, c := range res.Categories {
+		names[c.Key] = c.Name
+	}
+	for key, want := range map[string]string{"js-library": "JavaScript libraries", "web-server": "Web servers", "error-tracking": "Error tracking", "analytics": "Analytics"} {
+		if got, ok := names[key]; ok && got != want {
+			t.Errorf("%s -> %q, want %q", key, got, want)
+		}
+	}
+	if names["js-library"] == "" {
+		t.Error("js-library is in the fixtures and must be mapped")
+	}
+}
+
 func TestParseSubset(t *testing.T) {
 	decls, err := parseModule(`import type { X } from './x.js';
 /* block */ export const a: X[] = [

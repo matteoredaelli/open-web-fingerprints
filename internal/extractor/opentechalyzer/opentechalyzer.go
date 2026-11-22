@@ -229,7 +229,7 @@ func (st *state) technology(file string, m map[string]any) {
 			if !st.cats[s] {
 				st.cats[s] = true
 				st.res.Categories = append(st.res.Categories, extractor.ExtractedCategory{
-					Key: s, Name: strings.ReplaceAll(s, "-", " "), File: file, Raw: mustJSON(s),
+					Key: s, Name: categoryName(s), File: file, Raw: mustJSON(s),
 				})
 			}
 		}
@@ -446,4 +446,50 @@ func (b *builder) probes(field string, v any) {
 		}
 		b.st.res.Fingerprints = append(b.st.res.Fingerprints, f)
 	}
+}
+
+// categoryNames maps OpenTechalyzer's category keys to the name Wappalyzer-format sources
+// use for the same thing, so that the two are recognised as one category (a candidate for
+// review) instead of "js library" next to "JavaScript libraries". Only equivalents that
+// are plain are listed; the others keep their own name, spelled out. The key stays the
+// original identifier.
+var categoryNames = map[string]string{
+	"ab-testing":        "A/B Testing",
+	"ai":                "Artificial Intelligence",
+	"auth":              "Authentication",
+	"backend-framework": "Web frameworks",
+	"bot-protection":    "Security",
+	"build-tool":        "Development",
+	"captcha":           "Security",
+	"chat":              "Live chat",
+	"cookie-consent":    "Cookie compliance",
+	"css-framework":     "UI frameworks",
+	"database":          "Databases",
+	"feature-flags":     "Feature management",
+	"font":              "Font scripts",
+	"js-framework":      "JavaScript frameworks",
+	"js-library":        "JavaScript libraries",
+	"language":          "Programming languages",
+	"loyalty":           "Loyalty & rewards",
+	"mail-provider":     "Email",
+	"misc":              "Miscellaneous",
+	"payment":           "Payment processors",
+	"product-analytics": "Analytics",
+	"search":            "Search engines",
+	"shipping":          "Shipping carriers",
+	"tag-manager":       "Tag managers",
+	"ui-framework":      "UI frameworks",
+	"video":             "Video players",
+	"web-server":        "Web servers",
+}
+
+func categoryName(key string) string {
+	if n, ok := categoryNames[key]; ok {
+		return n
+	}
+	n := strings.ReplaceAll(key, "-", " ")
+	if n == "" {
+		return n
+	}
+	return strings.ToUpper(n[:1]) + n[1:]
 }

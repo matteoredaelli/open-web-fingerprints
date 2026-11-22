@@ -92,3 +92,15 @@ OpenTechalyzer next to "JavaScript libraries", "web server" next to "Web servers
 shares are split; the categories need a mapping before they are published. Generic buckets
 ("Miscellaneous", "Security") dominate. The next steps are a web page for these aggregates, the
 category mapping, and the 1000-site run.
+
+## Category names (2026-11-22)
+
+OpenTechalyzer's category keys are spelled differently from the Wappalyzer format ("js-library" next to
+"JavaScript libraries"), which split every category figure. The extractor now names 27 of its keys
+after the equivalent Wappalyzer category (`categoryNames`; the key stays the original), the others
+are capitalised ("Error tracking"). On a refresh the renamed records became 23 category candidates,
+all merged in `owf.db` after review (backup `/tmp/owf.db.before-catmap`); a new database gets the
+candidates on first import. Left separate because there is no equivalent: apm, baas, devops, media,
+platform, runtime, subscription, support, error tracking, ecommerce app. The mapping is mine:
+`bot-protection` and `captcha` go to Security, `backend-framework` to Web frameworks,
+`css-framework` to UI frameworks, `product-analytics` to Analytics.
