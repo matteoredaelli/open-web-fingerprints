@@ -349,3 +349,36 @@ registry:
   more rules matching (Netlify 2 to 4, Hugo 1 to 2, Google Tag Manager 1 to 2) and
   "Google Analytics 4" appearing next to "Google Analytics" until merged.
 
+
+## WhatWeb (imported, `urbanadventurer-whatweb`)
+
+`urbanadventurer/WhatWeb` @ `d279d93042d034f3fd29d5a893d44ccc0595d3f8` (2026-04-03), `plugins/*.rb`.
+GPL-2.0 (`LICENSE`); each plugin says it "may be subject to redistribution and commercial
+restrictions". The maintainer decided the licence question is settled (`sources-plan.md`);
+it is recorded with `owf source review` when the source is imported into the registry.
+
+The extractor (`internal/extractor/whatweb`) reads the `matches [ {...}, ... ]` list of each
+plugin as data (a reader for the subset of Ruby used: symbols, strings, `/re/` and `%r{}`
+literals, numbers, arrays; no Ruby is run). Measured on the full clone:
+
+- **1832 plugin files, 1685 technologies and 5550 rules imported** (after merging 51 duplicate
+  rules): body `html` rules about 4300, `http_header` about 750, `set_cookie` about 210,
+  probes about 300.
+- **Mapping.** `:text` is a literal (escaped, case-sensitive), `:regexp` and `:version` are
+  regular expressions over the body (`:version` also detects; `:offset` chooses the group),
+  `:search=>"headers[x]"` is a header rule (`set-cookie` a cookie rule), `:certainty` is
+  the confidence. Ruby anchors are line anchors and matching is case-sensitive unless `/i`,
+  so each regex is wrapped in `(?m-i:...)`; all of them are RE2 (none needed the `pcre` flavour).
+  A rule that matches any value of a header becomes an `exists` rule.
+- **Probes.** A clause with `:url` becomes a GET probe: `draft`, `safety_review: pending`, never
+  approved by the extractor.
+- **Not read, counted in warnings.** 208 plugins also detect with Ruby code (`passive` or
+  `aggressive` blocks) and 1 only with code; 389 clauses with `:md5` (hashes of files, mostly
+  to read a version) and 10 with `:tagpattern`; 18 clauses that are Ruby expressions or have
+  string interpolation (skipped whole); 5 plugins that only print a header (Content-Security-Policy
+  and similar) and 28 that had no usable clause.
+- **Overlap.** Registry before the import: 9842 technologies; by name only 16% of WhatWeb's
+  names existed. The import gave 279 new candidate conflicts and no change to existing records.
+  Not checked: how many rules are redundant with other sources' rules, false-positive rate (the
+  new rules have `health: unknown`; many are single words), and 17 websites written without a
+  scheme or as free text (the plugin's own text is kept in `raw`).

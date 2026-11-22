@@ -15,6 +15,7 @@ import (
 	"github.com/matteoredaelli/open-web-fingerprints/internal/extractor/opentechalyzer"
 	"github.com/matteoredaelli/open-web-fingerprints/internal/extractor/recog"
 	"github.com/matteoredaelli/open-web-fingerprints/internal/extractor/wappalyzer"
+	"github.com/matteoredaelli/open-web-fingerprints/internal/extractor/whatweb"
 )
 
 // Entry describes a known upstream source.
@@ -90,6 +91,16 @@ func Sources() []Entry {
 		},
 		Branch: "main", SparsePaths: []string{opentechalyzer.Root},
 		IncludeFile: opentechalyzer.IsFingerprintFile,
+	}, {
+		Source: domain.Source{
+			Slug: "urbanadventurer-whatweb", Name: "WhatWeb plugins",
+			URL:         "https://github.com/urbanadventurer/WhatWeb",
+			License:     "GPL-2.0-only",
+			ExtractorID: whatweb.ID, Redistributable: "unreviewed",
+			Notes: "Ruby plugins under plugins/, read as data (nothing is executed): the matches list of each plugin. Detection written as Ruby code (passive and aggressive blocks), md5 of files and page-shape patterns are not read. A clause with a :url becomes a probe, imported as a draft with a pending safety review. Matching is case-sensitive in WhatWeb, so rules are wrapped in (?-i:). The repository is GPL-2.0 and each plugin says it may be subject to redistribution and commercial restrictions; the maintainer decided the licence question is settled (docs/sources-plan.md), to be recorded with owf source review (docs/sources.md).",
+		},
+		Branch: "master", SparsePaths: []string{whatweb.Root},
+		IncludeFile: whatweb.IsPluginFile,
 	}}
 	sort.Slice(out, func(i, j int) bool { return out[i].Source.Slug < out[j].Source.Slug })
 	return out
@@ -108,7 +119,7 @@ func Find(slug string) (Entry, bool) {
 // Extractors returns a registry with every built-in extractor.
 func Extractors() *extractor.Registry {
 	r := extractor.NewRegistry()
-	for _, e := range []extractor.Extractor{wappalyzer.New(), recog.New(), nuclei.New(), opentechalyzer.New()} {
+	for _, e := range []extractor.Extractor{wappalyzer.New(), recog.New(), nuclei.New(), opentechalyzer.New(), whatweb.New()} {
 		if err := r.Register(e); err != nil {
 			panic(err) // static registration cannot collide
 		}

@@ -69,7 +69,7 @@ and plan: `docs/scan.md`.
 cmd/owf/                    thin Cobra CLI; logic lives in internal/
 internal/domain             canonical model, IDs (prefix_UUIDv7), semantic key
 internal/extractor          Extractor contract, registry, contract tests
-  wappalyzer/ recog/ nuclei/ opentechalyzer/  one package per source format
+  wappalyzer/ recog/ nuclei/ opentechalyzer/ whatweb/  one package per source format
 internal/normalizer         extraction -> domain (IDs, slugs, vendors, defaults)
 internal/reconciler         cross-source candidates, alias translation
 internal/merge, review      conflict decisions and record merges (atomic)
@@ -108,7 +108,7 @@ once assigned. The registry is SQLite; the public contract is the JSON export
 (schema `0.2.0`, draft, with a manifest and content hash). Conflicts and aliases
 are not exported.
 
-## Sources (all `unreviewed`)
+## Sources (`unreviewed` until a maintainer records a decision)
 
 | Slug | Extractor | Note |
 |---|---|---|
@@ -117,6 +117,7 @@ are not exported.
 | `rapid7-recog` | recog | web databases only; new data (favicon md5, title, cookie) |
 | `projectdiscovery-nuclei-templates` | nuclei | `http/technologies`; groups and probes |
 | `houseofmvps-opentechalyzer` | opentechalyzer | TypeScript literals read as data; `request_host`, probes |
+| `urbanadventurer-whatweb` | whatweb | Ruby `matches` lists read as data (no Ruby run); `:url` clauses are probes |
 
 More sources are planned in `docs/sources-plan.md` (order, licences, what to measure
 first; Inoue is excluded: proprietary). Adding a source: extractor package with real fixtures from a pinned revision

@@ -1,6 +1,6 @@
 # Plan: more sources of fingerprints
 
-State of 2026-11-20. Five sources are imported (`sources.md`); OpenTechalyzer was added after the measurement below. This page decides which others
+State of 2026-11-22. Six sources are imported (`sources.md`); OpenTechalyzer and WhatWeb were added after the measurements below. This page decides which others
 to add, in what order and what has to be settled first. **Nothing here is imported yet.** What
 was checked is marked; what was not is said.
 
@@ -163,3 +163,86 @@ plain data, no code. A Go extractor would need its own reader for that subset of
 - **Recommendation.** Worth doing, and before Retire.js. The first step is the reader; the second
   is deciding how to carry `id` (identifier) and `caseSensitive`; the third, the usual: fixtures,
   contract test, catalogue entry, a survey in `sources.md`.
+
+### CMSeeK (2026-11-22, `Tuhinshubhra/CMSeeK` @ `78f6782e00fe46f67d63b299e53043b1964f41e1`)
+
+Measured against an export of the registry (five sources, 9842 technologies, 23598 fingerprints).
+The code was only read, never run.
+
+- **Licence.** GPL-3.0 (the `LICENSE` file is the GPL-3.0 text), the same family as this project.
+- **Where the data is.** 190 CMS entries in `cmseekdb/cmss.py` (name, url, flags). The detection
+  strings are Python lists of `"A||B:-id"` strings (substring `A` or `B` means CMS `id`; `::::`
+  means "all must match": it appears 28 times in `header.py`, `sc.py`, `robots.py` and `dirscheck.py`) in five files: `sc.py` (page
+  source), `header.py` (HTTP headers), `generator.py` (meta generator), `robots.py` (robots.txt)
+  and `dirscheck.py` (a page at a directory). That is about 592 clauses: source 297, header 130,
+  generator 93, robots 66, directories 6. Version detection is **code**: 69 modules in
+  `VersionDetect/` with one regex each, and `deepscans/` (WordPress, Joomla, Umbraco) are probes
+  that enumerate users, plugins and themes, which is not what this registry holds.
+- **Overlap.** 145 of 190 CMS (76%) already have a technology with the same name or slug. 45 do
+  not, mostly forums (Burning Board, Phorum, JForum, YaBB, Vanilla...), regional CMS and e-commerce
+  (DEDE CMS, Jalios, Proximis, ekmPowershop); a few exist under another spelling (WIX, EPiServer,
+  DNN, Orchard, Blogger). Of the 592 clauses, 138 (23%) are already contained in a rule of the
+  same-named technology (substring test, rough); so most of the data is different.
+- **Quality.** The strings are plain substrings with no anchors or regexes (`bitrix`, `/wp-content/`,
+  `Disallow: /wp-admin/`). Many are short and will match more than the CMS: they would be
+  imported with low confidence and `health: unknown`, and several should be skipped (a partial
+  clause matches more than the original). Nothing in it is a test.
+- **Not a probe source after all.** The detection files read the page the scanner already has, not
+  paths to request. So **no probes** come from the detection lists; only `dirscheck.py` and the
+  deepscans request other paths, and those are not imported.
+- **What is not checked.** How many clauses are RE2-safe is moot (they are literals); how many
+  produce false positives; the exact per-file semantics of `||` and `::::` (read from the comments
+  and a count of occurrences, not from the code that evaluates them; `::::` rules map to a rule group); whether the 45 unmatched names are really new.
+- **Recommendation.** Worth a small extractor (about 500 clauses, all literals, no Python
+  execution: read the lists as data with a line pattern). It adds about 45 technologies and
+  maybe 450 rules, mainly for forums and regional CMS. The version modules would be skipped and
+  counted. Not a big source; do it if the long tail of CMS matters. The next step is the extractor
+  with fixtures from this revision, which I have not started.
+
+### Comparison of the other candidates (2026-11-22)
+
+Same method as above: shallow clone at the revision shown, counts of what is in the files,
+overlap by name or slug (case, punctuation, `.js` and ` cms` ignored) against an export of the
+registry (5 sources, 9842 technologies). The code was read, never run. Overlap by name
+understates identity (the same product can be spelled differently) and says nothing about the
+rules themselves, except for CMSeeK, where it was also checked on the strings.
+
+| Source | Revision | Licence (file) | Size | Names already in registry | Format |
+|---|---|---|---|---|---|
+| FingerprintHub | `0x727/FingerprintHub` @ `d155b767` | MIT (`LICENSE.md`) | 3411 names, 3503 entries; matchers: `word` 3116, `regex` 522, `favicon` 286 | 14% (488); **2923 new** | YAML/JSON close to the nuclei template; `web_fingerprint_v4.json` holds all of it |
+| WhatWeb | `urbanadventurer/WhatWeb` @ `d279d930` | GPL-2.0 (`LICENSE`); each plugin says it "may be subject to redistribution and commercial restrictions" | 1810 plugins, 1717 are only a `matches` list; clauses: `text` 131, `regexp` 58, `version` 52, `url` 51, `md5` 2 | 16% (301); **1509 new** | Ruby DSL; the data part is a literal list |
+| EHole | `EdgeSecurityTeam/EHole` @ `9a91e0b3` | Apache-2.0 | 958 rules, 811 names: keyword 386 (body 887, title 47, header 24 in all), favicon hash 572 | 53% (433); 378 new | one JSON file; the favicon values look like mmh3 integers, not the md5 of Recog |
+| wafw00f | `EnableSecurity/wafw00f` @ `69fbe395` | BSD-3-Clause (`LICENSE`) | 172 WAFs | 0% | Python functions calling `matchHeader`, `matchCookie`, `matchContent` |
+| CMSeeK | see above | GPL-3.0 | ~592 clauses, 190 CMS | 76% of names, 23% of clauses | Python lists of strings |
+
+What each would add, and what stands in the way:
+
+- **FingerprintHub.** The largest set of new technologies. The rules are small matchers (a title
+  or a word in the body, a favicon hash) of products that are mostly Chinese-market software,
+  routers, OA and mail systems, and admin panels. The format is nuclei-like, so the existing
+  nuclei extractor should be reusable in large part (not checked in detail). Open points: the
+  README says the rules follow the nuclei template layout, the `probe` entries come from nmap
+  (the part with requests to other paths would be imported as pending drafts or skipped), and
+  I did not establish where the rules come from: **the MIT licence of the repository is not proof
+  of the licence of the data**. Many entries are single words (`word` matchers) and will need low
+  confidence.
+- **WhatWeb.** The richest and the oldest, largely independent of the Wappalyzer sets (84% of the
+  names are new). 1717 plugins are pure data. But the licence is the problem described above, and
+  that is your decision; and the plugin header text goes beyond GPL-2.0.
+- **EHole.** Small and clean, Apache-2.0, one JSON file. Half of the names exist already, so the
+  value is the 378 new names (Chinese products) and the favicon hashes, which need a hash type
+  the registry may not have (mmh3 of the favicon). Cheapest to write.
+- **wafw00f.** A different kind of technology (web application firewalls and CDNs: 0% overlap).
+  BSD-3-Clause is the easiest licence. The rules are Python code, but of the plain call form; an
+  extractor would read those calls as data and skip the rest. Narrow value (one category), good
+  quality (the project is maintained and its detections are specific, like `cf-ray` for Cloudflare).
+- **CMSeeK.** See the section above.
+
+Order I would take by value for cost, with the licence in view: **1. FingerprintHub** (largest
+gain, a format we nearly read already; the origin of its data to be checked first), **2. wafw00f**
+(cleanest licence, a new category, small), **3. EHole**, then CMSeeK; WhatWeb only after your answer
+on the licence. Retire.js stays behind the scanner feature it needs.
+
+**Decision (2026-11-22, maintainer):** the WhatWeb licence question is settled as OK. The decision
+is recorded here; it is entered in the registry with `owf source review` (with a note naming its
+basis) only once the source is imported.

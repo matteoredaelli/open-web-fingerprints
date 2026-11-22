@@ -6,7 +6,7 @@ Open registry and toolkit for cataloguing web technologies and infrastructure
 and the fingerprints used to identify them.
 
 Status: **early development**. The local pipeline works end to end for five
-sources (Enthec WebAppAnalyzer, HTTP Archive Wappalyzer, Rapid7 Recog, nuclei technology templates, OpenTechalyzer): import, diff, SQLite storage, JSON export. See [AGENTS.md](AGENTS.md) for goals,
+sources (Enthec WebAppAnalyzer, HTTP Archive Wappalyzer, Rapid7 Recog, nuclei technology templates, OpenTechalyzer, WhatWeb): import, diff, SQLite storage, JSON export. See [AGENTS.md](AGENTS.md) for goals,
 architecture and roadmap.
 
 ## Development
