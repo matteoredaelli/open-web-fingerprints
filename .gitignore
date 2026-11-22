@@ -12,3 +12,6 @@ coverage.out
 # exports may contain rules from unreviewed sources: never commit them
 /registry.json
 *.registry.json
+
+# personal working notes
+/TODO.md

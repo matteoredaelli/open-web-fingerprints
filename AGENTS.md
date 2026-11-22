@@ -150,6 +150,9 @@ with `git` (sparse, pinned by SHA) and imports it; `--dry-run` first.
 
 ## State and next steps
 
+The maintainer keeps the current to-do list, local state and working preferences in `TODO.md`
+(local, not versioned; read it first if it exists).
+
 Done: model and schema, five importers, pinned fetch, reconciliation and merges,
 vendors from CPE, offline matcher and validation harness (case files and
 upstream examples, with the origin of each piece of evidence), redistribution
