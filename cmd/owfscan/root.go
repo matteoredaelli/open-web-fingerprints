@@ -70,6 +70,6 @@ func newRootCmd() *cobra.Command {
 		},
 	}
 	root.PersistentFlags().String("config", "", "configuration file (env OWFSCAN_CONFIG; default "+defaultConfigHint()+")")
-	root.AddCommand(newScanCmd(), newExtractCmd(), newLinksCmd(), newSocialCmd(), newFriendsCmd(), newRelatedCmd(), newObserveCmd(), newReportCmd(), newBatchCmd(), newConfigCmd())
+	root.AddCommand(newScanCmd(), newExtractCmd(), newLinksCmd(), newSocialCmd(), newFriendsCmd(), newRelatedCmd(), newObserveCmd(), newReportCmd(), newBatchCmd(), newStatsCmd(), newConfigCmd())
 	return root
 }

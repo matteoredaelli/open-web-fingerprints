@@ -70,3 +70,25 @@ importer stays faithful): daisyUI keeps only `navbar-start|drawer-toggle`, Prism
 `class="token [a-z-]+"`. The new patterns pass a positive and a negative case; the
 replacements are my choice, not upstream's. The other 24 rules passed, but those negatives are
 only a plain page and one lookalike for a few: this is a floor, not proof.
+
+## `owfscan stats` (built)
+
+`owfscan stats --db batch.db [-o stats.json] [--min-confidence 0.5] [--min-sites 3] [--exclude A,B] [--top 30]`
+writes aggregates that follow `schemas/stats.schema.json` (Go types `scan.Stats`) and prints a summary.
+Shares are of the sites reached (2xx); status and failure shares are of scanned and failed. Web
+technologies and **domain signals** (evidence only in DNS records) are separate lists. A technology
+or pair on fewer than `--min-sites` sites is counted in `other.technologies_hidden`, not named. The
+document carries no domain, handle, address or contact of any site (a test checks it), plus the list
+name, the registry hash and notices, and a `notes` array with the reading rules.
+
+Run on the same 72 scanned (63 reached) top-100 sites, with the registry before the daisyUI and
+Prism corrections (so Prism 11 sites is still the old false positive): median 8 web technologies per
+site, 63.7% of rules applied; HSTS on 84%, CSP 63%, X-Frame-Options 60%, Referrer-Policy 27%,
+Permissions-Policy 22%; certificates mostly under 90 days left (the 90-day Let's Encrypt style
+cycle). Domain signals: Meta 54%, Microsoft 365 52%, Apple iCloud Mail 38%, Atlassian 35%.
+
+Known problems seen in this output: category names differ by source ("js library" from
+OpenTechalyzer next to "JavaScript libraries", "web server" next to "Web servers"), so category
+shares are split; the categories need a mapping before they are published. Generic buckets
+("Miscellaneous", "Security") dominate. The next steps are a web page for these aggregates, the
+category mapping, and the 1000-site run.

@@ -128,7 +128,7 @@ before claiming value. Prefer sources with different data and clear licences.
 
 `init`, `source list|info|refresh|review`, `import`, `technology list|show|set`,
  `vendor list|show|set`, `fingerprint list|validate|test|lint|correct`, `probe list|review`,
-`conflict list|show|resolve`, `export`, `verify`, `stats`. `owfscan batch run|status` (list of sites, home only, SQLite, resumable; `internal/scan/batch`). `owfscan report` (HTML, `internal/scan/report`: no script, escaped, deterministic). `owfscan` reads limits from `~/.config/owf/owfscan.toml` (`owfscan config init|show|path`; `internal/scan/config` is the one place for defaults; the file never enables contacts or lifts guards). `owfscan`:
+`conflict list|show|resolve`, `export`, `verify`, `stats`. `owfscan stats` (aggregates of a batch, schema `stats`, no site-level data). `owfscan batch run|status` (list of sites, home only, SQLite, resumable; `internal/scan/batch`). `owfscan report` (HTML, `internal/scan/report`: no script, escaped, deterministic). `owfscan` reads limits from `~/.config/owf/owfscan.toml` (`owfscan config init|show|path`; `internal/scan/config` is the one place for defaults; the file never enables contacts or lifts guards). `owfscan`:
 `scan`, `extract`, `links`, `social`, `observe`. `refresh` fetches one commit
 with `git` (sparse, pinned by SHA) and imports it; `--dry-run` first.
 

@@ -216,3 +216,33 @@ func (s *Store) Counts(ctx context.Context) (Counts, error) {
 	}
 	return c, rows.Err()
 }
+
+// EachDone calls fn for every site that was scanned, in domain order, with its result JSON.
+// fn must not use the store.
+func (s *Store) EachDone(ctx context.Context, fn func(domain string, status int, resultJSON []byte) error) error {
+	rows, err := s.db.QueryContext(ctx, `SELECT domain, COALESCE(http_status,0), result FROM sites WHERE state='done' ORDER BY domain`)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = rows.Close() }()
+	for rows.Next() {
+		var d string
+		var st int
+		var b []byte
+		if err := rows.Scan(&d, &st, &b); err != nil {
+			return err
+		}
+		zr, err := gzip.NewReader(bytes.NewReader(b))
+		if err != nil {
+			return fmt.Errorf("batch: %s: %w", d, err)
+		}
+		j, err := io.ReadAll(io.LimitReader(zr, 256<<20))
+		if err != nil {
+			return fmt.Errorf("batch: %s: %w", d, err)
+		}
+		if err := fn(d, st, j); err != nil {
+			return err
+		}
+	}
+	return rows.Err()
+}

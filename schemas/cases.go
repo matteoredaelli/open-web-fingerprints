@@ -76,3 +76,36 @@ func ValidateScanResult(doc []byte) error {
 	}
 	return nil
 }
+
+//go:embed stats.schema.json
+var statsSchema []byte
+
+const statsURL = "https://github.com/matteoredaelli/open-web-fingerprints/schemas/stats.schema.json"
+
+// StatsSchema returns the raw JSON Schema of the statistics document.
+func StatsSchema() []byte { return append([]byte(nil), statsSchema...) }
+
+// ValidateStats validates a statistics document against its schema.
+func ValidateStats(doc []byte) error {
+	schemaDoc, err := jsonschema.UnmarshalJSON(bytes.NewReader(statsSchema))
+	if err != nil {
+		return fmt.Errorf("parse schema: %w", err)
+	}
+	c := jsonschema.NewCompiler()
+	c.AssertFormat()
+	if err := c.AddResource(statsURL, schemaDoc); err != nil {
+		return fmt.Errorf("add schema: %w", err)
+	}
+	sch, err := c.Compile(statsURL)
+	if err != nil {
+		return fmt.Errorf("compile schema: %w", err)
+	}
+	inst, err := jsonschema.UnmarshalJSON(bytes.NewReader(doc))
+	if err != nil {
+		return fmt.Errorf("parse document: %w", err)
+	}
+	if err := sch.Validate(inst); err != nil {
+		return fmt.Errorf("validate: %w", err)
+	}
+	return nil
+}

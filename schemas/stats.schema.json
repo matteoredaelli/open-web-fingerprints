@@ -1,0 +1,328 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/matteoredaelli/open-web-fingerprints/schemas/stats.schema.json",
+  "title": "Open Web Fingerprints statistics",
+  "description": "Aggregates over many home-page scans. Shares are of the sites reached; no site-level data.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "generated_at",
+    "registry",
+    "filters",
+    "sites",
+    "technologies",
+    "domain_signals",
+    "categories",
+    "headers",
+    "tls",
+    "social",
+    "pairs",
+    "coverage",
+    "other",
+    "notes"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "0.1.0"
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "scanner": {
+      "type": "string"
+    },
+    "list": {
+      "type": "string"
+    },
+    "registry": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "content_sha256": {
+          "type": "string"
+        },
+        "sources": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "notice": {
+          "type": "string"
+        }
+      }
+    },
+    "filters": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "min_confidence",
+        "min_sites"
+      ],
+      "properties": {
+        "min_confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "min_sites": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "excluded_technologies": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "sites": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "listed",
+        "scanned",
+        "reached",
+        "failed",
+        "pending",
+        "http_status",
+        "failures"
+      ],
+      "properties": {
+        "listed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "scanned": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "reached": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "failed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "pending": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "http_status": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/count"
+          }
+        },
+        "failures": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/count"
+          }
+        }
+      }
+    },
+    "technologies": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/tech"
+      }
+    },
+    "domain_signals": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/tech"
+      }
+    },
+    "categories": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/count"
+      }
+    },
+    "headers": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/count"
+      }
+    },
+    "tls": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "with_certificate",
+        "days_left",
+        "issuers"
+      ],
+      "properties": {
+        "with_certificate": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "days_left": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/count"
+          }
+        },
+        "issuers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/count"
+          }
+        }
+      }
+    },
+    "social": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/count"
+      }
+    },
+    "pairs": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/pair"
+      }
+    },
+    "coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mean_percent",
+        "median_technologies_per_site",
+        "mean_technologies_per_site",
+        "sites_without_technology"
+      ],
+      "properties": {
+        "mean_percent": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "median_technologies_per_site": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "mean_technologies_per_site": {
+          "type": "number",
+          "minimum": 0
+        },
+        "sites_without_technology": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "other": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "technologies_hidden"
+      ],
+      "properties": {
+        "technologies_hidden": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "notes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "$defs": {
+    "count": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "sites",
+        "share"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "sites": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "share": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      }
+    },
+    "tech": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "sites",
+        "share"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "categories": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "sites": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "share": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "versions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/count"
+          }
+        }
+      }
+    },
+    "pair": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "a",
+        "b",
+        "sites",
+        "share"
+      ],
+      "properties": {
+        "a": {
+          "type": "string"
+        },
+        "b": {
+          "type": "string"
+        },
+        "sites": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "share": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      }
+    }
+  }
+}
