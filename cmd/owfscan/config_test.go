@@ -296,3 +296,24 @@ func TestReportFromAScanResult(t *testing.T) {
 		t.Error("a file that is not a scan result must be refused")
 	}
 }
+
+func TestBatchRefusesExcessAndReportsStatus(t *testing.T) {
+	dir := t.TempDir()
+	list := filepath.Join(dir, "l.txt")
+	_ = os.WriteFile(list, []byte("1,a.example\r\n"), 0o600)
+	reg := filepath.Join(dir, "registry.json")
+	if err := os.WriteFile(reg, scantest.RegistryJSON(t), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	db := filepath.Join(dir, "b.db")
+	for _, a := range [][]string{{"--workers", "100"}, {"--rate", "50"}, {"--workers", "0"}} {
+		args := append([]string{"batch", "run", list, "--db", db, "--registry", reg, "--verify-cache", "off"}, a...)
+		if _, err := run(t, "", args...); err == nil {
+			t.Errorf("%v must be refused", a)
+		}
+	}
+	// --limit 0 would scan; use an unreachable-by-guard list: nothing is requested for a name that does not resolve.
+	if _, err := run(t, "", "batch", "status", "--db", filepath.Join(dir, "none.db")); err == nil {
+		t.Error("status of a missing file is an error")
+	}
+}
