@@ -1,7 +1,7 @@
 .DEFAULT_GOAL := help
 BIN := bin/owf
 
-.PHONY: help build test lint fmt vet check hooks clean addlicense license-check validate-corpus
+.PHONY: help build test lint fmt vet check hooks clean addlicense license-check validate-corpus registry
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN{FS=":.*?## "}{printf "  %-10s %s\n",$$1,$$2}'
@@ -62,6 +62,18 @@ validate-corpus: build ## Fetch Enthec, nuclei and OpenTechalyzer and run valida
 	$(BIN) --db $(CORPUS_DB) source refresh houseofmvps-opentechalyzer --revision $(CORPUS_OPENTECHALYZER_REVISION)
 	$(BIN) --db $(CORPUS_DB) fingerprint test validation/cases-opentechalyzer
 	rm -f $(CORPUS_DB) $(CORPUS_DB)-shm $(CORPUS_DB)-wal
+
+# registry: refresh every source (fetch the pinned tip of its branch and import it), then
+# export. The export keeps the redistribution guard: it refuses sources that are not
+# reviewed. For internal use pass EXPORT_FLAGS=--include-unreviewed (the file says so).
+# Needs git and network. Example: make registry DB=owf.db EXPORT_FLAGS=--include-unreviewed
+DB ?= owf.db
+EXPORT_FILE ?= registry.json
+EXPORT_FLAGS ?=
+registry: build ## Create the registry if missing, refresh all sources (import) and export JSON
+	@test -f $(DB) || $(BIN) --db $(DB) init
+	$(BIN) --db $(DB) source refresh --all
+	$(BIN) --db $(DB) export $(EXPORT_FLAGS) -o $(EXPORT_FILE)
 
 clean: ## Remove build artifacts
 	rm -rf bin dist coverage.out
