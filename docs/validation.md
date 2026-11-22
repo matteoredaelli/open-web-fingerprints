@@ -147,6 +147,14 @@ against a recorded answer, nothing is requested). They are written by hand with 
 inputs, each with its reason. On that registry 126 of 5166 rules are `ok` after
 `fingerprint test --apply`.
 
+Run against a registry that holds more sources (your working `owf.db`), these two
+directories report **errors, not failures**: the nuclei groups have other slugs there
+(`nginx-2` has become part of `nginx`), and two OpenTechalyzer cases name the patterns of
+daisyUI and Prism as the source wrote them, which `owf fingerprint correct` has since
+changed (on 2026-11-22: 55 and 2 errors). That is expected; `make validate-corpus` is the
+check that counts for them, and `validation/cases/` is the one that runs on any registry
+where the Enthec rules are the first provenance.
+
 Rules that are weak by their own terms get **no positive case**, so they cannot become
 `ok`: **Metatag CMS** matches any page that declares a generator (a Hugo site included),
 `sentry-instance` matches any site using the Sentry browser SDK, and the Intel AMT rule
