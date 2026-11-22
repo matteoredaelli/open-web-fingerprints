@@ -46,7 +46,9 @@ CORPUS_DB := .corpus.db
 # The nuclei cases are written against this nuclei-templates commit, in a registry
 # that holds only that source (slugs get numeric suffixes when sources collide).
 CORPUS_NUCLEI_REVISION ?= 7fba833dacc1ea8f737fed34d01cc404a17e3424
-validate-corpus: build ## Fetch Enthec and nuclei and run validation/cases* (needs git and network)
+# The OpenTechalyzer cases are written against this commit, in a registry that holds only that source.
+CORPUS_OPENTECHALYZER_REVISION ?= a3d30e479c91c06732ef88867d69b7feef8f3f35
+validate-corpus: build ## Fetch Enthec, nuclei and OpenTechalyzer and run validation/cases* (needs git and network)
 	rm -f $(CORPUS_DB)
 	$(BIN) --db $(CORPUS_DB) init
 	$(BIN) --db $(CORPUS_DB) source refresh enthec-webappanalyzer --revision $(CORPUS_REVISION)
@@ -55,6 +57,10 @@ validate-corpus: build ## Fetch Enthec and nuclei and run validation/cases* (nee
 	$(BIN) --db $(CORPUS_DB) init
 	$(BIN) --db $(CORPUS_DB) source refresh projectdiscovery-nuclei-templates --revision $(CORPUS_NUCLEI_REVISION)
 	$(BIN) --db $(CORPUS_DB) fingerprint test validation/cases-nuclei
+	rm -f $(CORPUS_DB) $(CORPUS_DB)-shm $(CORPUS_DB)-wal
+	$(BIN) --db $(CORPUS_DB) init
+	$(BIN) --db $(CORPUS_DB) source refresh houseofmvps-opentechalyzer --revision $(CORPUS_OPENTECHALYZER_REVISION)
+	$(BIN) --db $(CORPUS_DB) fingerprint test validation/cases-opentechalyzer
 	rm -f $(CORPUS_DB) $(CORPUS_DB)-shm $(CORPUS_DB)-wal
 
 clean: ## Remove build artifacts

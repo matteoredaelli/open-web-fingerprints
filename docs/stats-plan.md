@@ -58,3 +58,15 @@ browser. The file holds full results (contacts too): private.
 
 Same top 100 as above, with the `www.` retry: **72 scanned** (was 61), 28 failed (21 no such host,
 4 certificate, 1 refused, 1 reset, 1 connection refused); 63 answered 200.
+
+## daisyUI and Prism corrected (2026-11-22)
+
+`validation/cases-opentechalyzer/` has 52 cases (a positive and a negative for each of the 26
+class-name `html` rules of OpenTechalyzer). Two negatives failed on the uncorrected rules:
+daisyUI matched Bootstrap's `btn-primary` and `card-body`, and Prism matched any
+`class="language-xxx"`. They are kept in `validation/known-failing/` (not run by `make`) and the
+rules were corrected in the registry with `owf fingerprint correct` (reason recorded; the
+importer stays faithful): daisyUI keeps only `navbar-start|drawer-toggle`, Prism becomes
+`class="token [a-z-]+"`. The new patterns pass a positive and a negative case; the
+replacements are my choice, not upstream's. The other 24 rules passed, but those negatives are
+only a plain page and one lookalike for a few: this is a floor, not proof.

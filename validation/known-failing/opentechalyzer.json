@@ -1,0 +1,35 @@
+{
+  "schema_version": "0.1.0",
+  "cases": [
+    {
+      "id": "daisyui-html-class-1-negative",
+      "rule": {
+        "technology": "daisyui",
+        "observation": "html",
+        "operator": "regex",
+        "pattern": "class=\"[^\"]*\\b(?:btn-primary|card-body|navbar-start|drawer-toggle)\\b"
+      },
+      "input": {
+        "html": "<div class=\"card\"><div class=\"card-body\"><a class=\"btn btn-primary\">Go</a></div></div>"
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "prism-html-class-1-negative",
+      "rule": {
+        "technology": "prism",
+        "observation": "html",
+        "operator": "regex",
+        "pattern": "class=\"[^\"]*\\blanguage-[a-z]+\\b[^\"]*\"[^>]*>|token comment"
+      },
+      "input": {
+        "html": "<pre><code class=\"language-python\">print(1)</code></pre>"
+      },
+      "expect": {
+        "match": false
+      }
+    }
+  ]
+}

@@ -1,0 +1,785 @@
+{
+  "schema_version": "0.1.0",
+  "cases": [
+    {
+      "id": "svelte-html-class-1-positive",
+      "rule": {
+        "technology": "svelte",
+        "observation": "html",
+        "operator": "regex",
+        "pattern": "class=\"[^\"]*svelte-[0-9a-z]{6}"
+      },
+      "input": {
+        "html": "<div class=\"card svelte-1a2b3c\">x</div>"
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "svelte-html-class-1-negative",
+      "rule": {
+        "technology": "svelte",
+        "observation": "html",
+        "operator": "regex",
+        "pattern": "class=\"[^\"]*svelte-[0-9a-z]{6}"
+      },
+      "input": {
+        "html": "<div class=\"container main\"><p class=\"lead\">Hello</p></div>"
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "bootstrap-html-class-1-positive",
+      "rule": {
+        "technology": "bootstrap",
+        "observation": "html",
+        "operator": "regex",
+        "pattern": "class=\"[^\"]*\\b(?:col-(?:xs|sm|md|lg|xl)-\\d+|navbar-toggler|carousel-inner)\\b"
+      },
+      "input": {
+        "html": "<div class=\"row\"><div class=\"col-md-6\">x</div></div>"
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "bootstrap-html-class-1-negative",
+      "rule": {
+        "technology": "bootstrap",
+        "observation": "html",
+        "operator": "regex",
+        "pattern": "class=\"[^\"]*\\b(?:col-(?:xs|sm|md|lg|xl)-\\d+|navbar-toggler|carousel-inner)\\b"
+      },
+      "input": {
+        "html": "<div class=\"col-12 container\">x</div>"
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "bulma-html-class-1-positive",
+      "rule": {
+        "technology": "bulma",
+        "observation": "html",
+        "operator": "regex",
+        "pattern": "class=\"[^\"]*\\b(?:is-primary|hero-body)\\b[^\"]*\"[\\s\\S]{0,400}class=\"[^\"]*\\bcolumn is-"
+      },
+      "input": {
+        "html": "<section class=\"hero is-primary\"><div class=\"hero-body\">x</div></section>\n<div class=\"columns\"><div class=\"column is-half\">y</div></div>"
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "bulma-html-class-1-negative",
+      "rule": {
+        "technology": "bulma",
+        "observation": "html",
+        "operator": "regex",
+        "pattern": "class=\"[^\"]*\\b(?:is-primary|hero-body)\\b[^\"]*\"[\\s\\S]{0,400}class=\"[^\"]*\\bcolumn is-"
+      },
+      "input": {
+        "html": "<div class=\"container main\"><p class=\"lead\">Hello</p></div>"
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "foundation-html-class-1-positive",
+      "rule": {
+        "technology": "foundation",
+        "observation": "html",
+        "operator": "regex",
+        "pattern": "class=\"[^\"]*\\bsmall-\\d+\\s+(?:medium|large)-\\d+\\b"
+      },
+      "input": {
+        "html": "<div class=\"small-12 medium-6 columns\">x</div>"
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "foundation-html-class-1-negative",
+      "rule": {
+        "technology": "foundation",
+        "observation": "html",
+        "operator": "regex",
+        "pattern": "class=\"[^\"]*\\bsmall-\\d+\\s+(?:medium|large)-\\d+\\b"
+      },
+      "input": {
+        "html": "<div class=\"container main\"><p class=\"lead\">Hello</p></div>"
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "ant-design-html-class-1-positive",
+      "rule": {
+        "technology": "ant-design",
+        "observation": "html",
+        "operator": "regex",
+        "pattern": "class=\"[^\"]*\\bant-(?:btn|layout|menu|row|col)\\b"
+      },
+      "input": {
+        "html": "<button class=\"ant-btn ant-btn-primary\">x</button>"
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "ant-design-html-class-1-negative",
+      "rule": {
+        "technology": "ant-design",
+        "observation": "html",
+        "operator": "regex",
+        "pattern": "class=\"[^\"]*\\bant-(?:btn|layout|menu|row|col)\\b"
+      },
+      "input": {
+        "html": "<div class=\"container main\"><p class=\"lead\">Hello</p></div>"
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "mantine-html-class-1-positive",
+      "rule": {
+        "technology": "mantine",
+        "observation": "html",
+        "operator": "regex",
+        "pattern": "class=\"[^\"]*\\bmantine-"
+      },
+      "input": {
+        "html": "<div class=\"mantine-Button-root\">x</div>"
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "mantine-html-class-1-negative",
+      "rule": {
+        "technology": "mantine",
+        "observation": "html",
+        "operator": "regex",
+        "pattern": "class=\"[^\"]*\\bmantine-"
+      },
+      "input": {
+        "html": "<div class=\"container main\"><p class=\"lead\">Hello</p></div>"
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "daisyui-html-class-1-positive",
+      "rule": {
+        "technology": "daisyui",
+        "observation": "html",
+        "operator": "regex",
+        "pattern": "class=\"[^\"]*\\b(?:btn-primary|card-body|navbar-start|drawer-toggle)\\b"
+      },
+      "input": {
+        "html": "<nav class=\"navbar-start\">x</nav>"
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "vuetify-html-class-1-positive",
+      "rule": {
+        "technology": "vuetify",
+        "observation": "html",
+        "operator": "regex",
+        "pattern": "class=\"[^\"]*\\bv-application\\b"
+      },
+      "input": {
+        "html": "<div class=\"v-application v-application--is-ltr\">x</div>"
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "vuetify-html-class-1-negative",
+      "rule": {
+        "technology": "vuetify",
+        "observation": "html",
+        "operator": "regex",
+        "pattern": "class=\"[^\"]*\\bv-application\\b"
+      },
+      "input": {
+        "html": "<div class=\"container main\"><p class=\"lead\">Hello</p></div>"
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "vuetify-html-class-2-positive",
+      "rule": {
+        "technology": "vuetify",
+        "observation": "html",
+        "operator": "regex",
+        "pattern": "class=\"[^\"]*\\bv-(?:btn|card|container)\\b"
+      },
+      "input": {
+        "html": "<button class=\"v-btn v-btn--flat\">x</button>"
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "vuetify-html-class-2-negative",
+      "rule": {
+        "technology": "vuetify",
+        "observation": "html",
+        "operator": "regex",
+        "pattern": "class=\"[^\"]*\\bv-(?:btn|card|container)\\b"
+      },
+      "input": {
+        "html": "<div class=\"container main\"><p class=\"lead\">Hello</p></div>"
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "element-plus-html-class-1-positive",
+      "rule": {
+        "technology": "element-plus",
+        "observation": "html",
+        "operator": "regex",
+        "pattern": "class=\"[^\"]*\\bel-(?:button|row|col|input)\\b"
+      },
+      "input": {
+        "html": "<button class=\"el-button el-button--primary\">x</button>"
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "element-plus-html-class-1-negative",
+      "rule": {
+        "technology": "element-plus",
+        "observation": "html",
+        "operator": "regex",
+        "pattern": "class=\"[^\"]*\\bel-(?:button|row|col|input)\\b"
+      },
+      "input": {
+        "html": "<div class=\"container main\"><p class=\"lead\">Hello</p></div>"
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "primevue-html-class-1-positive",
+      "rule": {
+        "technology": "primevue",
+        "observation": "html",
+        "operator": "regex",
+        "pattern": "class=\"[^\"]*\\bp-(?:component|button|inputtext)\\b"
+      },
+      "input": {
+        "html": "<input class=\"p-inputtext p-component\">"
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "primevue-html-class-1-negative",
+      "rule": {
+        "technology": "primevue",
+        "observation": "html",
+        "operator": "regex",
+        "pattern": "class=\"[^\"]*\\bp-(?:component|button|inputtext)\\b"
+      },
+      "input": {
+        "html": "<div class=\"container main\"><p class=\"lead\">Hello</p></div>"
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "quasar-html-class-1-positive",
+      "rule": {
+        "technology": "quasar",
+        "observation": "html",
+        "operator": "regex",
+        "pattern": "class=\"[^\"]*\\bq-(?:btn|layout|page)\\b"
+      },
+      "input": {
+        "html": "<button class=\"q-btn q-btn-item\">x</button>"
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "quasar-html-class-1-negative",
+      "rule": {
+        "technology": "quasar",
+        "observation": "html",
+        "operator": "regex",
+        "pattern": "class=\"[^\"]*\\bq-(?:btn|layout|page)\\b"
+      },
+      "input": {
+        "html": "<div class=\"container main\"><p class=\"lead\">Hello</p></div>"
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "ionic-html-class-1-positive",
+      "rule": {
+        "technology": "ionic",
+        "observation": "html",
+        "operator": "regex",
+        "pattern": "class=\"[^\"]*\\bion-"
+      },
+      "input": {
+        "html": "<ion-content class=\"ion-padding\">x</ion-content>"
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "ionic-html-class-1-negative",
+      "rule": {
+        "technology": "ionic",
+        "observation": "html",
+        "operator": "regex",
+        "pattern": "class=\"[^\"]*\\bion-"
+      },
+      "input": {
+        "html": "<div class=\"container main\"><p class=\"lead\">Hello</p></div>"
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "emotion-html-class-1-positive",
+      "rule": {
+        "technology": "emotion",
+        "observation": "html",
+        "operator": "regex",
+        "pattern": "class=\"[^\"]*\\bcss-[a-z0-9]{6,}\\b"
+      },
+      "input": {
+        "html": "<div class=\"css-1x2y3z4\">x</div>"
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "emotion-html-class-1-negative",
+      "rule": {
+        "technology": "emotion",
+        "observation": "html",
+        "operator": "regex",
+        "pattern": "class=\"[^\"]*\\bcss-[a-z0-9]{6,}\\b"
+      },
+      "input": {
+        "html": "<div class=\"css-grid\">x</div>"
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "swiper-html-class-1-positive",
+      "rule": {
+        "technology": "swiper",
+        "observation": "html",
+        "operator": "regex",
+        "pattern": "class=\"[^\"]*\\bswiper\\b"
+      },
+      "input": {
+        "html": "<div class=\"swiper swiper-container\">x</div>"
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "swiper-html-class-1-negative",
+      "rule": {
+        "technology": "swiper",
+        "observation": "html",
+        "operator": "regex",
+        "pattern": "class=\"[^\"]*\\bswiper\\b"
+      },
+      "input": {
+        "html": "<div class=\"swipe-hint\">x</div>"
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "slick-carousel-html-class-1-positive",
+      "rule": {
+        "technology": "slick-carousel",
+        "observation": "html",
+        "operator": "regex",
+        "pattern": "class=\"[^\"]*\\bslick-(?:slider|track|slide)\\b"
+      },
+      "input": {
+        "html": "<div class=\"slick-slider slick-initialized\">x</div>"
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "slick-carousel-html-class-1-negative",
+      "rule": {
+        "technology": "slick-carousel",
+        "observation": "html",
+        "operator": "regex",
+        "pattern": "class=\"[^\"]*\\bslick-(?:slider|track|slide)\\b"
+      },
+      "input": {
+        "html": "<div class=\"container main\"><p class=\"lead\">Hello</p></div>"
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "splide-html-class-1-positive",
+      "rule": {
+        "technology": "splide",
+        "observation": "html",
+        "operator": "regex",
+        "pattern": "class=\"[^\"]*\\bsplide\\b"
+      },
+      "input": {
+        "html": "<div class=\"splide\"><div class=\"splide__track\">x</div></div>"
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "splide-html-class-1-negative",
+      "rule": {
+        "technology": "splide",
+        "observation": "html",
+        "operator": "regex",
+        "pattern": "class=\"[^\"]*\\bsplide\\b"
+      },
+      "input": {
+        "html": "<div class=\"container main\"><p class=\"lead\">Hello</p></div>"
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "flickity-html-class-1-positive",
+      "rule": {
+        "technology": "flickity",
+        "observation": "html",
+        "operator": "regex",
+        "pattern": "class=\"[^\"]*\\bflickity-"
+      },
+      "input": {
+        "html": "<div class=\"flickity-enabled\">x</div>"
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "flickity-html-class-1-negative",
+      "rule": {
+        "technology": "flickity",
+        "observation": "html",
+        "operator": "regex",
+        "pattern": "class=\"[^\"]*\\bflickity-"
+      },
+      "input": {
+        "html": "<div class=\"container main\"><p class=\"lead\">Hello</p></div>"
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "prism-html-class-1-positive",
+      "rule": {
+        "technology": "prism",
+        "observation": "html",
+        "operator": "regex",
+        "pattern": "class=\"[^\"]*\\blanguage-[a-z]+\\b[^\"]*\"[^>]*>|token comment"
+      },
+      "input": {
+        "html": "<pre><code class=\"language-js\"><span class=\"token comment\">// x</span></code></pre>"
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "shiki-html-class-1-positive",
+      "rule": {
+        "technology": "shiki",
+        "observation": "html",
+        "operator": "regex",
+        "pattern": "class=\"[^\"]*\\bshiki\\b"
+      },
+      "input": {
+        "html": "<pre class=\"shiki github-dark\">x</pre>"
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "shiki-html-class-1-negative",
+      "rule": {
+        "technology": "shiki",
+        "observation": "html",
+        "operator": "regex",
+        "pattern": "class=\"[^\"]*\\bshiki\\b"
+      },
+      "input": {
+        "html": "<div class=\"container main\"><p class=\"lead\">Hello</p></div>"
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "codemirror-html-class-1-positive",
+      "rule": {
+        "technology": "codemirror",
+        "observation": "html",
+        "operator": "regex",
+        "pattern": "class=\"[^\"]*\\bcm-(?:editor|content)\\b"
+      },
+      "input": {
+        "html": "<div class=\"cm-editor cm-content\">x</div>"
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "codemirror-html-class-1-negative",
+      "rule": {
+        "technology": "codemirror",
+        "observation": "html",
+        "operator": "regex",
+        "pattern": "class=\"[^\"]*\\bcm-(?:editor|content)\\b"
+      },
+      "input": {
+        "html": "<div class=\"container main\"><p class=\"lead\">Hello</p></div>"
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "tiptap-html-class-1-positive",
+      "rule": {
+        "technology": "tiptap",
+        "observation": "html",
+        "operator": "regex",
+        "pattern": "class=\"[^\"]*\\btiptap\\b"
+      },
+      "input": {
+        "html": "<div class=\"tiptap ProseMirror\">x</div>"
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "tiptap-html-class-1-negative",
+      "rule": {
+        "technology": "tiptap",
+        "observation": "html",
+        "operator": "regex",
+        "pattern": "class=\"[^\"]*\\btiptap\\b"
+      },
+      "input": {
+        "html": "<div class=\"container main\"><p class=\"lead\">Hello</p></div>"
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "font-awesome-html-class-1-positive",
+      "rule": {
+        "technology": "font-awesome",
+        "observation": "html",
+        "operator": "regex",
+        "pattern": "class=\"[^\"]*\\bfa[srlbd]?\\s+fa-"
+      },
+      "input": {
+        "html": "<i class=\"fas fa-home\"></i>"
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "font-awesome-html-class-1-negative",
+      "rule": {
+        "technology": "font-awesome",
+        "observation": "html",
+        "operator": "regex",
+        "pattern": "class=\"[^\"]*\\bfa[srlbd]?\\s+fa-"
+      },
+      "input": {
+        "html": "<div class=\"sofa-bed fantasy\">x</div>"
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "font-awesome-html-class-2-positive",
+      "rule": {
+        "technology": "font-awesome",
+        "observation": "html",
+        "operator": "regex",
+        "pattern": "class=\"[^\"]*\\bfa-[a-z-]+"
+      },
+      "input": {
+        "html": "<i class=\"fa-solid fa-user\"></i>"
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "font-awesome-html-class-2-negative",
+      "rule": {
+        "technology": "font-awesome",
+        "observation": "html",
+        "operator": "regex",
+        "pattern": "class=\"[^\"]*\\bfa-[a-z-]+"
+      },
+      "input": {
+        "html": "<div class=\"sofa-bed fantasy\">x</div>"
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "woocommerce-html-class-1-positive",
+      "rule": {
+        "technology": "woocommerce",
+        "observation": "html",
+        "operator": "regex",
+        "pattern": "class=\"[^\"]*\\bwoocommerce\\b"
+      },
+      "input": {
+        "html": "<body class=\"woocommerce-page woocommerce\">x</body>"
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "woocommerce-html-class-1-negative",
+      "rule": {
+        "technology": "woocommerce",
+        "observation": "html",
+        "operator": "regex",
+        "pattern": "class=\"[^\"]*\\bwoocommerce\\b"
+      },
+      "input": {
+        "html": "<body class=\"woo-page\">x</body>"
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "chakra-ui-html-class-1-positive",
+      "rule": {
+        "technology": "chakra-ui",
+        "observation": "html",
+        "operator": "regex",
+        "pattern": "class=\"[^\"]*\\bchakra-[a-z]+"
+      },
+      "input": {
+        "html": "<div class=\"chakra-button css-x\">x</div>"
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "chakra-ui-html-class-1-negative",
+      "rule": {
+        "technology": "chakra-ui",
+        "observation": "html",
+        "operator": "regex",
+        "pattern": "class=\"[^\"]*\\bchakra-[a-z]+"
+      },
+      "input": {
+        "html": "<div class=\"container main\"><p class=\"lead\">Hello</p></div>"
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "chakra-ui-html-class-2-positive",
+      "rule": {
+        "technology": "chakra-ui",
+        "observation": "html",
+        "operator": "regex",
+        "pattern": "data-theme=\"(?:light|dark)\"[^>]*class=\"[^\"]*chakra"
+      },
+      "input": {
+        "html": "<html data-theme=\"dark\" class=\"chakra-ui-dark\">x</html>"
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "chakra-ui-html-class-2-negative",
+      "rule": {
+        "technology": "chakra-ui",
+        "observation": "html",
+        "operator": "regex",
+        "pattern": "data-theme=\"(?:light|dark)\"[^>]*class=\"[^\"]*chakra"
+      },
+      "input": {
+        "html": "<div class=\"container main\"><p class=\"lead\">Hello</p></div>"
+      },
+      "expect": {
+        "match": false
+      }
+    }
+  ]
+}
