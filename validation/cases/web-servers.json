@@ -34,14 +34,14 @@
     },
     {
       "id": "cloudflare-server-header-positive",
-      "rule": {"technology": "cloudflare", "observation": "http_header", "target": "Server", "operator": "regex"},
+      "rule": {"technology": "cloudflare", "observation": "http_header", "target": "Server", "operator": "regex", "pattern": "^cloudflare$"},
       "input": {"headers": {"Server": "cloudflare"}},
       "expect": {"match": true}
     },
     {
       "id": "cloudflare-server-header-negative",
       "description": "The rule is anchored: another product whose name starts with cloudflare is not Cloudflare.",
-      "rule": {"technology": "cloudflare", "observation": "http_header", "target": "Server", "operator": "regex"},
+      "rule": {"technology": "cloudflare", "observation": "http_header", "target": "Server", "operator": "regex", "pattern": "^cloudflare$"},
       "input": {"headers": {"Server": "cloudflare-nginx"}},
       "expect": {"match": false}
     },

@@ -3,20 +3,20 @@
   "cases": [
     {
       "id": "wordpress-generator-positive",
-      "rule": {"technology": "wordpress", "observation": "meta_tag", "target": "generator", "operator": "regex"},
+      "rule": {"technology": "wordpress", "observation": "meta_tag", "target": "generator", "operator": "regex", "pattern": "^WordPress(?: ([\\d.]+))?"},
       "input": {"html": "<html><head><meta name=\"generator\" content=\"WordPress 6.4.2\"></head></html>"},
       "expect": {"match": true, "version": "6.4.2"}
     },
     {
       "id": "wordpress-generator-negative",
-      "rule": {"technology": "wordpress", "observation": "meta_tag", "target": "generator", "operator": "regex"},
+      "rule": {"technology": "wordpress", "observation": "meta_tag", "target": "generator", "operator": "regex", "pattern": "^WordPress(?: ([\\d.]+))?"},
       "input": {"html": "<html><head><meta name=\"generator\" content=\"Drupal 10 (https://www.drupal.org)\"></head></html>"},
       "expect": {"match": false}
     },
     {
       "id": "wordpress-generator-anchored",
       "description": "A page that only talks about WordPress in its generator tag text is not matched mid-string.",
-      "rule": {"technology": "wordpress", "observation": "meta_tag", "target": "generator", "operator": "regex"},
+      "rule": {"technology": "wordpress", "observation": "meta_tag", "target": "generator", "operator": "regex", "pattern": "^WordPress(?: ([\\d.]+))?"},
       "input": {"html": "<meta name=\"generator\" content=\"Static site migrated from WordPress\">"},
       "expect": {"match": false}
     },
@@ -34,13 +34,13 @@
     },
     {
       "id": "wordpress-pingback-positive",
-      "rule": {"technology": "wordpress", "observation": "http_header", "target": "X-Pingback"},
+      "rule": {"technology": "wordpress", "observation": "http_header", "target": "X-Pingback", "pattern": "/xmlrpc\\.php$"},
       "input": {"headers": {"X-Pingback": "https://example.com/xmlrpc.php"}},
       "expect": {"match": true}
     },
     {
       "id": "wordpress-pingback-negative",
-      "rule": {"technology": "wordpress", "observation": "http_header", "target": "X-Pingback"},
+      "rule": {"technology": "wordpress", "observation": "http_header", "target": "X-Pingback", "pattern": "/xmlrpc\\.php$"},
       "input": {"headers": {"X-Pingback": "https://example.com/pingback/endpoint"}},
       "expect": {"match": false}
     },
