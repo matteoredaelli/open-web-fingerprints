@@ -47,17 +47,18 @@ func TestSelectLinks(t *testing.T) {
 		link("https://www.example.org/about?utm=1", "a", "example.org"),      // query
 		link("https://www.example.org/press/report.pdf", "a", "example.org"), // a file
 		link("https://www.example.org/privacy", "a", "example.org"),
-		link("https://www.example.org/products", "a", "example.org"),   // no keyword
+		link("https://www.example.org/products", "a", "example.org"),   // no keyword: followed after the others
 		link("https://www.example.org/careers", "link", "example.org"), // not an ordinary link
 		link("https://www.example.org/legal", "script", "example.org"),
 		link("https://shop.example.org/contact-us", "a", "example.org"), // another host of the same site
 		link("https://other.example.net/contact", "a", "example.net"),   // another site
 		link("https://www.example.org/seen", "a", "example.org"),
+		link("https://www.example.org/seen2", "a", "example.org"), // no keyword: still followed, last
 		link("ftp://www.example.org/contact", "a", "example.org"),
 	}
 	visited := map[string]bool{"www.example.org/seen": true}
 	got := selectLinks(links, "example.org", visited)
-	want := []string{"https://shop.example.org/contact-us", "https://www.example.org/contact", "https://www.example.org/about", "https://www.example.org/privacy"}
+	want := []string{"https://shop.example.org/contact-us", "https://www.example.org/contact", "https://www.example.org/about", "https://www.example.org/privacy", "https://www.example.org/products", "https://www.example.org/seen2"}
 	if strings.Join(got, " ") != strings.Join(want, " ") {
 		t.Errorf("selected\n %v\nwant\n %v", got, want)
 	}
@@ -147,10 +148,10 @@ func TestCrawlFollowsTheRightPages(t *testing.T) {
 		t.Fatal(err)
 	}
 	got := paths(c)
-	if got != "/ /contact /about" {
-		t.Errorf("pages: %q (careers is disallowed, products has a query, the pdf is a file, the blog has no keyword, elsewhere is another site)", got)
+	if got != "/ /contact /about /blog/hello" {
+		t.Errorf("pages: %q (careers is disallowed, products has a query, the pdf is a file, elsewhere is another site)", got)
 	}
-	if s.count("/careers") != 0 || s.count("/products") != 0 || s.count("/brochure.pdf") != 0 || s.count("/blog/hello") != 0 {
+	if s.count("/careers") != 0 || s.count("/products") != 0 || s.count("/brochure.pdf") != 0 {
 		t.Errorf("hits: %v", s.hits)
 	}
 	if s.count("/robots.txt") != 1 || !c.RobotsFetched || !strings.Contains(c.Robots, "Disallow: /careers") {
@@ -162,7 +163,7 @@ func TestCrawlFollowsTheRightPages(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := paths(c); got != "/ /contact /about /contact/offices" {
+	if got := paths(c); got != "/ /contact /about /blog/hello /contact/offices" {
 		t.Errorf("depth 2: %q", got)
 	}
 	for path, n := range s.hits {
@@ -228,7 +229,7 @@ func TestRobotsHandling(t *testing.T) {
 	s = newSite(t, "User-agent: *\nDisallow: /\nUser-agent: owfscan\nDisallow: /about\nCrawl-delay: 0.05\n", 200)
 	start := time.Now()
 	c, _ = Crawl(context.Background(), copts(1, 10), s.URL)
-	if got := paths(c); got != "/ /contact /careers" {
+	if got := paths(c); got != "/ /contact /careers /blog/hello" {
 		t.Errorf("owfscan group: %q", got)
 	}
 	if time.Since(start) < 100*time.Millisecond {

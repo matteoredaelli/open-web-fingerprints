@@ -39,7 +39,7 @@ type CrawlOptions struct {
 
 // Defaults for a crawl.
 const (
-	DefaultMaxPages = 8
+	DefaultMaxPages = 50
 	DefaultDelay    = 500 * time.Millisecond
 	MaxDelay        = 10 * time.Second
 	userAgentToken  = "owfscan"
@@ -57,8 +57,8 @@ type Crawled struct {
 	Warnings      []scan.Warning
 }
 
-// Crawl observes a page and, if asked, the pages it links to that are most likely to
-// say something about the site: contact, about, press, legal and similar. It stays
+// Crawl observes a page and, if asked, the pages it links to on the same site, those
+// most likely to say something about it first: contact, about, press, legal and similar. It stays
 // on the registrable domain of the first page, follows only ordinary links, skips
 // files and addresses with a query, honours robots.txt, pauses between requests and
 // never fetches more than MaxPages pages.
@@ -263,7 +263,7 @@ var keywords = map[string]int{
 }
 
 // score rates a path: the best keyword it contains, with a small preference for short
-// paths. Zero means the page is not worth fetching.
+// paths. Zero means no keyword: the page is still followed, after those that have one.
 func score(p string) int {
 	best := 0
 	segs := strings.FieldsFunc(strings.ToLower(p), func(r rune) bool { return r == '/' })
@@ -293,7 +293,8 @@ func score(p string) int {
 
 // selectLinks picks the links to follow: ordinary links (not stylesheets, scripts,
 // images) to the same registrable domain, over http or https, without a query,
-// that are not files and not seen, ordered by score and then by address. It marks
+// that are not files and not seen, ordered by score (pages with a keyword first) and
+// then by address. It marks
 // nothing visited; the caller does that when it fetches.
 func selectLinks(links []scan.Link, site string, visited map[string]bool) []string {
 	type cand struct {
@@ -318,9 +319,7 @@ func selectLinks(links []scan.Link, site string, visited map[string]bool) []stri
 			continue
 		}
 		seen[k] = true
-		if s := score(u.Path); s > 0 {
-			cs = append(cs, cand{l.URL, s})
-		}
+		cs = append(cs, cand{l.URL, score(u.Path)})
 	}
 	sort.SliceStable(cs, func(i, j int) bool {
 		if cs[i].score != cs[j].score {

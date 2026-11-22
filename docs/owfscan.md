@@ -347,11 +347,12 @@ links up to N levels, with these limits:
 
 - **Which pages.** Only ordinary links (`<a>`) to the same registrable domain, over
   http or https, without a query string, that are not files (pdf, images, archives,
-  feeds...). Of those, only pages whose path contains a word that usually marks a page
-  with company details, in several languages: `contact`, `contatti`, `kontakt`, `about`,
-  `chi-siamo`, `impressum`, `imprint`, `legal`, `press`, `stampa`, `careers`, `team`,
-  `support`, `privacy`... Pages without such a word (a blog post, a product) are not
-  fetched. Best candidates first, then by address. The word list is in
+  feeds...). **All** of them are followed, subdomains of the same registrable domain
+  included (`blog.example.com`, `/blog/...`). Pages whose path contains a word that
+  usually marks a page with company details (`contact`, `contatti`, `kontakt`, `about`,
+  `chi-siamo`, `impressum`, `legal`, `press`, `careers`, `team`, `support`, `privacy`...,
+  in several languages) come first, then the others by address. Because of `--max-pages`
+  the order decides what is read: raise it to read more. The word list is in
   `internal/scan/scanner/crawl.go`.
 - **`robots.txt`.** Read once per host before any further page, with the rules of
   RFC 9309 (the group for `owfscan`, else `*`; longest rule wins; `Allow` wins a tie).
@@ -361,7 +362,7 @@ links up to N levels, with these limits:
   this, for your own site. **The page you name is always fetched.**
 - **Pace.** `--delay` (default 500 ms) before each further page, or the site's
   `Crawl-delay` if larger, at most 10 s. Requests are sequential.
-- **Size.** `--max-pages` (default 8) in total; a warning says when it stopped there.
+- **Size.** `--max-pages` (default 50, at most 200) in total; a warning says when it stopped there.
 - **Safety.** The same rules as for the first page: public addresses only, also after
   a redirect. A page that redirects to another site is dropped.
 - **Result.** Technologies found on several pages are one record whose evidence says

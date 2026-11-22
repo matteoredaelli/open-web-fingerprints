@@ -20,7 +20,7 @@ func TestDefaultsAreTheValuesOfToday(t *testing.T) {
 	if d.Fetch.Timeout.D() != 20*time.Second || d.Fetch.MaxBodyBytes != 5<<20 || d.Fetch.MaxRedirects != 10 || d.Fetch.MaxAge.D() != 24*time.Hour {
 		t.Errorf("fetch: %+v", d.Fetch)
 	}
-	if d.Crawl.MaxPages != 8 || d.Crawl.Delay.D() != 500*time.Millisecond || d.Crawl.MaxDelay.D() != 10*time.Second {
+	if d.Crawl.MaxPages != 50 || d.Crawl.Delay.D() != 500*time.Millisecond || d.Crawl.MaxDelay.D() != 10*time.Second {
 		t.Errorf("crawl: %+v", d.Crawl)
 	}
 	if d.Friends.Max != 20 || d.Related.Max != 20 || d.Active.Max != 30 || d.Active.MaxBodyBytes != 1<<20 {

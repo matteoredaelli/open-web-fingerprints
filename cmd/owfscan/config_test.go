@@ -43,7 +43,7 @@ func TestConfigInitStdoutIsTheDefaults(t *testing.T) {
 	if _, err := config.Parse(strings.NewReader(out)); err != nil {
 		t.Errorf("what init writes must parse: %v", err)
 	}
-	if !strings.Contains(out, "max_pages = 8") || !strings.Contains(out, `tlds = ["com", "org"`) {
+	if !strings.Contains(out, "max_pages = 50") || !strings.Contains(out, `tlds = ["com", "org"`) {
 		t.Errorf("missing defaults:\n%s", out)
 	}
 }
