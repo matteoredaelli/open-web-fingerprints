@@ -166,8 +166,8 @@ nothing about it.
 
 Current state: **304 cases, all pass** on the author's registry (2026-11-23, six sources).
 With the cases of this corpus applied, 34 more rules became `ok` (911 -> 945 of 29174; 685
-of them only from upstream examples). Before that, 115 rules of 61 technologies came from
-this corpus, out of 15836 Enthec rules (0.7%).
+of them only from upstream examples).
+The earlier count was 236 cases and 115 Enthec rules of 61 technologies (of 15836, 0.7%).
 
 | File | Contents |
 |---|---|
