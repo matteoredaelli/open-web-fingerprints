@@ -164,14 +164,17 @@ matches any header containing "intel". A case that asserts the wrong behaviour a
 rule's own pattern for hundreds of groups: evidence that only repeats the pattern says
 nothing about it.
 
-Current state: **236 cases, all pass; 115 rules of 61 technologies are `ok`**, out of
-15836 Enthec rules (0.7%).
+Current state: **304 cases, all pass** on the author's registry (2026-11-23, six sources).
+With the cases of this corpus applied, 34 more rules became `ok` (911 -> 945 of 29174; 685
+of them only from upstream examples). Before that, 115 rules of 61 technologies came from
+this corpus, out of 15836 Enthec rules (0.7%).
 
 | File | Contents |
 |---|---|
 | `web-servers.json`, `cms-and-libraries.json`, `dom.json` | the first 34 cases (nginx, Cloudflare, WordPress, jQuery, Google Analytics, Pixelfed, Bootstrap, ...) |
 | `servers-and-hosting.json` | Apache, Akamai, CloudFront, S3, Caddy, Fastly, GitHub Pages, LiteSpeed, Netlify, OpenResty, Squarespace, Varnish, Vercel, HSTS, Wix, ASP.NET |
 | `frameworks-and-cms.json` | PHP, Next.js, Express, Rails, Django, Laravel, Drupal, Joomla, Ghost, Gatsby, Hugo, WordPress, WooCommerce, Elementor, Yoast, Shopify, Matomo, Tailwind |
+| `popular-sites.json` | 34 rules of the technologies most found in the 100-site Tranco sample that had no evidence: Envoy, Cloudflare Bot Management, Microsoft HTTPAPI, Azure (Front Door, Monitor, headers, cookie), AWS (headers, Route 53 NS), RSS, LinkedIn Insight, React, Astro, Stimulus, reCAPTCHA, PWA, HTML5, X-UA-Compatible, HTTP/3, Priority Hints, mailto, Permissions-Policy, TLS issuers (DigiCert, Sectigo, Let's Encrypt, Amazon) |
 | `analytics-and-services.json` | Google Analytics, Tag Manager, AdSense, Hotjar, OneTrust, Cookiebot, Facebook Pixel, reCAPTCHA, Segment, Plausible, Stripe, Sentry, Maps, YouTube, HubSpot, Intercom, Google Fonts, Font Awesome, Open Graph, Moment, Swiper, Slick |
 
 How to add one: pick a rule (`owf fingerprint list --technology <slug>`), write a
@@ -188,6 +191,14 @@ passes both is shown to behave as asserted on those inputs. It is not a measurem
 of false positives on the web, and `ok` should not be read as "reliable".
 
 ### Findings from writing the corpus
+
+- **React's script rule matches Preact.** `react(?:-dom)?[@/-]v?([\d.]+).*?\.js` is not
+  anchored on a path segment, so `preact-10.19.3.min.js` matches and yields version
+  `10.19.3` as React's. Found with a probe case that is not in the corpus (it would fail);
+  the case in the corpus uses a different near miss (`jquery-3.6.0.min.js`). Not corrected
+  yet: a reviewer can with `owf fingerprint correct`, or propose it upstream.
+- **The nginx cases needed a pattern.** After the merges `nginx` has five `Server` rules;
+  the three older cases now name the Enthec pattern.
 
 - **Cookie names that are patterns are inert, upstream too.** 13 rules in the
   Wappalyzer-format sources name a cookie with regular-expression syntax

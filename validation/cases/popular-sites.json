@@ -1,0 +1,1150 @@
+{
+  "schema_version": "0.1.0",
+  "cases": [
+    {
+      "id": "envoy-server-header-positive",
+      "rule": {
+        "technology": "envoy",
+        "observation": "http_header",
+        "target": "Server",
+        "operator": "regex",
+        "pattern": "^envoy$"
+      },
+      "input": {
+        "headers": {
+          "Server": "envoy"
+        }
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "envoy-server-header-negative",
+      "description": "The rule is anchored: a longer product name is not Envoy.",
+      "rule": {
+        "technology": "envoy",
+        "observation": "http_header",
+        "target": "Server",
+        "operator": "regex",
+        "pattern": "^envoy$"
+      },
+      "input": {
+        "headers": {
+          "Server": "envoy-proxy-lite"
+        }
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "envoy-upstream-time-positive",
+      "rule": {
+        "technology": "envoy",
+        "observation": "http_header",
+        "target": "x-envoy-upstream-service-time",
+        "operator": "exists"
+      },
+      "input": {
+        "headers": {
+          "x-envoy-upstream-service-time": "12"
+        }
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "envoy-upstream-time-negative",
+      "rule": {
+        "technology": "envoy",
+        "observation": "http_header",
+        "target": "x-envoy-upstream-service-time",
+        "operator": "exists"
+      },
+      "input": {
+        "headers": {
+          "x-request-time": "12"
+        }
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "cloudflare-bot-management-cookie-positive",
+      "rule": {
+        "technology": "cloudflare-bot-management",
+        "observation": "cookie",
+        "target": "__cf_bm",
+        "operator": "exists"
+      },
+      "input": {
+        "cookies": {
+          "__cf_bm": "abc123"
+        }
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "cloudflare-bot-management-cookie-negative",
+      "description": "Another Cloudflare cookie is not bot management.",
+      "rule": {
+        "technology": "cloudflare-bot-management",
+        "observation": "cookie",
+        "target": "__cf_bm",
+        "operator": "exists"
+      },
+      "input": {
+        "cookies": {
+          "__cflb": "abc123"
+        }
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "microsoft-httpapi-server-positive",
+      "rule": {
+        "technology": "microsoft-httpapi",
+        "observation": "http_header",
+        "target": "Server",
+        "operator": "regex",
+        "pattern": "Microsoft-HTTPAPI(?:/([\\d.]+))?"
+      },
+      "input": {
+        "headers": {
+          "Server": "Microsoft-HTTPAPI/2.0"
+        }
+      },
+      "expect": {
+        "match": true,
+        "version": "2.0"
+      }
+    },
+    {
+      "id": "microsoft-httpapi-server-negative",
+      "description": "IIS is not HTTPAPI.",
+      "rule": {
+        "technology": "microsoft-httpapi",
+        "observation": "http_header",
+        "target": "Server",
+        "operator": "regex",
+        "pattern": "Microsoft-HTTPAPI(?:/([\\d.]+))?"
+      },
+      "input": {
+        "headers": {
+          "Server": "Microsoft-IIS/10.0"
+        }
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "azure-front-door-header-positive",
+      "rule": {
+        "technology": "azure-front-door",
+        "observation": "http_header",
+        "target": "X-Azure-Ref",
+        "operator": "exists"
+      },
+      "input": {
+        "headers": {
+          "X-Azure-Ref": "0abcdef"
+        }
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "azure-front-door-header-negative",
+      "rule": {
+        "technology": "azure-front-door",
+        "observation": "http_header",
+        "target": "X-Azure-Ref",
+        "operator": "exists"
+      },
+      "input": {
+        "headers": {
+          "X-Amz-Cf-Id": "abcdef"
+        }
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "azure-front-door-cookie-positive",
+      "rule": {
+        "technology": "azure-front-door",
+        "observation": "cookie",
+        "target": "ASLBSA",
+        "operator": "exists"
+      },
+      "input": {
+        "cookies": {
+          "ASLBSA": "0003"
+        }
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "azure-front-door-cookie-negative",
+      "rule": {
+        "technology": "azure-front-door",
+        "observation": "cookie",
+        "target": "ASLBSA",
+        "operator": "exists"
+      },
+      "input": {
+        "cookies": {
+          "ASP.NET_SessionId": "abc"
+        }
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "rss-link-type-positive",
+      "rule": {
+        "technology": "rss",
+        "observation": "dom",
+        "target": "link[type*='application']::attr(type)",
+        "operator": "regex"
+      },
+      "input": {
+        "html": "<head><link rel=\"alternate\" type=\"application/rss+xml\" href=\"/feed.xml\"></head>"
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "rss-link-type-negative",
+      "rule": {
+        "technology": "rss",
+        "observation": "dom",
+        "target": "link[type*='application']::attr(type)",
+        "operator": "regex"
+      },
+      "input": {
+        "html": "<head><link rel=\"stylesheet\" type=\"text/css\" href=\"/a.css\"></head>"
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "linkedin-insight-script-positive",
+      "rule": {
+        "technology": "linkedin-insight-tag",
+        "observation": "script_url",
+        "operator": "regex",
+        "pattern": "snap\\.licdn\\.com/li\\.lms-analytics/insight\\.min\\.js"
+      },
+      "input": {
+        "scripts": [
+          "https://snap.licdn.com/li.lms-analytics/insight.min.js"
+        ]
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "linkedin-insight-script-negative",
+      "description": "The LinkedIn share widget is not the Insight Tag.",
+      "rule": {
+        "technology": "linkedin-insight-tag",
+        "observation": "script_url",
+        "operator": "regex",
+        "pattern": "snap\\.licdn\\.com/li\\.lms-analytics/insight\\.min\\.js"
+      },
+      "input": {
+        "scripts": [
+          "https://platform.linkedin.com/in.js"
+        ]
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "linkedin-insight-partner-id-positive",
+      "rule": {
+        "technology": "linkedin-insight-tag",
+        "observation": "js_global",
+        "target": "_linkedin_partner_id",
+        "operator": "exists"
+      },
+      "input": {
+        "js": {
+          "_linkedin_partner_id": "123456"
+        }
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "linkedin-insight-partner-id-negative",
+      "rule": {
+        "technology": "linkedin-insight-tag",
+        "observation": "js_global",
+        "target": "_linkedin_partner_id",
+        "operator": "exists"
+      },
+      "input": {
+        "js": {
+          "_fbq": "x"
+        }
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "react-version-global-positive",
+      "rule": {
+        "technology": "react",
+        "observation": "js_global",
+        "target": "React.version",
+        "operator": "regex",
+        "pattern": "^([\\d\\.]+)$"
+      },
+      "input": {
+        "js": {
+          "React.version": "18.2.0"
+        }
+      },
+      "expect": {
+        "match": true,
+        "version": "18.2.0"
+      }
+    },
+    {
+      "id": "react-version-global-negative",
+      "description": "A value that is not a version number does not match.",
+      "rule": {
+        "technology": "react",
+        "observation": "js_global",
+        "target": "React.version",
+        "operator": "regex",
+        "pattern": "^([\\d\\.]+)$"
+      },
+      "input": {
+        "js": {
+          "React.version": "next"
+        }
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "react-reactroot-positive",
+      "rule": {
+        "technology": "react",
+        "observation": "html",
+        "operator": "regex",
+        "pattern": "data-reactroot"
+      },
+      "input": {
+        "html": "<div id=\"root\" data-reactroot=\"\"></div>"
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "react-reactroot-negative",
+      "rule": {
+        "technology": "react",
+        "observation": "html",
+        "operator": "regex",
+        "pattern": "data-reactroot"
+      },
+      "input": {
+        "html": "<div id=\"root\" data-react-helmet=\"true\"></div>"
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "react-script-url-positive",
+      "rule": {
+        "technology": "react",
+        "observation": "script_url",
+        "operator": "regex",
+        "pattern": "react(?:-dom)?[@/-]v?([\\d.]+).*?\\.js"
+      },
+      "input": {
+        "scripts": [
+          "https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"
+        ]
+      },
+      "expect": {
+        "match": true,
+        "version": "18.2.0"
+      }
+    },
+    {
+      "id": "react-script-url-negative",
+      "rule": {
+        "technology": "react",
+        "observation": "script_url",
+        "operator": "regex",
+        "pattern": "react(?:-dom)?[@/-]v?([\\d.]+).*?\\.js"
+      },
+      "input": {
+        "scripts": [
+          "https://cdn.example.com/jquery-3.6.0.min.js"
+        ]
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "astro-generator-positive",
+      "rule": {
+        "technology": "astro",
+        "observation": "meta_tag",
+        "target": "generator",
+        "operator": "regex",
+        "pattern": "^Astro(?:\\sv([\\d\\.]+))?$"
+      },
+      "input": {
+        "html": "<meta name=\"generator\" content=\"Astro v4.2.1\">"
+      },
+      "expect": {
+        "match": true,
+        "version": "4.2.1"
+      }
+    },
+    {
+      "id": "astro-generator-negative",
+      "description": "The rule is anchored on the whole name.",
+      "rule": {
+        "technology": "astro",
+        "observation": "meta_tag",
+        "target": "generator",
+        "operator": "regex",
+        "pattern": "^Astro(?:\\sv([\\d\\.]+))?$"
+      },
+      "input": {
+        "html": "<meta name=\"generator\" content=\"Astrology Pro 2.0\">"
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "astro-island-positive",
+      "rule": {
+        "technology": "astro",
+        "observation": "html",
+        "operator": "regex",
+        "pattern": "astro-island"
+      },
+      "input": {
+        "html": "<astro-island uid=\"Z1\" component-url=\"/a.js\"></astro-island>"
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "astro-island-negative",
+      "rule": {
+        "technology": "astro",
+        "observation": "html",
+        "operator": "regex",
+        "pattern": "astro-island"
+      },
+      "input": {
+        "html": "<div class=\"astronomy-island\">x</div>"
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "stimulus-data-action-positive",
+      "rule": {
+        "technology": "stimulus",
+        "observation": "html",
+        "operator": "regex",
+        "pattern": "\\sdata-action="
+      },
+      "input": {
+        "html": "<button data-action=\"click->hello#greet\">Hi</button>"
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "stimulus-data-action-negative",
+      "rule": {
+        "technology": "stimulus",
+        "observation": "html",
+        "operator": "regex",
+        "pattern": "\\sdata-action="
+      },
+      "input": {
+        "html": "<button data-actions=\"x\">Hi</button>"
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "stimulus-global-positive",
+      "rule": {
+        "technology": "stimulus",
+        "observation": "js_global",
+        "target": "Stimulus.Application",
+        "operator": "exists"
+      },
+      "input": {
+        "js": {
+          "Stimulus.Application": "function"
+        }
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "stimulus-global-negative",
+      "rule": {
+        "technology": "stimulus",
+        "observation": "js_global",
+        "target": "Stimulus.Application",
+        "operator": "exists"
+      },
+      "input": {
+        "js": {
+          "Turbo.session": "object"
+        }
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "azure-x-ms-request-id-positive",
+      "rule": {
+        "technology": "microsoft-azure",
+        "observation": "http_header",
+        "target": "x-ms-request-id",
+        "operator": "exists"
+      },
+      "input": {
+        "headers": {
+          "x-ms-request-id": "0a1b2c"
+        }
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "azure-x-ms-request-id-negative",
+      "description": "A generic request id is not Azure's.",
+      "rule": {
+        "technology": "microsoft-azure",
+        "observation": "http_header",
+        "target": "x-ms-request-id",
+        "operator": "exists"
+      },
+      "input": {
+        "headers": {
+          "x-request-id": "0a1b2c"
+        }
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "azure-arraffinity-positive",
+      "rule": {
+        "technology": "microsoft-azure",
+        "observation": "set_cookie",
+        "operator": "regex",
+        "pattern": "(?m-i:ARRAffinity)"
+      },
+      "input": {
+        "set_cookies": [
+          "ARRAffinity=abc123; Path=/; HttpOnly; Domain=example.org"
+        ]
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "azure-arraffinity-negative",
+      "rule": {
+        "technology": "microsoft-azure",
+        "observation": "set_cookie",
+        "operator": "regex",
+        "pattern": "(?m-i:ARRAffinity)"
+      },
+      "input": {
+        "set_cookies": [
+          "sessionid=abc123; Path=/; HttpOnly"
+        ]
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "azure-monitor-script-positive",
+      "rule": {
+        "technology": "azure-monitor",
+        "observation": "script_url",
+        "operator": "regex",
+        "pattern": "js\\.monitor\\.azure\\.com/"
+      },
+      "input": {
+        "scripts": [
+          "https://js.monitor.azure.com/scripts/b/ai.2.min.js"
+        ]
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "azure-monitor-script-negative",
+      "rule": {
+        "technology": "azure-monitor",
+        "observation": "script_url",
+        "operator": "regex",
+        "pattern": "js\\.monitor\\.azure\\.com/"
+      },
+      "input": {
+        "scripts": [
+          "https://js.monitor.example.com/scripts/ai.js"
+        ]
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "aws-certificate-manager-issuer-positive",
+      "rule": {
+        "technology": "aws-certificate-manager",
+        "observation": "tls_cert",
+        "target": "issuer",
+        "operator": "regex",
+        "pattern": "Amazon"
+      },
+      "input": {
+        "tls": {
+          "issuer": "Amazon RSA 2048 M02"
+        }
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "aws-certificate-manager-issuer-negative",
+      "rule": {
+        "technology": "aws-certificate-manager",
+        "observation": "tls_cert",
+        "target": "issuer",
+        "operator": "regex",
+        "pattern": "Amazon"
+      },
+      "input": {
+        "tls": {
+          "issuer": "DigiCert TLS RSA SHA256 2020 CA1"
+        }
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "digicert-issuer-positive",
+      "rule": {
+        "technology": "digicert",
+        "observation": "tls_cert",
+        "target": "issuer",
+        "operator": "regex",
+        "pattern": "DigiCert"
+      },
+      "input": {
+        "tls": {
+          "issuer": "DigiCert TLS RSA SHA256 2020 CA1"
+        }
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "digicert-issuer-negative",
+      "rule": {
+        "technology": "digicert",
+        "observation": "tls_cert",
+        "target": "issuer",
+        "operator": "regex",
+        "pattern": "DigiCert"
+      },
+      "input": {
+        "tls": {
+          "issuer": "Sectigo RSA Domain Validation Secure Server CA"
+        }
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "sectigo-issuer-positive",
+      "rule": {
+        "technology": "sectigo",
+        "observation": "tls_cert",
+        "target": "issuer",
+        "operator": "regex",
+        "pattern": "Sectigo"
+      },
+      "input": {
+        "tls": {
+          "issuer": "Sectigo RSA Domain Validation Secure Server CA"
+        }
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "sectigo-issuer-negative",
+      "rule": {
+        "technology": "sectigo",
+        "observation": "tls_cert",
+        "target": "issuer",
+        "operator": "regex",
+        "pattern": "Sectigo"
+      },
+      "input": {
+        "tls": {
+          "issuer": "R3"
+        }
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "lets-encrypt-issuer-positive",
+      "rule": {
+        "technology": "let-s-encrypt",
+        "observation": "tls_cert",
+        "target": "issuer",
+        "operator": "regex",
+        "pattern": "Let's Encrypt"
+      },
+      "input": {
+        "tls": {
+          "issuer": "Let's Encrypt R3"
+        }
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "lets-encrypt-issuer-negative",
+      "rule": {
+        "technology": "let-s-encrypt",
+        "observation": "tls_cert",
+        "target": "issuer",
+        "operator": "regex",
+        "pattern": "Let's Encrypt"
+      },
+      "input": {
+        "tls": {
+          "issuer": "Amazon RSA 2048 M02"
+        }
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "pwa-manifest-positive",
+      "rule": {
+        "technology": "pwa",
+        "observation": "dom",
+        "target": "link[rel='manifest']",
+        "operator": "exists"
+      },
+      "input": {
+        "html": "<head><link rel=\"manifest\" href=\"/manifest.webmanifest\"></head>"
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "pwa-manifest-negative",
+      "rule": {
+        "technology": "pwa",
+        "observation": "dom",
+        "target": "link[rel='manifest']",
+        "operator": "exists"
+      },
+      "input": {
+        "html": "<head><link rel=\"icon\" href=\"/favicon.ico\"></head>"
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "html5-doctype-positive",
+      "rule": {
+        "technology": "html5",
+        "observation": "html",
+        "operator": "regex",
+        "pattern": "(?m:<!DOCTYPE html>)"
+      },
+      "input": {
+        "html": "<!DOCTYPE html><html><head></head></html>"
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "html5-doctype-negative",
+      "description": "The HTML 4.01 doctype is not HTML5.",
+      "rule": {
+        "technology": "html5",
+        "observation": "html",
+        "operator": "regex",
+        "pattern": "(?m:<!DOCTYPE html>)"
+      },
+      "input": {
+        "html": "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//EN\" \"http://www.w3.org/TR/html4/strict.dtd\"><html></html>"
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "x-ua-compatible-meta-positive",
+      "rule": {
+        "technology": "x-ua-compatible",
+        "observation": "html",
+        "operator": "regex"
+      },
+      "input": {
+        "html": "<meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">"
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "x-ua-compatible-meta-negative",
+      "rule": {
+        "technology": "x-ua-compatible",
+        "observation": "html",
+        "operator": "regex"
+      },
+      "input": {
+        "html": "<meta http-equiv=\"refresh\" content=\"5\">"
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "http3-alt-svc-positive",
+      "rule": {
+        "technology": "http-3",
+        "observation": "http_header",
+        "target": "Alt-Svc",
+        "operator": "regex",
+        "pattern": "h3"
+      },
+      "input": {
+        "headers": {
+          "Alt-Svc": "h3=\":443\"; ma=86400"
+        }
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "http3-alt-svc-negative",
+      "rule": {
+        "technology": "http-3",
+        "observation": "http_header",
+        "target": "Alt-Svc",
+        "operator": "regex",
+        "pattern": "h3"
+      },
+      "input": {
+        "headers": {
+          "Alt-Svc": "clear"
+        }
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "priority-hints-attr-positive",
+      "rule": {
+        "technology": "priority-hints",
+        "observation": "dom"
+      },
+      "input": {
+        "html": "<img fetchpriority=\"high\" src=\"/hero.jpg\">"
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "priority-hints-attr-negative",
+      "rule": {
+        "technology": "priority-hints",
+        "observation": "dom"
+      },
+      "input": {
+        "html": "<img src=\"/hero.jpg\" loading=\"lazy\">"
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "email-mailto-positive",
+      "rule": {
+        "technology": "email",
+        "observation": "html",
+        "operator": "regex",
+        "pattern": "(?m:<[^>]+href=[^>]*mailto:([^\\'\\\"\\?>]+)[^>]*>)"
+      },
+      "input": {
+        "html": "<a href=\"mailto:info@example.com\">Write us</a>"
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "email-mailto-negative",
+      "rule": {
+        "technology": "email",
+        "observation": "html",
+        "operator": "regex",
+        "pattern": "(?m:<[^>]+href=[^>]*mailto:([^\\'\\\"\\?>]+)[^>]*>)"
+      },
+      "input": {
+        "html": "<a href=\"https://example.com/mail\">Mail</a>"
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "aws-request-id-positive",
+      "rule": {
+        "technology": "amazon-web-services",
+        "observation": "http_header",
+        "target": "x-amz-request-id",
+        "operator": "exists"
+      },
+      "input": {
+        "headers": {
+          "x-amz-request-id": "ABC123"
+        }
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "aws-request-id-negative",
+      "rule": {
+        "technology": "amazon-web-services",
+        "observation": "http_header",
+        "target": "x-amz-request-id",
+        "operator": "exists"
+      },
+      "input": {
+        "headers": {
+          "x-request-id": "ABC123"
+        }
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "aws-route53-ns-positive",
+      "rule": {
+        "technology": "amazon-web-services",
+        "observation": "dns_record",
+        "target": "NS",
+        "operator": "regex",
+        "pattern": "\\.awsdns-"
+      },
+      "input": {
+        "dns": {
+          "NS": [
+            "ns-123.awsdns-45.com",
+            "ns-678.awsdns-12.org"
+          ]
+        }
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "aws-route53-ns-negative",
+      "rule": {
+        "technology": "amazon-web-services",
+        "observation": "dns_record",
+        "target": "NS",
+        "operator": "regex",
+        "pattern": "\\.awsdns-"
+      },
+      "input": {
+        "dns": {
+          "NS": [
+            "ns1.example.net"
+          ]
+        }
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "modern-security-permissions-policy-positive",
+      "rule": {
+        "technology": "modern-security-headers",
+        "observation": "http_header",
+        "target": "permissions-policy",
+        "operator": "exists"
+      },
+      "input": {
+        "headers": {
+          "Permissions-Policy": "geolocation=()"
+        }
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "modern-security-permissions-policy-negative",
+      "description": "Another security header is not Permissions-Policy.",
+      "rule": {
+        "technology": "modern-security-headers",
+        "observation": "http_header",
+        "target": "permissions-policy",
+        "operator": "exists"
+      },
+      "input": {
+        "headers": {
+          "Referrer-Policy": "no-referrer"
+        }
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "recaptcha-html-positive",
+      "rule": {
+        "technology": "google-recaptcha",
+        "observation": "html",
+        "operator": "regex",
+        "pattern": "g-recaptcha"
+      },
+      "input": {
+        "html": "<div class=\"g-recaptcha\" data-sitekey=\"abc\"></div>"
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "recaptcha-html-negative",
+      "rule": {
+        "technology": "google-recaptcha",
+        "observation": "html",
+        "operator": "regex",
+        "pattern": "g-recaptcha"
+      },
+      "input": {
+        "html": "<div class=\"g-captcha\"></div>"
+      },
+      "expect": {
+        "match": false
+      }
+    },
+    {
+      "id": "recaptcha-global-positive",
+      "rule": {
+        "technology": "google-recaptcha",
+        "observation": "js_global",
+        "target": "grecaptcha",
+        "operator": "exists"
+      },
+      "input": {
+        "js": {
+          "grecaptcha": "object"
+        }
+      },
+      "expect": {
+        "match": true
+      }
+    },
+    {
+      "id": "recaptcha-global-negative",
+      "description": "hCaptcha is a different product.",
+      "rule": {
+        "technology": "google-recaptcha",
+        "observation": "js_global",
+        "target": "grecaptcha",
+        "operator": "exists"
+      },
+      "input": {
+        "js": {
+          "hcaptcha": "object"
+        }
+      },
+      "expect": {
+        "match": false
+      }
+    }
+  ]
+}

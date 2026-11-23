@@ -4,19 +4,19 @@
     {
       "id": "nginx-server-header-positive",
       "description": "nginx announces itself and its version in Server.",
-      "rule": {"technology": "nginx", "observation": "http_header", "target": "Server", "operator": "regex"},
+      "rule": {"technology": "nginx", "observation": "http_header", "target": "Server", "operator": "regex", "pattern": "nginx(?:/([\\d.]+))?"},
       "input": {"headers": {"Server": "nginx/1.25.3"}},
       "expect": {"match": true, "version": "1.25.3"}
     },
     {
       "id": "nginx-server-header-no-version",
-      "rule": {"technology": "nginx", "observation": "http_header", "target": "Server", "operator": "regex"},
+      "rule": {"technology": "nginx", "observation": "http_header", "target": "Server", "operator": "regex", "pattern": "nginx(?:/([\\d.]+))?"},
       "input": {"headers": {"Server": "nginx"}},
       "expect": {"match": true}
     },
     {
       "id": "nginx-server-header-negative",
-      "rule": {"technology": "nginx", "observation": "http_header", "target": "Server", "operator": "regex"},
+      "rule": {"technology": "nginx", "observation": "http_header", "target": "Server", "operator": "regex", "pattern": "nginx(?:/([\\d.]+))?"},
       "input": {"headers": {"Server": "Apache/2.4.58 (Ubuntu)"}},
       "expect": {"match": false}
     },
