@@ -89,6 +89,7 @@ internal/fetch              pinned single-commit git fetch
 internal/export             schema-validated JSON with the redistribution guard
 internal/builtin            static catalogue of sources and extractors
 scan/                       public result types of the scanner
+scan/client                 public Go API of the scanner (Scan and its parts); the commands that fetch use only this. Keep it small: it is a promise to consumers
 schemas/                    public JSON Schemas (registry, validation cases, scan result)
 validation/cases/           corpus of cases on real rules
 examples/  docs/  testdata under each package

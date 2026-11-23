@@ -26,6 +26,7 @@ import (
 	"github.com/matteoredaelli/open-web-fingerprints/internal/scan/browser"
 	"github.com/matteoredaelli/open-web-fingerprints/internal/scan/fetch"
 	"github.com/matteoredaelli/open-web-fingerprints/internal/scan/scanner"
+	"github.com/matteoredaelli/open-web-fingerprints/scan/client"
 )
 
 // FileName is the name of the configuration file.
@@ -341,16 +342,16 @@ func Resolve(explicit string) (Config, string, error) {
 // Apply copies the limits into scanner options. Switches and per-run choices
 // (depth, browser, friends, related.tlds, ...) are not touched: the TLD list is the
 // default of --related-tlds, and giving that flag is what turns the variants on.
-func (c Config) Apply(o *scanner.Options) {
-	o.Fetch.Timeout = c.Fetch.Timeout.D()
-	o.Fetch.MaxBody = c.Fetch.MaxBodyBytes
-	o.Fetch.MaxRedirects = c.Fetch.MaxRedirects
-	o.Fetch.MaxAge = c.Fetch.MaxAge.D()
+func (c Config) Apply(o *client.Options) {
+	o.Timeout = c.Fetch.Timeout.D()
+	o.MaxBody = c.Fetch.MaxBodyBytes
+	o.MaxRedirects = c.Fetch.MaxRedirects
+	o.MaxAge = c.Fetch.MaxAge.D()
 	if c.Fetch.CacheDir != "" {
-		o.Fetch.CacheDir = c.Fetch.CacheDir
+		o.CacheDir = c.Fetch.CacheDir
 	}
 	if c.Fetch.UserAgent != "" {
-		o.Fetch.UserAgent = c.Fetch.UserAgent
+		o.UserAgent = c.Fetch.UserAgent
 	}
 	o.MaxPages, o.Delay, o.MaxDelay = c.Crawl.MaxPages, c.Crawl.Delay.D(), c.Crawl.MaxDelay.D()
 	o.FriendsMax, o.RelatedMax = c.Friends.Max, c.Related.Max

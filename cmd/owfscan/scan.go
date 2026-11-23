@@ -15,10 +15,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/matteoredaelli/open-web-fingerprints/internal/scan/engine"
-	"github.com/matteoredaelli/open-web-fingerprints/internal/scan/observe"
-	"github.com/matteoredaelli/open-web-fingerprints/internal/scan/scanner"
 	"github.com/matteoredaelli/open-web-fingerprints/scan"
+	"github.com/matteoredaelli/open-web-fingerprints/scan/client"
 )
 
 func version() string {
@@ -59,37 +57,35 @@ func newScanCmd() *cobra.Command {
 			if registry == "" {
 				return fmt.Errorf("--registry is required: the export written by `owf export` (or env OWFSCAN_REGISTRY)")
 			}
-			if minHealth != "" && !engine.ValidHealth(minHealth) {
+			if minHealth != "" && !client.ValidHealth(minHealth) {
 				return fmt.Errorf("--min-health must be broken, degraded, unknown or ok")
 			}
-			reg, err := scanner.LoadRegistryCached(registry, stampDir(verifyCache))
+			reg, err := client.LoadRegistryCached(registry, stampDir(verifyCache))
 			if err != nil {
 				return err
 			}
-			var opt scanner.Options
+			var opt client.Options
 			cfg.Apply(&opt) // the limits without a flag; the flags below override the rest
-			opt.Registry, opt.NoFavicon, opt.MinHealth, opt.Version = reg, noFavicon, minHealth, version()
+			opt.NoFavicon, opt.MinHealth, opt.Version = noFavicon, minHealth, version()
 			opt.Depth, opt.MaxPages, opt.Delay, opt.IgnoreRobots = n.depth, n.maxPages, n.delay, n.ignoreRobots
 			opt.Friends, opt.FriendsMax = friends, friendsMax
 			opt.Related, opt.RelatedMax, opt.RelatedTLDs = related, relatedMax, tf.tlds()
 			opt.Active, opt.ActiveMax = active, activeMax
 			opt.Browser, opt.BrowserPath, opt.BrowserTimeout = useBrowser, chrome, browserTimeout
-			opt.Fetch = n.fetchOptions()
+			n.applyTo(&opt)
 			opt.DropHeaders = dropList(allHeaders)
-			if !noDNS {
-				opt.Resolver = observe.SystemResolver{}
-			}
+			opt.DNS = !noDNS
 			if len(tf.tlds()) > 0 && !related {
 				return fmt.Errorf("--related-tlds needs --related")
 			}
 			if len(tf.tlds()) > 0 && noDNS {
 				return fmt.Errorf("--related-tlds looks names up in DNS: it cannot be used with --no-dns")
 			}
-			res, err := scanner.Scan(cmd.Context(), opt, args[0])
+			res, err := client.Scan(cmd.Context(), reg, opt, args[0])
 			if err != nil {
 				return err
 			}
-			if err := scanner.Validate(res); err != nil {
+			if err := client.Validate(res); err != nil {
 				return fmt.Errorf("internal error: the result does not satisfy its schema: %w", err)
 			}
 			if htmlOut == "-" {

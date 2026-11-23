@@ -13,9 +13,8 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/matteoredaelli/open-web-fingerprints/internal/scan/batch"
-	"github.com/matteoredaelli/open-web-fingerprints/internal/scan/observe"
-	"github.com/matteoredaelli/open-web-fingerprints/internal/scan/scanner"
 	"github.com/matteoredaelli/open-web-fingerprints/scan"
+	"github.com/matteoredaelli/open-web-fingerprints/scan/client"
 )
 
 const (
@@ -66,7 +65,7 @@ func newBatchRunCmd() *cobra.Command {
 			if workers < 1 || workers > maxBatchWorkers || rate <= 0 || rate > maxBatchRate {
 				return fmt.Errorf("--workers must be 1 to %d and --rate above 0 and at most %.0f", maxBatchWorkers, maxBatchRate)
 			}
-			reg, err := scanner.LoadRegistryCached(registry, stampDir(verifyCache))
+			reg, err := client.LoadRegistryCached(registry, stampDir(verifyCache))
 			if err != nil {
 				return err
 			}
@@ -89,29 +88,27 @@ func newBatchRunCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			for k, v := range map[string]string{"list": args[0], "registry_sha256": reg.Ref.ContentSHA256, "scanner": "owfscan " + version(), "updated": time.Now().UTC().Format(time.RFC3339)} {
+			for k, v := range map[string]string{"list": args[0], "registry_sha256": reg.Ref().ContentSHA256, "scanner": "owfscan " + version(), "updated": time.Now().UTC().Format(time.RFC3339)} {
 				if err := st.SetMeta(ctx, k, v); err != nil {
 					return err
 				}
 			}
 			fmt.Fprintf(cmd.ErrOrStderr(), "%d sites in the list (%d new, %d skipped as not host names)\n", len(sites), added, skipped)
 
-			var opt scanner.Options
+			var opt client.Options
 			cfg.Apply(&opt)
-			opt.Registry, opt.Version = reg, version()
+			opt.Version = version()
 			opt.NoFavicon = noFavicon
 			opt.Depth, opt.MaxPages = depth, maxPages
 			opt.DropHeaders = dropList(false)
-			opt.Fetch = (&netFlags{timeout: cfg.Fetch.Timeout.D(), maxAge: cfg.Fetch.MaxAge.D(), cacheDir: cfg.Fetch.CacheDir}).fetchOptions()
-			if !noDNS {
-				opt.Resolver = observe.SystemResolver{}
-			}
+			(&netFlags{timeout: cfg.Fetch.Timeout.D(), maxAge: cfg.Fetch.MaxAge.D(), cacheDir: cfg.Fetch.CacheDir}).applyTo(&opt)
+			opt.DNS = !noDNS
 			scanFn := func(ctx context.Context, target string) (*scan.Result, error) {
-				res, err := scanner.Scan(ctx, opt, target)
+				res, err := client.Scan(ctx, reg, opt, target)
 				if err != nil {
 					return nil, err
 				}
-				if err := scanner.Validate(res); err != nil {
+				if err := client.Validate(res); err != nil {
 					return nil, fmt.Errorf("result: %w", err)
 				}
 				return res, nil

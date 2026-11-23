@@ -83,10 +83,12 @@ design and decisions: [docs/scan.md](docs/scan.md).
 
 ## As a Go module
 
-The module is `github.com/matteoredaelli/open-web-fingerprints`. Two packages are meant to
+The module is `github.com/matteoredaelli/open-web-fingerprints`. Three packages are meant to
 be imported (everything under `internal/` is not):
 
 - [`scan`](scan): the Go types of a scan result (`owfscan scan --json`);
+- [`scan/client`](scan/client): the scanner as a Go library, the same code as `owfscan`
+  (see [docs/owfscan.md](docs/owfscan.md#using-the-scanner-from-go));
 - [`schemas`](schemas): the embedded JSON Schemas and functions that validate a registry
   export, a scan result or a file of validation cases.
 

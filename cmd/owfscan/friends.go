@@ -5,14 +5,12 @@ package main
 
 import (
 	"fmt"
-	"net/url"
 	"text/tabwriter"
 
 	"github.com/spf13/cobra"
 
-	"github.com/matteoredaelli/open-web-fingerprints/internal/scan/scanner"
-	"github.com/matteoredaelli/open-web-fingerprints/internal/scan/web"
 	"github.com/matteoredaelli/open-web-fingerprints/scan"
+	"github.com/matteoredaelli/open-web-fingerprints/scan/client"
 )
 
 const friendsNotice = "\nA friend is a domain that the home page links to and whose own home page links\n" +
@@ -31,23 +29,17 @@ func newFriendsCmd() *cobra.Command {
 			"home page for a link back to the first." + friendsNotice + netNotice,
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			n.depth = 0 // the definition is about the home page
-			o := n.crawlOptions(false, false)
-			ob, err := scanner.Crawl(cmd.Context(), o, args[0])
+			o := n.options()
+			o.FriendsMax = max
+			r, err := client.Friends(cmd.Context(), o, args[0])
 			if err != nil {
 				return err
 			}
-			u, err := url.Parse(ob.Main.Page.FinalURL)
-			if err != nil {
-				return err
-			}
-			ex := web.Extract([]web.Page{{URL: ob.Main.Page.FinalURL, Body: ob.Main.HTML}}, u.Hostname())
-			fr := scanner.FindFriends(cmd.Context(), scanner.FriendsOptions{Fetch: o.Fetch, Max: max, Delay: n.delay},
-				scanner.Home{Domain: web.RegistrableDomain(u.Hostname()), Links: ex.Links})
+			fr := r.Friends
 			if n.asJSON {
-				return printJSON(cmd, map[string]any{"target": ob.Main.Page.FinalURL, "friends": fr})
+				return printJSON(cmd, map[string]any{"target": r.URL, "friends": fr})
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "%s\n", ob.Main.Page.FinalURL)
+			fmt.Fprintf(cmd.OutOrStdout(), "%s\n", r.URL)
 			printFriends(cmd, fr)
 			return nil
 		},

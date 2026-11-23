@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/matteoredaelli/open-web-fingerprints/internal/scan/scanner"
+	"github.com/matteoredaelli/open-web-fingerprints/scan/client"
 )
 
 func TestDefaultsAreTheValuesOfToday(t *testing.T) {
@@ -149,12 +149,12 @@ func TestApplyDoesNotTouchSwitches(t *testing.T) {
 	c := Default()
 	c.Crawl.MaxPages = 4
 	c.Fetch.CacheDir = "/tmp/c"
-	o := scanner.Options{Browser: false, Friends: false, Related: false, Active: false, Depth: 2}
+	o := client.Options{Browser: false, Friends: false, Related: false, Active: false, Depth: 2}
 	c.Apply(&o)
-	if o.MaxPages != 4 || o.Fetch.CacheDir != "/tmp/c" || o.FriendsMax != 20 || o.ActiveMax != 30 || o.BrowserMaxRequests != 300 {
+	if o.MaxPages != 4 || o.CacheDir != "/tmp/c" || o.FriendsMax != 20 || o.ActiveMax != 30 || o.BrowserMaxRequests != 300 {
 		t.Errorf("%+v", o)
 	}
-	if o.Browser || o.Friends || o.Related || o.Active || o.Fetch.AllowPrivate || o.Fetch.Insecure || o.IgnoreRobots || o.Depth != 2 || len(o.RelatedTLDs) != 0 {
+	if o.Browser || o.Friends || o.Related || o.Active || o.AllowPrivate || o.Insecure || o.IgnoreRobots || o.Depth != 2 || len(o.RelatedTLDs) != 0 {
 		t.Errorf("the file must not change switches or guards: %+v", o)
 	}
 }
@@ -181,7 +181,7 @@ func TestDropHeaders(t *testing.T) {
 	if err != nil || len(c.Output.DropHeaders) != 0 {
 		t.Errorf("an empty list keeps every header: %v %v", err, c.Output.DropHeaders)
 	}
-	var o scanner.Options
+	var o client.Options
 	Default().Apply(&o)
 	if len(o.DropHeaders) != len(DefaultDropHeaders) {
 		t.Error("Apply")

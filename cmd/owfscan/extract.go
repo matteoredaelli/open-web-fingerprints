@@ -6,12 +6,11 @@ package main
 import (
 	"fmt"
 	"io"
-	"net/url"
 	"os"
 
 	"github.com/spf13/cobra"
 
-	"github.com/matteoredaelli/open-web-fingerprints/internal/scan/web"
+	"github.com/matteoredaelli/open-web-fingerprints/scan/client"
 )
 
 func newExtractCmd() *cobra.Command {
@@ -26,10 +25,7 @@ func newExtractCmd() *cobra.Command {
 			"links to the same registrable domain are internal. It makes no network requests.",
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			u, err := url.Parse(pageURL)
-			if err != nil || u.Hostname() == "" {
-				return fmt.Errorf("--url must be the http(s) address of the page")
-			}
+			var err error
 			var body []byte
 			if args[0] == "-" {
 				body, err = io.ReadAll(cmd.InOrStdin())
@@ -39,7 +35,10 @@ func newExtractCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			ex := web.Extract([]web.Page{{URL: pageURL, Body: body}}, u.Hostname())
+			ex, err := client.Extract(body, pageURL)
+			if err != nil {
+				return fmt.Errorf("--url must be the http(s) address of the page")
+			}
 			return printExtraction(cmd, ex, asJSON, true)
 		},
 	}

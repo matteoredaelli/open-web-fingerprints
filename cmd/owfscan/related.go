@@ -5,16 +5,13 @@ package main
 
 import (
 	"fmt"
-	"net/url"
 	"strings"
 	"text/tabwriter"
 
 	"github.com/spf13/cobra"
 
-	"github.com/matteoredaelli/open-web-fingerprints/internal/scan/observe"
-	"github.com/matteoredaelli/open-web-fingerprints/internal/scan/scanner"
-	"github.com/matteoredaelli/open-web-fingerprints/internal/scan/web"
 	"github.com/matteoredaelli/open-web-fingerprints/scan"
+	"github.com/matteoredaelli/open-web-fingerprints/scan/client"
 )
 
 const relatedNotice = "\nA related domain is one that the home page links to, declares as another-language version\n" +
@@ -66,24 +63,17 @@ func newRelatedCmd() *cobra.Command {
 		Long:  "related reads a home page and looks for domains that may belong to the same owner." + relatedNotice + netNotice,
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			n.depth = 0
-			o := n.crawlOptions(true, false)
-			cr, err := scanner.Crawl(cmd.Context(), o, args[0])
+			o := n.options()
+			o.RelatedMax, o.RelatedTLDs = max, tf.tlds()
+			res, err := client.Related(cmd.Context(), o, args[0])
 			if err != nil {
 				return err
 			}
-			u, err := url.Parse(cr.Main.Page.FinalURL)
-			if err != nil {
-				return err
-			}
-			ex := web.Extract([]web.Page{{URL: cr.Main.Page.FinalURL, Body: cr.Main.HTML}}, u.Hostname())
-			r := scanner.FindRelated(cmd.Context(), scanner.RelatedOptions{Fetch: o.Fetch, Max: max, Delay: n.delay, TLDs: tf.tlds(), Resolver: observe.SystemResolver{}}, scanner.HomeInfo{
-				Domain: web.RegistrableDomain(u.Hostname()), URL: cr.Main.Page.FinalURL, HTML: cr.Main.HTML, Links: ex.Links, TLS: cr.Main.Host.TLS,
-			})
+			r := res.Related
 			if n.asJSON {
-				return printJSON(cmd, map[string]any{"target": cr.Main.Page.FinalURL, "related": r})
+				return printJSON(cmd, map[string]any{"target": res.URL, "related": r})
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "%s\n", cr.Main.Page.FinalURL)
+			fmt.Fprintf(cmd.OutOrStdout(), "%s\n", res.URL)
 			printRelated(cmd, r)
 			return nil
 		},

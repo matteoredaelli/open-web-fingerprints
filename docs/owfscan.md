@@ -743,6 +743,7 @@ Layout:
 ```
 cmd/owfscan/             the CLI
 scan/                    public result types
+scan/client/             public Go API: Scan and its parts (the CLI uses only this)
 internal/scan/web/       links, domains, social profiles, contacts (pure, from HTML)
 internal/scan/fetch/     guarded HTTP fetch, redirects, limits, disk cache
 internal/scan/observe/   page -> observation (favicon hashes, DNS, TLS)
@@ -770,6 +771,39 @@ RE2 syntax only.
 from local `httptest` servers and DNS from a fake resolver. A live check is manual
 (`owfscan observe <your domain>`); never make a test depend on a third-party site.
 `make check` runs everything.
+
+## Using the scanner from Go
+
+`github.com/matteoredaelli/open-web-fingerprints/scan/client` is the scanner as a library.
+`owfscan` itself uses only this package to scan, so the two cannot drift apart. The guards
+are the same: only `GET`, non-public addresses refused (also after redirects) unless
+`Options.AllowPrivate`, robots.txt honoured when links or other sites are followed, probes
+only if approved and asked for (`Options.Active`). Scan only sites you are allowed to scan.
+
+```go
+reg, err := client.LoadRegistry("registry.json") // verified against its manifest
+if err != nil { ... }
+res, err := client.Scan(ctx, reg, client.Options{DNS: true, Depth: 1}, "https://example.org")
+if err != nil { ... }
+if err := client.Validate(res); err != nil { ... } // optional: the result against its schema
+for _, t := range res.Technologies {
+	fmt.Println(t.Name, t.Version)
+}
+```
+
+- `Registry` is read-only after loading and can be shared by concurrent scans. Load it once.
+  `LoadRegistryCached` skips re-verification of a file already verified (as `--verify-cache`),
+  `ParseRegistry` takes bytes, `Registry.Ref()` gives hash, sources and the export's notice.
+- `Options` has the same meaning as the flags: the zero value reads one page with the default
+  limits and no DNS, crawling, probing or browser. Zero limits mean the defaults. Unlike the
+  command, the library does not read the configuration file: you give every value.
+- The parts of a scan are available alone, with the same options: `Extract` (saved HTML, no
+  network), `ReadSite` (`links`, `social`), `Observe`, `Friends`, `Related`.
+- `Scan` returns a `*scan.Result`: the types of package `scan`, the contract of
+  `schemas/scan-result.schema.json`. `Extraction` and `Observed` are aliases of internal types;
+  their fields are readable but you cannot name the package of `Observed.Observation`.
+- A runnable example is `ExampleScan` in `scan/client/client_test.go`.
+- The API is a draft, like the formats (0.x): no tagged release yet.
 
 ## Statistics page
 
