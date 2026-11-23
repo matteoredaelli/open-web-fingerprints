@@ -87,7 +87,7 @@ var nameFamily = map[string]string{
 	"datadog browser rum": FamilyAnalytics, "fullstory rum": FamilyAnalytics,
 	"zurb foundation framework": FamilyFramework, "bitrix-site-manager": FamilyCMS,
 	"passwordfield": FamilySignals, "dublincore": FamilySignals, "meta-geo": FamilySignals,
-	"openid": FamilySignals, "google firebase db url": FamilyInfra,
+	"openid": FamilySignals, "mixpanel analytics": FamilyAnalytics, "posthog browser rum": FamilyAnalytics, "google firebase db url": FamilyInfra,
 }
 
 // FamilyOf gives the family of a technology.
