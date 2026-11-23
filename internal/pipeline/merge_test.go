@@ -292,8 +292,8 @@ func TestManualDecisions(t *testing.T) {
 				t.Fatalf("keep-separate: %+v", c)
 			}
 		}
-		// A closed conflict cannot be decided again.
-		if _, err := review.Resolve(ctx, repo, review.Request{IDs: []domain.ConflictID{diff.ID}, Decision: merge.Merge}); err == nil {
+		// A closed conflict cannot be decided again (only a merge may reverse a keep-separate).
+		if _, err := review.Resolve(ctx, repo, review.Request{IDs: []domain.ConflictID{diff.ID}, Decision: merge.KeepSeparate}); err == nil {
 			t.Error("deciding a closed conflict must fail")
 		}
 		// Bulk without filters or IDs is refused.
