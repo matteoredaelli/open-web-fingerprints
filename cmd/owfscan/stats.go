@@ -4,6 +4,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -14,12 +15,13 @@ import (
 
 	"github.com/matteoredaelli/open-web-fingerprints/internal/scan/batch"
 	"github.com/matteoredaelli/open-web-fingerprints/internal/scan/stats"
+	"github.com/matteoredaelli/open-web-fingerprints/internal/scan/statspage"
 	"github.com/matteoredaelli/open-web-fingerprints/scan"
 	"github.com/matteoredaelli/open-web-fingerprints/schemas"
 )
 
 func newStatsCmd() *cobra.Command {
-	var db, out, exclude string
+	var db, out, exclude, htmlOut, title string
 	var minConf float64
 	var minSites, top int
 	var asJSON bool
@@ -68,6 +70,16 @@ func newStatsCmd() *cobra.Command {
 				}
 				fmt.Fprintf(cmd.ErrOrStderr(), "wrote %s\n", out)
 			}
+			if htmlOut != "" {
+				var buf bytes.Buffer
+				if err := statspage.Render(&buf, s, statspage.Options{Title: title}); err != nil {
+					return err
+				}
+				if err := os.WriteFile(htmlOut, buf.Bytes(), 0o644); err != nil { //nolint:gosec // a page is meant to be shared
+					return err
+				}
+				fmt.Fprintf(cmd.ErrOrStderr(), "wrote %s\n", htmlOut)
+			}
 			if asJSON {
 				_, err := fmt.Fprintln(cmd.OutOrStdout(), string(b))
 				return err
@@ -82,6 +94,8 @@ func newStatsCmd() *cobra.Command {
 	c.Flags().IntVar(&minSites, "min-sites", 3, "name a technology only when at least this many sites show it")
 	c.Flags().StringVar(&exclude, "exclude", "", "comma-separated technology names to leave out (rules known to be unreliable)")
 	c.Flags().IntVar(&top, "top", 30, "length of the lists")
+	c.Flags().StringVar(&htmlOut, "html", "", "also write a static HTML summary page (no script, aggregates only) to this file")
+	c.Flags().StringVar(&title, "title", "", "title of the HTML page")
 	c.Flags().BoolVar(&asJSON, "json", false, "print the JSON instead of the summary")
 	return c
 }

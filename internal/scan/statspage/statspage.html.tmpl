@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<meta name="color-scheme" content="light dark">
+<title>{{.Title}}</title>
+<style>
+:root{--bg:#f4f6fb;--card:#fff;--ink:#16202e;--mute:#5b6678;--line:#e3e8f1;--track:#e9edf5;--accent:#4f46e5;--accent2:#06b6d4;--ok:#16a34a;--soon:#d97706;--bad:#dc2626;--shadow:0 1px 2px rgba(16,24,40,.05),0 8px 24px rgba(16,24,40,.06)}
+@media (prefers-color-scheme:dark){:root{--bg:#0d1220;--card:#151c2e;--ink:#e8edf7;--mute:#9aa6bd;--line:#243049;--track:#222c42;--shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35)}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+code,.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.88em}
+.wrap{max-width:1120px;margin:0 auto;padding:0 20px}
+.hero{background:radial-gradient(1200px 400px at 85% -20%,rgba(6,182,212,.55),transparent 60%),radial-gradient(900px 500px at 0% 0%,rgba(124,58,237,.6),transparent 55%),linear-gradient(135deg,#1e1b4b,#312e81 55%,#0e7490);color:#fff;padding:44px 0 90px}
+.eyebrow{letter-spacing:.14em;text-transform:uppercase;font-size:12px;opacity:.75;font-weight:600}
+.hero h1{margin:6px 0 4px;font-size:clamp(30px,5vw,50px);line-height:1.1;letter-spacing:-.02em;word-break:break-word}
+.hero .url{opacity:.8;word-break:break-all}
+.meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:4px 11px;border-radius:99px;background:rgba(255,255,255,.14);font-size:13px;backdrop-filter:blur(4px)}
+.dot{width:8px;height:8px;border-radius:50%;background:currentColor;display:inline-block}
+.pill.ok .dot{color:#4ade80}.pill.soon .dot{color:#fbbf24}.pill.bad .dot{color:#f87171}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-top:-56px}
+.stat{background:var(--card);border-radius:16px;padding:16px 18px;box-shadow:var(--shadow);border:1px solid var(--line)}
+.stat b{display:block;font-size:30px;line-height:1.1;letter-spacing:-.02em;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent}
+.stat span{color:var(--mute);font-size:13px}
+.banner{margin:22px 0 0;padding:12px 16px;border-radius:12px;background:rgba(217,119,6,.12);border:1px solid rgba(217,119,6,.45);color:var(--ink);font-size:14px}
+.banner b{color:var(--soon)}
+section{margin-top:44px}
+h2{font-size:22px;margin:0 0 4px;letter-spacing:-.01em}
+.sub{color:var(--mute);margin:0 0 18px;max-width:78ch}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:20px}
+.glance{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.glance div{padding:12px 14px;border-radius:12px;background:var(--card);border:1px solid var(--line);box-shadow:var(--shadow)}
+.glance small{display:block;color:var(--mute);font-size:12px;text-transform:uppercase;letter-spacing:.08em}
+.glance strong{font-size:16px}
+.tech-top{display:grid;grid-template-columns:minmax(220px,300px) 1fr;gap:24px;align-items:center}
+.donut{width:100%;max-width:280px;margin:auto;display:block}
+.donut-n{font-size:34px;font-weight:700;fill:var(--ink)}.donut-l{font-size:11px;fill:var(--mute);letter-spacing:.08em;text-transform:uppercase}
+.legend{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:6px 18px}
+.legend li{display:flex;align-items:center;gap:9px}
+.sw{--c:hsl(var(--h) 65% 52%);width:12px;height:12px;border-radius:4px;background:var(--c);flex:none}
+.legend em{margin-left:auto;font-style:normal;color:var(--mute);font-variant-numeric:tabular-nums}
+.grp{margin-top:28px}
+.grp h3{display:flex;align-items:center;gap:9px;margin:0 0 12px;font-size:16px}
+.grp h3 small{color:var(--mute);font-weight:500}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:14px}
+.tech{--c:hsl(var(--h) 65% 52%);background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;box-shadow:var(--shadow);border-top:3px solid var(--c)}
+.t-head{display:flex;gap:12px;align-items:center}
+.logo{width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,var(--c),hsl(calc(var(--h) + 40) 70% 45%));color:#fff;display:grid;place-items:center;font-weight:700;font-size:18px;flex:none}
+.t-name{font-weight:650;font-size:16px;line-height:1.2;word-break:break-word}
+.t-name small{color:var(--mute);font-weight:500}
+.t-vendor{color:var(--mute);font-size:12.5px}
+.conf{display:flex;align-items:center;gap:10px;margin:12px 0 4px;font-size:12.5px;color:var(--mute)}
+.bar{flex:1;height:7px;border-radius:99px;background:var(--track);overflow:hidden}
+.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--c,var(--accent)),var(--accent2));border-radius:99px}
+.badge{display:inline-block;padding:1px 8px;border-radius:99px;font-size:11.5px;border:1px solid var(--line);color:var(--mute);white-space:nowrap}
+.badge.ok{color:var(--ok);border-color:currentColor}.badge.degraded,.badge.soon{color:var(--soon);border-color:currentColor}.badge.broken,.badge.bad{color:var(--bad);border-color:currentColor}
+details{margin-top:8px}
+summary{cursor:pointer;color:var(--mute);font-size:13px;list-style:none}
+summary::-webkit-details-marker{display:none}
+summary::before{content:"▸ ";color:var(--accent)}details[open] summary::before{content:"▾ "}
+.ev{margin:8px 0 0;padding:0;list-style:none;display:grid;gap:6px}
+.ev li{padding:8px 10px;border-radius:10px;background:var(--bg);font-size:12.5px;word-break:break-word}
+.ev .k{color:var(--accent);font-weight:600}
+.ev .m{display:block;color:var(--mute);margin-top:2px}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{text-align:left;color:var(--mute);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.07em;padding:6px 10px 6px 0}
+td{padding:7px 10px 7px 0;border-top:1px solid var(--line);vertical-align:top;word-break:break-word}
+.sec{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px}
+.sec div{padding:11px 13px;border-radius:12px;border:1px solid var(--line);background:var(--card)}
+.sec .y{border-left:4px solid var(--ok)}.sec .n{border-left:4px solid var(--track);opacity:.8}
+.sec b{display:block}.sec small{color:var(--mute)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{display:inline-flex;align-items:center;gap:8px;padding:6px 12px 6px 6px;border-radius:99px;background:var(--card);border:1px solid var(--line);box-shadow:var(--shadow)}
+.chip .logo{width:26px;height:26px;border-radius:50%;font-size:12px}
+.chip small{color:var(--mute)}
+.bars{display:grid;gap:7px}
+.bars div{display:grid;grid-template-columns:minmax(120px,230px) 1fr 38px;gap:10px;align-items:center;font-size:13.5px}
+.bars div{grid-template-columns:minmax(120px,230px) 1fr 60px}
+.bars .l{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bars .n{text-align:right;color:var(--mute);font-variant-numeric:tabular-nums}
+.graph{width:100%;height:auto}
+.edge{stroke:var(--line);stroke-width:1.5}.edge.friend{stroke:var(--ok)}.edge.probable{stroke:var(--accent)}
+.node circle{fill:var(--mute)}.node.friend circle{fill:var(--ok)}.node.probable circle{fill:var(--accent)}
+.node.center circle{fill:var(--accent)}
+.node text{font-size:11.5px;fill:var(--ink)}.node.center text{fill:#fff;font-size:10.5px;font-weight:700}
+.key{display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--mute);margin-top:8px}
+.key i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;background:var(--mute)}.key .f i{background:var(--ok)}.key .p i{background:var(--accent)}
+.rel{border-top:1px solid var(--line);padding:11px 0}.rel:first-child{border-top:0}
+.rel b{margin-right:8px}
+.ev-tag{display:inline-block;margin:3px 6px 0 0;padding:1px 9px;border-radius:99px;font-size:12px;background:var(--bg);border:1px solid var(--line)}
+.ev-tag.strong{border-color:var(--accent);color:var(--accent)}.ev-tag.medium{border-color:var(--accent2)}
+.cov{display:grid;grid-template-columns:220px 1fr;gap:24px;align-items:center}
+.ring{--p:0;width:200px;aspect-ratio:1;border-radius:50%;background:conic-gradient(var(--accent) calc(var(--p)*1%),var(--track) 0);display:grid;place-items:center;margin:auto}
+.ring div{width:150px;aspect-ratio:1;border-radius:50%;background:var(--card);display:grid;place-items:center;text-align:center}
+.ring b{font-size:34px;line-height:1}.ring small{color:var(--mute);display:block;font-size:12px}
+.note{border-left:4px solid var(--accent2);background:var(--bg);padding:12px 16px;border-radius:0 12px 12px 0;color:var(--mute);font-size:14px;margin-top:16px}
+.list{margin:0;padding:0;list-style:none}.list li{padding:6px 0;border-top:1px solid var(--line)}.list li:first-child{border-top:0}
+.warn{color:var(--soon)}
+footer{margin:56px 0 40px;color:var(--mute);font-size:13px;border-top:1px solid var(--line);padding-top:18px}
+@media (max-width:760px){.tech-top,.cov{grid-template-columns:1fr}.bars div{grid-template-columns:1fr 1fr 34px}}
+@media print{body{background:#fff;color:#000}.hero{background:#1e1b4b!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}.card,.tech,.stat{box-shadow:none}details>*{display:block}details .ev{display:grid}section{break-inside:avoid-page}}
+</style>
+</head>
+<body>
+<header class="hero"><div class="wrap">
+  <div class="eyebrow">Statistics of a batch</div>
+  <h1>{{.Title}}</h1>
+  <div class="meta">
+    <span class="pill">Generated {{.Generated}}</span>
+    {{if .List}}<span class="pill">List: {{.List}}</span>{{end}}
+    {{if .Scanner}}<span class="pill">{{.Scanner}}</span>{{end}}
+  </div>
+</div></header>
+
+<main class="wrap">
+  <div class="stats">
+    <div class="stat"><b>{{.Sites.Listed}}</b><span>sites listed</span></div>
+    <div class="stat"><b>{{.Sites.Scanned}}</b><span>scanned</span></div>
+    <div class="stat"><b>{{.Sites.Reached}}</b><span>reached (2xx){{if .ReachedPct}}: {{.ReachedPct}}{{end}}</span></div>
+    <div class="stat"><b>{{.Sites.Failed}}</b><span>failed</span></div>
+    <div class="stat"><b>{{.Sites.Pending}}</b><span>pending</span></div>
+    <div class="stat"><b>{{.Cov.MedianTechs}}</b><span>median technologies per site</span></div>
+  </div>
+
+  {{if .Notice}}<div class="banner"><b>Internal use.</b> {{.Notice}}</div>{{end}}
+
+  <section>
+    <h2>How to read this page</h2>
+    <p class="note" style="margin-top:0">Every share is of the <b>{{.Sites.Reached}}</b> sites whose home page answered 2xx, and means "detected on the home page" by the rules of the registry. It is not a measure of use: a technology that leaves no trace in the home page is not counted, and rules that need a browser, a probe or a lookup that was not requested were not applied (on average {{.CovPct}}% of the rules were). Most rules have not been tested; some may match too much or too little. Anything seen on fewer than {{.MinSites}} sites is counted, not named ({{.Hidden}} technologies). Bars are scaled to the largest value of each list; the printed percentage is the real share.{{if .Excluded}} Left out as unreliable: {{.Excluded}}.{{end}}{{if ne .MinConf "0.00"}} Technologies below confidence {{.MinConf}} are left out.{{end}}</p>
+  </section>
+
+  {{if .Categories}}
+  <section>
+    <h2>Categories</h2>
+    <p class="sub">Sites with at least one web technology of the category.</p>
+    <div class="card"><div class="bars">{{range .Categories}}<div><span class="l" title="{{.Name}}">{{.Name}}</span><span class="bar"><i style="{{.Width}}"></i></span><span class="n">{{.Pct}}</span></div>{{end}}</div></div>
+  </section>
+  {{end}}
+
+  <section>
+    <h2>Technologies</h2>
+    <p class="sub">Web technologies: something the page or its headers show.</p>
+    {{if .Technologies}}
+    <div class="card"><table><tr><th>Technology</th><th>Category</th><th>Sites</th><th>Share</th><th style="width:30%"></th></tr>
+    {{range .Technologies}}<tr><td><b>{{.Name}}</b></td><td>{{.Detail}}</td><td>{{.Sites}}</td><td>{{.Pct}}</td><td><span class="bar"><i style="{{.Width}}"></i></span></td></tr>{{end}}
+    </table></div>
+    {{else}}<div class="card">No technology was seen on enough sites to be named.</div>{{end}}
+  </section>
+
+  {{if .Signals}}
+  <section>
+    <h2>Domain signals</h2>
+    <p class="sub">Technologies seen only in DNS records (a domain verification for a vendor, a mail provider). They describe the domain, not the web stack, and are kept apart.</p>
+    <div class="card"><table><tr><th>Signal</th><th>Sites</th><th>Share</th><th style="width:30%"></th></tr>
+    {{range .Signals}}<tr><td><b>{{.Name}}</b></td><td>{{.Sites}}</td><td>{{.Pct}}</td><td><span class="bar"><i style="{{.Width}}"></i></span></td></tr>{{end}}
+    </table></div>
+  </section>
+  {{end}}
+
+  {{if .Pairs}}
+  <section>
+    <h2>Seen together</h2>
+    <p class="sub">Pairs of technologies on the same site. Co-occurrence, not dependence.</p>
+    <div class="card"><div class="bars">{{range .Pairs}}<div><span class="l" title="{{.Name}}">{{.Name}}</span><span class="bar"><i style="{{.Width}}"></i></span><span class="n">{{.Sites}}</span></div>{{end}}</div></div>
+  </section>
+  {{end}}
+
+  <section>
+    <h2>Browser-facing headers, certificates and profiles</h2>
+    <div class="two">
+      {{if .Headers}}<div class="card"><h3 style="margin-top:0">Headers on the home page</h3><div class="bars">{{range .Headers}}<div><span class="l">{{.Name}}</span><span class="bar"><i style="{{.Width}}"></i></span><span class="n">{{.Pct}}</span></div>{{end}}</div>
+        <p class="note">This lists headers the first response carried: it is not a security assessment.</p></div>{{end}}
+      {{if or .DaysLeft .Issuers}}<div class="card"><h3 style="margin-top:0">Certificates <small style="color:var(--mute);font-weight:500">{{.WithCert}} sites</small></h3>
+        {{if .DaysLeft}}<p class="sub" style="margin:0 0 8px">Time left on the day of the scan</p><div class="bars">{{range .DaysLeft}}<div><span class="l">{{.Name}}</span><span class="bar"><i style="{{.Width}}"></i></span><span class="n">{{.Pct}}</span></div>{{end}}</div>{{end}}
+        {{if .Issuers}}<p class="sub" style="margin:14px 0 8px">Issuers</p><div class="bars">{{range .Issuers}}<div><span class="l" title="{{.Name}}">{{.Name}}</span><span class="bar"><i style="{{.Width}}"></i></span><span class="n">{{.Pct}}</span></div>{{end}}</div>{{end}}
+      </div>{{end}}
+      {{if .Social}}<div class="card"><h3 style="margin-top:0">Social platforms linked</h3><div class="bars">{{range .Social}}<div><span class="l">{{.Name}}</span><span class="bar"><i style="{{.Width}}"></i></span><span class="n">{{.Pct}}</span></div>{{end}}</div></div>{{end}}
+    </div>
+  </section>
+
+  <section>
+    <h2>The run</h2>
+    <div class="two">
+      <div class="card"><h3 style="margin-top:0">Coverage</h3>
+        <table>
+          <tr><td>Rules applied, on average</td><td>{{.CovPct}}%</td></tr>
+          <tr><td>Technologies per site, median</td><td>{{.Cov.MedianTechs}}</td></tr>
+          <tr><td>Technologies per site, mean</td><td>{{printf "%.1f" .Cov.MeanTechs}}</td></tr>
+          <tr><td>Sites with no technology</td><td>{{.Cov.SitesWithNone}}</td></tr>
+        </table></div>
+      {{if .Status}}<div class="card"><h3 style="margin-top:0">HTTP status of the home page</h3><table>{{range .Status}}<tr><td>{{.Name}}</td><td>{{.Sites}}</td></tr>{{end}}</table></div>{{end}}
+      {{if .Failures}}<div class="card"><h3 style="margin-top:0">Failures</h3><table>{{range .Failures}}<tr><td>{{.Name}}</td><td>{{.Sites}}</td></tr>{{end}}</table></div>{{end}}
+    </div>
+    {{if .Notes}}<div class="card" style="margin-top:16px"><h3 style="margin-top:0">Notes</h3><ul class="list">{{range .Notes}}<li>{{.}}</li>{{end}}</ul></div>{{end}}
+  </section>
+
+  <footer>
+    <div>Registry <span class="mono">{{.RegistryShort}}</span>{{if .Sources}}: {{.Sources}}{{end}}</div>
+    <div>Generated from the statistics file by owfscan stats --html. The page holds no address, handle or contact of a site, contains no script and loads nothing.</div>
+  </footer>
+</main>
+</body>
+</html>

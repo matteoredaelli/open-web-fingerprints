@@ -770,3 +770,9 @@ RE2 syntax only.
 from local `httptest` servers and DNS from a fake resolver. A live check is manual
 (`owfscan observe <your domain>`); never make a test depend on a third-party site.
 `make check` runs everything.
+
+## Statistics page
+
+`owfscan stats --db batch.db --html stats.html` also writes a static summary page of the aggregates
+(`internal/scan/statspage`): categories, technologies, domain signals apart, pairs, headers, certificates, notes of
+reading. No script, nothing loaded, values escaped, same input gives the same bytes. `make stats-page` does it.
