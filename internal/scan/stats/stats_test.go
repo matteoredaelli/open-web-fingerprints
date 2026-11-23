@@ -136,6 +136,8 @@ func TestFamilyOf(t *testing.T) {
 		{"HSTS", []string{"Security"}, FamilySignals},
 		{"HTML5", nil, FamilySignals},
 		{"Open Graph", []string{"Miscellaneous"}, FamilySignals},
+		{"Cart Functionality", []string{"Ecommerce"}, FamilySignals},
+		{"Intercom", []string{"Live chat"}, FamilyBusiness},
 		{"Something", nil, FamilyOther},
 		{"Odd", []string{"Unmapped category"}, FamilyOther},
 	} {

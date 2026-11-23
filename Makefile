@@ -1,7 +1,7 @@
 .DEFAULT_GOAL := help
 BIN := bin/owf
 
-.PHONY: help build test lint fmt vet check hooks clean addlicense license-check validate-corpus registry stats stats-page tranco
+.PHONY: help build test lint fmt vet check hooks clean addlicense license-check validate-corpus registry stats stats-page tranco filters filters-check
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN{FS=":.*?## "}{printf "  %-10s %s\n",$$1,$$2}'
@@ -102,6 +102,16 @@ tranco: build ## Scan the top TOP sites of Tranco list TRANCO_ID and write stats
 	curl -fsSL https://tranco-list.eu/download/$(TRANCO_ID)/$(TOP) -o $(TRANCO_DIR)/top$(TOP).txt
 	bin/owfscan batch run $(TRANCO_DIR)/top$(TOP).txt --db $(TRANCO_DIR)/batch.db --registry $(REGISTRY) --depth $(DEPTH) --quiet
 	bin/owfscan stats --db $(TRANCO_DIR)/batch.db -o $(TRANCO_DIR)/stats.json --exclude '$(EXCLUDE)' --html $(TRANCO_DIR)/stats.html
+
+# filters: download the block lists of the crawler (needs the network, so it is not part of `make check`).
+# Fails when no list is configured; the lists are chosen in the configuration, none is shipped.
+filters: build ## Download the crawler's block lists (configured in owfscan.toml)
+	bin/owfscan bot filter refresh
+
+# filters-check: say whether a domain is blocked, and by which list (DOMAIN=example.com).
+filters-check: build ## Check DOMAIN against the downloaded block lists
+	@test -n "$(DOMAIN)" || { echo "usage: make filters-check DOMAIN=example.com"; exit 2; }
+	bin/owfscan bot filter check $(DOMAIN)
 
 clean: ## Remove build artifacts
 	rm -rf bin dist coverage.out
