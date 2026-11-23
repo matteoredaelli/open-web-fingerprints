@@ -68,6 +68,15 @@ func TestCompute(t *testing.T) {
 	if len(s.Technologies) < 2 || s.Technologies[0].Name != "PHP" && s.Technologies[0].Name != "WordPress" || s.Technologies[0].Sites != 3 || s.Technologies[0].Share != 1 {
 		t.Errorf("technologies %+v", s.Technologies)
 	}
+	var cms *scan.StatFamily
+	for i := range s.Families {
+		if s.Families[i].Name == FamilyCMS {
+			cms = &s.Families[i]
+		}
+	}
+	if cms == nil || cms.Sites != 3 || len(cms.Technologies) != 1 || cms.Technologies[0].Name != "WordPress" {
+		t.Errorf("CMS family %+v (3 sites show WordPress)", cms)
+	}
 	var wpv []scan.StatCount
 	for _, x := range s.Technologies {
 		if x.Name == "WordPress" {
@@ -109,6 +118,29 @@ func TestCompute(t *testing.T) {
 	for _, x := range s2.Technologies {
 		if x.Name == "PHP" {
 			t.Error("excluded technology listed")
+		}
+	}
+}
+
+func TestFamilyOf(t *testing.T) {
+	for _, c := range []struct {
+		name string
+		cats []string
+		want string
+	}{
+		{"WordPress", []string{"Blogs", "CMS", "Platform"}, FamilyCMS},
+		{"Next.js", []string{"JavaScript frameworks", "Static site generator", "Web servers"}, FamilyFramework},
+		{"Nginx", []string{"Reverse proxies", "Web servers"}, FamilyServers},
+		{"Varnish", []string{"CDN", "Caching", "Web servers"}, FamilyInfra},
+		{"Cloudflare", []string{"CDN", "Security"}, FamilyInfra},
+		{"HSTS", []string{"Security"}, FamilySignals},
+		{"HTML5", nil, FamilySignals},
+		{"Open Graph", []string{"Miscellaneous"}, FamilySignals},
+		{"Something", nil, FamilyOther},
+		{"Odd", []string{"Unmapped category"}, FamilyOther},
+	} {
+		if got := FamilyOf(c.name, c.cats); got != c.want {
+			t.Errorf("FamilyOf(%q, %v) = %q, want %q", c.name, c.cats, got, c.want)
 		}
 	}
 }

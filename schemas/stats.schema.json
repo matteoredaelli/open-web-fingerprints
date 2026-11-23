@@ -236,6 +236,12 @@
       "items": {
         "type": "string"
       }
+    },
+    "families": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/family"
+      }
     }
   },
   "$defs": {
@@ -321,6 +327,36 @@
           "type": "number",
           "minimum": 0,
           "maximum": 1
+        }
+      }
+    },
+    "family": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "sites",
+        "share",
+        "technologies"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "sites": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "share": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "technologies": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/tech"
+          }
         }
       }
     }

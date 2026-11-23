@@ -776,3 +776,14 @@ from local `httptest` servers and DNS from a fake resolver. A live check is manu
 `owfscan stats --db batch.db --html stats.html` also writes a static summary page of the aggregates
 (`internal/scan/statspage`): categories, technologies, domain signals apart, pairs, headers, certificates, notes of
 reading. No script, nothing loaded, values escaped, same input gives the same bytes. `make stats-page` does it.
+
+### Families
+
+The statistics also group technologies by `families`: CMS and publishing, E-commerce and payments, Frameworks
+and languages, Libraries/fonts/media, CDN/hosting/caching, Web servers and proxies, Analytics/tags/advertising,
+Security/privacy/certificates, Standards and page signals, Other. The registry's categories overlap (Next.js is a
+JavaScript framework, a static site generator and a web server), so each technology gets **one** family: the first
+in that order that one of its categories maps to (`internal/scan/stats/families.go`). A few names (HTML5, HSTS,
+Open Graph, HTTP/3, ...) are page features or headers rather than products and always go to "Standards and page
+signals". A family's figure is the share of sites with at least one technology of it. It is a reading aid, not a
+taxonomy: a technology without categories (many WhatWeb rules) lands in Other.

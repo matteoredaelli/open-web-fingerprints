@@ -38,7 +38,14 @@ type bar struct {
 	Width        template.CSS
 }
 
+type family struct {
+	Name, Pct string
+	Sites     int
+	Techs     []bar
+}
+
 type view struct {
+	Families                        []family
 	Title, Generated, Scanner, List string
 	Notice, RegistryShort, Sources  string
 	Sites                           scan.StatsSites
@@ -143,6 +150,9 @@ func build(s *scan.Stats, opt Options) view {
 	}
 	v.Technologies = techs(s.Technologies, opt.TopTechnologies)
 	v.Signals = techs(s.DomainSignals, opt.TopTechnologies)
+	for _, f := range s.Families {
+		v.Families = append(v.Families, family{Name: f.Name, Sites: f.Sites, Pct: pct(f.Share), Techs: techs(f.Technologies, 8)})
+	}
 	v.Categories = counts(s.Categories, opt.TopCategories)
 	v.Headers = counts(s.Headers, 0)
 	v.Social = counts(s.Social, 0)

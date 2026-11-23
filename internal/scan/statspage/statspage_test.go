@@ -22,6 +22,7 @@ func sample() *scan.Stats {
 			{Name: "<script>alert(1)</script>", Categories: []string{"CMS"}, Sites: 40, Share: 0.5},
 			{Name: "nginx", Categories: []string{"Web servers"}, Sites: 20, Share: 0.25},
 		},
+		Families:      []scan.StatFamily{{Name: "Web servers and proxies", Sites: 20, Share: 0.25, Technologies: []scan.StatTech{{Name: "nginx", Sites: 20, Share: 0.25}}}},
 		DomainSignals: []scan.StatTech{{Name: "Google Workspace", Sites: 10, Share: 0.125}},
 		Categories:    []scan.StatCount{{Name: "CMS", Sites: 40, Share: 0.5}},
 		Headers:       []scan.StatCount{{Name: "strict-transport-security", Sites: 30, Share: 0.375}},
@@ -45,7 +46,7 @@ func TestRendersTheSections(t *testing.T) {
 	out := render(t, sample())
 	for _, want := range []string{
 		"Web technology statistics", "sites.txt", "Internal use", "Categories", "nginx", "Domain signals", "Google Workspace",
-		"Seen together", "nginx &#43; PHP", "strict-transport-security", "50.0%", "7 technologies", "noisy", "a note", "How to read this page",
+		"By family", "Web servers and proxies", "Seen together", "nginx &#43; PHP", "strict-transport-security", "50.0%", "7 technologies", "noisy", "a note", "How to read this page",
 	} {
 		if !strings.Contains(out, want) {
 			t.Errorf("page lacks %q", want)

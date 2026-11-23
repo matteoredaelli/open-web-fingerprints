@@ -49,6 +49,7 @@ type acc struct {
 	sites    int
 	versions map[string]int
 	domain   bool
+	family   string
 }
 
 // Compute reads the batch and returns the statistics.
@@ -83,6 +84,7 @@ func Compute(ctx context.Context, st *batch.Store, opt Options) (*scan.Stats, er
 
 	techs := map[string]*acc{}
 	cats := map[string]int{}
+	fams := map[string]int{}
 	hdrs := map[string]int{}
 	soc := map[string]int{}
 	issuers := map[string]int{}
@@ -124,7 +126,7 @@ func Compute(ctx context.Context, st *batch.Store, opt Options) (*scan.Stats, er
 			}
 			a := techs[t.Name]
 			if a == nil {
-				a = &acc{cats: map[string]bool{}, versions: map[string]int{}, domain: domainOnly}
+				a = &acc{cats: map[string]bool{}, versions: map[string]int{}, domain: domainOnly, family: FamilyOf(t.Name, t.Categories)}
 				techs[t.Name] = a
 			}
 			a.domain = a.domain && domainOnly
@@ -149,6 +151,13 @@ func Compute(ctx context.Context, st *batch.Store, opt Options) (*scan.Stats, er
 		}
 		for c := range siteCats {
 			cats[c]++
+		}
+		siteFams := map[string]bool{}
+		for n := range web {
+			siteFams[techs[n].family] = true
+		}
+		for f := range siteFams {
+			fams[f]++
 		}
 		perSite = append(perSite, len(web))
 		names := make([]string, 0, len(web))
@@ -287,6 +296,22 @@ func Compute(ctx context.Context, st *batch.Store, opt Options) (*scan.Stats, er
 	out.Other.TechnologiesHidden = hidden
 
 	out.Categories = top(list(cats, opt.MinSites))
+	out.Families = []scan.StatFamily{}
+	for _, name := range familyOrder {
+		if fams[name] == 0 {
+			continue
+		}
+		f := scan.StatFamily{Name: name, Sites: fams[name], Share: share(fams[name]), Technologies: []scan.StatTech{}}
+		for _, t := range out.Technologies {
+			if techs[t.Name].family == name {
+				f.Technologies = append(f.Technologies, t)
+			}
+		}
+		if len(f.Technologies) > opt.Top {
+			f.Technologies = f.Technologies[:opt.Top]
+		}
+		out.Families = append(out.Families, f)
+	}
 	hl := map[string]int{}
 	for _, h := range securityHeaders {
 		hl[h] = hdrs[h]

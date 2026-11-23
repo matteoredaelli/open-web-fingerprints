@@ -25,15 +25,18 @@ type Stats struct {
 	Technologies []StatTech `json:"technologies"`
 	// DomainSignals are technologies seen only in DNS records (a domain verification for
 	// a vendor, a mail provider): true of the domain, not part of the web stack.
-	DomainSignals []StatTech    `json:"domain_signals"`
-	Categories    []StatCount   `json:"categories"`
-	Headers       []StatCount   `json:"headers"`
-	TLS           StatsTLS      `json:"tls"`
-	Social        []StatCount   `json:"social"`
-	Pairs         []StatPair    `json:"pairs"`
-	Coverage      StatsCoverage `json:"coverage"`
-	Other         StatsOther    `json:"other"`
-	Notes         []string      `json:"notes"`
+	DomainSignals []StatTech `json:"domain_signals"`
+	// Families group the technologies by kind (CMS, web server, CDN...); each technology is
+	// in one family. Sites counts the sites with at least one technology of the family.
+	Families   []StatFamily  `json:"families"`
+	Categories []StatCount   `json:"categories"`
+	Headers    []StatCount   `json:"headers"`
+	TLS        StatsTLS      `json:"tls"`
+	Social     []StatCount   `json:"social"`
+	Pairs      []StatPair    `json:"pairs"`
+	Coverage   StatsCoverage `json:"coverage"`
+	Other      StatsOther    `json:"other"`
+	Notes      []string      `json:"notes"`
 }
 
 // StatsSource says which registry the rules came from.
@@ -75,6 +78,14 @@ type StatTech struct {
 	Sites      int         `json:"sites"`
 	Share      float64     `json:"share"`
 	Versions   []StatCount `json:"versions,omitempty"`
+}
+
+// StatFamily is a family of technologies, with the ones named (seen on enough sites).
+type StatFamily struct {
+	Name         string     `json:"name"`
+	Sites        int        `json:"sites"`
+	Share        float64    `json:"share"`
+	Technologies []StatTech `json:"technologies"`
 }
 
 // StatPair is two technologies seen together.
