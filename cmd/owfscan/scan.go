@@ -69,16 +69,20 @@ func newScanCmd() *cobra.Command {
 			opt.NoFavicon, opt.MinHealth, opt.Version = noFavicon, minHealth, version()
 			opt.Depth, opt.MaxPages, opt.Delay, opt.IgnoreRobots = n.depth, n.maxPages, n.delay, n.ignoreRobots
 			opt.Friends, opt.FriendsMax = friends, friendsMax
-			opt.Related, opt.RelatedMax, opt.RelatedTLDs = related, relatedMax, tf.tlds()
+			tlds, err := tf.tlds()
+			if err != nil {
+				return err
+			}
+			opt.Related, opt.RelatedMax, opt.RelatedTLDs = related, relatedMax, tlds
 			opt.Active, opt.ActiveMax = active, activeMax
 			opt.Browser, opt.BrowserPath, opt.BrowserTimeout = useBrowser, chrome, browserTimeout
 			n.applyTo(&opt)
 			opt.DropHeaders = dropList(allHeaders)
 			opt.DNS = !noDNS
-			if len(tf.tlds()) > 0 && !related {
+			if len(tlds) > 0 && !related {
 				return fmt.Errorf("--related-tlds needs --related")
 			}
-			if len(tf.tlds()) > 0 && noDNS {
+			if len(tlds) > 0 && noDNS {
 				return fmt.Errorf("--related-tlds looks names up in DNS: it cannot be used with --no-dns")
 			}
 			res, err := client.Scan(cmd.Context(), reg, opt, args[0])

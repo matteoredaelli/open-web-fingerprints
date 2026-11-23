@@ -302,13 +302,8 @@ func (c Config) Validate() error {
 	dur("browser.settle", c.Browser.Settle, 0, maxSettle)
 	num("browser.max_requests", int64(c.Browser.MaxRequests), 1, maxBrowserReqs)
 	num("result.max_evidence", int64(c.Result.MaxEvidence), 1, maxEvidenceList)
-	if len(c.Related.TLDs) > maxTLDs {
-		bad("related.tlds", "%d entries, at most %d", len(c.Related.TLDs), maxTLDs)
-	}
-	for _, t := range c.Related.TLDs {
-		if !validTLD(t) {
-			bad("related.tlds", "%q is not a suffix like \"com\" or \"co.uk\" (lower case, no dot at the ends)", t)
-		}
+	if err := ValidateTLDs(c.Related.TLDs); err != nil {
+		bad("related.tlds", "%v", err)
 	}
 	if len(c.Output.DropHeaders) > maxDropHeaders {
 		bad("output.drop_headers", "%d entries, at most %d", len(c.Output.DropHeaders), maxDropHeaders)
@@ -432,6 +427,20 @@ func validHeaderPattern(h string) bool {
 		}
 	}
 	return true
+}
+
+// ValidateTLDs checks a list of suffixes for --related-tlds: at most 50, each like "com" or
+// "co.uk" (lower case, no dot at the ends). The file and the flag use the same rule.
+func ValidateTLDs(list []string) error {
+	if len(list) > maxTLDs {
+		return fmt.Errorf("%d entries, at most %d", len(list), maxTLDs)
+	}
+	for _, t := range list {
+		if !validTLD(t) {
+			return fmt.Errorf("%q is not a suffix like \"com\" or \"co.uk\" (lower case, no dot at the ends)", t)
+		}
+	}
+	return nil
 }
 
 func validTLD(t string) bool {

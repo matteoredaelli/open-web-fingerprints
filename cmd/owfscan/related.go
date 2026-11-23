@@ -10,6 +10,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/matteoredaelli/open-web-fingerprints/internal/scan/config"
 	"github.com/matteoredaelli/open-web-fingerprints/scan"
 	"github.com/matteoredaelli/open-web-fingerprints/scan/client"
 )
@@ -37,7 +38,7 @@ func (t *tldFlags) add(c *cobra.Command) {
 }
 
 // tlds returns the TLDs to try, nil when the option is off.
-func (t *tldFlags) tlds() []string {
+func (t *tldFlags) tlds() ([]string, error) {
 	if t.list != "" {
 		var out []string
 		for _, s := range strings.Split(t.list, ",") {
@@ -45,12 +46,15 @@ func (t *tldFlags) tlds() []string {
 				out = append(out, s)
 			}
 		}
-		return out
+		if err := config.ValidateTLDs(out); err != nil {
+			return nil, fmt.Errorf("--related-tlds-list: %w", err)
+		}
+		return out, nil
 	}
 	if t.on {
-		return append([]string(nil), cfg.Related.TLDs...)
+		return append([]string(nil), cfg.Related.TLDs...), nil
 	}
-	return nil
+	return nil, nil
 }
 
 func newRelatedCmd() *cobra.Command {
@@ -64,7 +68,11 @@ func newRelatedCmd() *cobra.Command {
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			o := n.options()
-			o.RelatedMax, o.RelatedTLDs = max, tf.tlds()
+			tlds, err := tf.tlds()
+			if err != nil {
+				return err
+			}
+			o.RelatedMax, o.RelatedTLDs = max, tlds
 			res, err := client.Related(cmd.Context(), o, args[0])
 			if err != nil {
 				return err

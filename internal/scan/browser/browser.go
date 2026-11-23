@@ -154,7 +154,15 @@ func Run(ctx context.Context, opt Options, target string) (*Result, error) {
 	allocCtx, cancelAlloc := chromedp.NewExecAllocator(runCtx, flags...)
 	defer cancelAlloc()
 	bctx, cancelB := chromedp.NewContext(allocCtx)
-	defer cancelB()
+	// chromedp.Cancel closes the browser and waits until its process has exited, so none is
+	// left running when the scan returns, also after a timeout or an interrupt.
+	started := false
+	defer func() {
+		if started {
+			_ = chromedp.Cancel(bctx)
+		}
+		cancelB()
+	}()
 
 	res := &Result{Globals: map[string]string{}}
 	var xhr []string
@@ -177,6 +185,7 @@ func Run(ctx context.Context, opt Options, target string) (*Result, error) {
 	}); err != nil {
 		return nil, fmt.Errorf("%w: %w", ErrNoChrome, err)
 	}
+	started = true
 	paths := append([]string(nil), opt.Paths...)
 	sort.Strings(paths)
 	pathsJSON, _ := json.Marshal(paths)

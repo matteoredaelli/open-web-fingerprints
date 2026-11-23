@@ -187,3 +187,14 @@ func TestDropHeaders(t *testing.T) {
 		t.Error("Apply")
 	}
 }
+
+func TestValidateTLDs(t *testing.T) {
+	if err := ValidateTLDs([]string{"com", "co.uk"}); err != nil {
+		t.Fatal(err)
+	}
+	for _, bad := range []string{".it", "IT", "a..b", ""} {
+		if ValidateTLDs([]string{bad}) == nil {
+			t.Errorf("%q accepted", bad)
+		}
+	}
+}
