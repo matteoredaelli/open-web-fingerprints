@@ -101,3 +101,21 @@ func TestSameRecordIsNotACandidate(t *testing.T) {
 		t.Fatalf("got %+v err=%v", got, err)
 	}
 }
+
+func TestIdentityKeyIgnoresPunctuation(t *testing.T) {
+	for _, names := range [][]string{
+		{"CakePHP", "Cake-PHP", "cake php"},
+		{"Video.js", "VideoJS", "video-js"},
+		{"Craft CMS", "CraftCMS"},
+	} {
+		want := IdentityKey(names[0])
+		for _, n := range names[1:] {
+			if got := IdentityKey(n); got != want {
+				t.Errorf("IdentityKey(%q) = %q, want %q", n, got, want)
+			}
+		}
+	}
+	if IdentityKey("ip-api") == IdentityKey("jquery") {
+		t.Error("different names share a key")
+	}
+}

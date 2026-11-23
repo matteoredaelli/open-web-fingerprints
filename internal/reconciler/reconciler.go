@@ -44,12 +44,12 @@ func Candidates(in Input) ([]domain.Conflict, error) {
 
 	techs := map[string][]domain.Technology{}
 	for _, t := range in.Other.Technologies {
-		if k := normalizer.Slugify(t.Name); k != "" {
+		if k := IdentityKey(t.Name); k != "" {
 			techs[k] = append(techs[k], t)
 		}
 	}
 	for _, f := range in.Fresh.Technologies {
-		for _, o := range techs[normalizer.Slugify(f.Name)] {
+		for _, o := range techs[IdentityKey(f.Name)] {
 			if o.ID == f.ID {
 				continue
 			}
@@ -83,6 +83,13 @@ func Candidates(in Input) ([]domain.Conflict, error) {
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i].ID < out[j].ID })
 	return out, nil
+}
+
+// IdentityKey is what two technology names must share to be proposed as the
+// same thing: the slug without hyphens, so "CakePHP", "Cake-PHP" and "cake php"
+// meet. It only proposes a candidate; a reviewer decides.
+func IdentityKey(name string) string {
+	return strings.ReplaceAll(normalizer.Slugify(name), "-", "")
 }
 
 // IdentityDetail is the evidence for a technology candidate. Sides are
@@ -131,6 +138,13 @@ func build(in Input, kind string, detail map[string]string, a, b string, srcs []
 		RecordIDs: ids, SourceIDs: srcs, Detail: detail,
 		CreatedAt: in.Now, UpdatedAt: in.Now,
 	}, nil
+}
+
+// Propose builds the identity candidate for two technologies a reviewer names,
+// whatever their names are. It only proposes; a reviewer still resolves it.
+func Propose(in Input, a, b domain.Technology) (domain.Conflict, error) {
+	return build(in, domain.ConflictIdentityCandidate, IdentityDetail(a, b), string(a.ID), string(b.ID),
+		sources(a.Provenance, b.Provenance))
 }
 
 // Sources lists the distinct sources of the given provenance lists, sorted.

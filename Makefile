@@ -1,7 +1,7 @@
 .DEFAULT_GOAL := help
 BIN := bin/owf
 
-.PHONY: help build test lint fmt vet check hooks clean addlicense license-check validate-corpus registry
+.PHONY: help build test lint fmt vet check hooks clean addlicense license-check validate-corpus registry stats stats-page tranco
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN{FS=":.*?## "}{printf "  %-10s %s\n",$$1,$$2}'
@@ -74,6 +74,34 @@ registry: build ## Create the registry if missing, refresh all sources (import) 
 	@test -f $(DB) || $(BIN) --db $(DB) init
 	$(BIN) --db $(DB) source refresh --all
 	$(BIN) --db $(DB) export $(EXPORT_FLAGS) -o $(EXPORT_FILE)
+
+# stats: aggregate a batch (owfscan batch run) into the JSON statistics (schema "stats").
+BATCH_DB ?= batch.db
+STATS_FILE ?= stats.json
+STATS_HTML ?= stats.html
+STATS_FLAGS ?=
+stats: build ## Aggregate the batch DB into JSON statistics (BATCH_DB, STATS_FILE, STATS_FLAGS)
+	bin/owfscan stats --db $(BATCH_DB) -o $(STATS_FILE) $(STATS_FLAGS)
+
+# stats-page: static summary page (no script, escaped, deterministic).
+# Also writes $(STATS_FILE) (the page is made from the same aggregates).
+stats-page: build ## Write the static HTML summary page of the statistics (STATS_HTML)
+	bin/owfscan stats --db $(BATCH_DB) -o $(STATS_FILE) --html $(STATS_HTML) $(STATS_FLAGS)
+
+# tranco: download the top TOP sites of a Tranco list, scan their home pages, write the statistics.
+# Home page only, aggregates only. Work files go to TRANCO_DIR (outside the repository).
+TOP ?= 100
+TRANCO_ID ?= 46YVX
+TRANCO_DIR ?= /tmp/tranco
+REGISTRY ?= registry.json
+DEPTH ?= 0
+# Generic detectors that fire on almost any page (not products): left out of the statistics.
+EXCLUDE ?= Metatag CMS,MetaGenerator,PoweredBy,Frame,Object,Meta-Author,Script
+tranco: build ## Scan the top TOP sites of Tranco list TRANCO_ID and write stats (TOP, TRANCO_ID, TRANCO_DIR, DEPTH)
+	mkdir -p $(TRANCO_DIR)
+	curl -fsSL https://tranco-list.eu/download/$(TRANCO_ID)/$(TOP) -o $(TRANCO_DIR)/top$(TOP).txt
+	bin/owfscan batch run $(TRANCO_DIR)/top$(TOP).txt --db $(TRANCO_DIR)/batch.db --registry $(REGISTRY) --depth $(DEPTH) --quiet
+	bin/owfscan stats --db $(TRANCO_DIR)/batch.db -o $(TRANCO_DIR)/stats.json --exclude '$(EXCLUDE)' --html $(TRANCO_DIR)/stats.html
 
 clean: ## Remove build artifacts
 	rm -rf bin dist coverage.out

@@ -292,3 +292,94 @@ func effective(fresh, upsert, stored domain.Records) domain.Records {
 	}
 	return out
 }
+
+// Reconcile looks for identity candidates among the stored technologies
+// themselves, without importing anything. It is for when the matching rule
+// improves: records already stored get their candidates without a new fetch.
+// Known conflicts keep their state. With dryRun nothing is stored. It returns
+// the conflicts that are new or whose evidence changed.
+func (p *Pipeline) Reconcile(ctx context.Context, dryRun bool) ([]domain.Conflict, error) {
+	all, err := p.Repo.AllRecords(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("pipeline: load records: %w", err)
+	}
+	now := p.Now().UTC()
+	in := domain.Records{Technologies: all.Technologies}
+	found, err := reconciler.Candidates(reconciler.Input{
+		Fresh: in, Other: in, Now: now,
+		Alloc: func(k domain.Kind, key string) (string, error) { return p.Repo.Allocate(k, "", key) },
+	})
+	if err != nil {
+		return nil, fmt.Errorf("pipeline: reconcile: %w", err)
+	}
+	seen := map[domain.ConflictID]bool{}
+	uniq := found[:0]
+	for _, c := range found {
+		if !seen[c.ID] {
+			seen[c.ID] = true
+			uniq = append(uniq, c)
+		}
+	}
+	known, err := p.Repo.Conflicts(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("pipeline: load conflicts: %w", err)
+	}
+	upsert, _ := mergeConflicts(known, uniq, now)
+	if dryRun || len(upsert) == 0 {
+		return upsert, nil
+	}
+	if err := p.Repo.Apply(ctx, repository.ChangeSet{Conflicts: upsert}); err != nil {
+		return nil, fmt.Errorf("pipeline: apply conflicts: %w", err)
+	}
+	return upsert, nil
+}
+
+// Propose opens an identity candidate for two stored technologies named by
+// slug, for names no matching rule links (Varnish, Varnish Cache). It does
+// not merge. A pair that is already known keeps its state.
+func (p *Pipeline) Propose(ctx context.Context, slugA, slugB string) (domain.Conflict, bool, error) {
+	if slugA == slugB {
+		return domain.Conflict{}, false, fmt.Errorf("pipeline: propose: the two slugs are the same")
+	}
+	all, err := p.Repo.AllRecords(ctx)
+	if err != nil {
+		return domain.Conflict{}, false, fmt.Errorf("pipeline: load records: %w", err)
+	}
+	var a, b *domain.Technology
+	for i := range all.Technologies {
+		switch all.Technologies[i].Slug {
+		case slugA:
+			a = &all.Technologies[i]
+		case slugB:
+			b = &all.Technologies[i]
+		}
+	}
+	for _, x := range []struct {
+		t *domain.Technology
+		s string
+	}{{a, slugA}, {b, slugB}} {
+		if x.t == nil {
+			return domain.Conflict{}, false, fmt.Errorf("pipeline: propose: no technology with slug %q", x.s)
+		}
+	}
+	c, err := reconciler.Propose(reconciler.Input{
+		Now:   p.Now().UTC(),
+		Alloc: func(k domain.Kind, key string) (string, error) { return p.Repo.Allocate(k, "", key) },
+	}, *a, *b)
+	if err != nil {
+		return c, false, err
+	}
+	known, err := p.Repo.Conflicts(ctx)
+	if err != nil {
+		return c, false, fmt.Errorf("pipeline: load conflicts: %w", err)
+	}
+	for _, k := range known {
+		if k.ID == c.ID {
+			return k, false, nil
+		}
+	}
+	if err := p.Repo.Apply(ctx, repository.ChangeSet{Conflicts: []domain.Conflict{c}}); err != nil {
+		return c, false, fmt.Errorf("pipeline: apply conflict: %w", err)
+	}
+	return c, true, nil
+}

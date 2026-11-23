@@ -12,6 +12,7 @@ import (
 
 	"github.com/matteoredaelli/open-web-fingerprints/internal/domain"
 	"github.com/matteoredaelli/open-web-fingerprints/internal/merge"
+	"github.com/matteoredaelli/open-web-fingerprints/internal/pipeline"
 	"github.com/matteoredaelli/open-web-fingerprints/internal/review"
 )
 
@@ -69,7 +70,7 @@ func newConflictCmd(o *options) *cobra.Command {
 	list.Flags().StringVar(&state, "state", "", "filter by state (open, resolved, ignored)")
 	list.Flags().StringVar(&websites, "websites", "", "filter by website relation (same_domain, different, unknown)")
 	list.Flags().BoolVar(&asJSON, "json", false, "output JSON")
-	c.AddCommand(list, newConflictShowCmd(o), newConflictResolveCmd(o))
+	c.AddCommand(list, newConflictShowCmd(o), newConflictResolveCmd(o), newConflictDetectCmd(o), newConflictProposeCmd(o))
 	return c
 }
 
@@ -221,4 +222,62 @@ func newConflictResolveCmd(o *options) *cobra.Command {
 	c.Flags().StringVar(&websites, "websites", "", "filter by website relation")
 	c.Flags().StringVar(&note, "note", "", "reason, stored with the resolution")
 	return c
+}
+
+func newConflictDetectCmd(o *options) *cobra.Command {
+	var dry bool
+	c := &cobra.Command{
+		Use:   "detect",
+		Short: "Look for identity candidates among the stored technologies (no import)",
+		Long: "detect applies the current matching rule to the technologies already stored, so that\n" +
+			"names that differ only in punctuation or spacing (Cake-PHP, CakePHP) become candidates.\n" +
+			"It never merges: decide with `conflict resolve`. Known conflicts keep their state.",
+		Args: cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			r, err := o.open(cmd.Context())
+			if err != nil {
+				return err
+			}
+			defer func() { _ = r.Close() }()
+			added, err := pipeline.New(nil, r).Reconcile(cmd.Context(), dry)
+			if err != nil {
+				return err
+			}
+			verb := "stored"
+			if dry {
+				verb = "found (dry run, nothing stored)"
+			}
+			fmt.Fprintf(cmd.OutOrStdout(), "%d candidates %s\n", len(added), verb)
+			return nil
+		},
+	}
+	c.Flags().BoolVar(&dry, "dry-run", false, "show the count without storing")
+	return c
+}
+
+func newConflictProposeCmd(o *options) *cobra.Command {
+	return &cobra.Command{
+		Use:   "propose <slug-a> <slug-b>",
+		Short: "Open an identity candidate for two technologies whose names no rule links",
+		Long: "propose is for pairs such as varnish and varnish-cache. It only opens the candidate;\n" +
+			"decide it with `conflict resolve`.",
+		Args: cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			r, err := o.open(cmd.Context())
+			if err != nil {
+				return err
+			}
+			defer func() { _ = r.Close() }()
+			c, isNew, err := pipeline.New(nil, r).Propose(cmd.Context(), args[0], args[1])
+			if err != nil {
+				return err
+			}
+			state := "already known, state " + c.State
+			if isNew {
+				state = "opened"
+			}
+			fmt.Fprintf(cmd.OutOrStdout(), "%s %s\n", c.ID, state)
+			return nil
+		},
+	}
 }

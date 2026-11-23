@@ -21,14 +21,16 @@ import (
 const (
 	maxBatchWorkers = 32
 	maxBatchRate    = 20.0
+	maxBatchDepth   = 1
+	maxBatchPages   = 10
 )
 
 func newBatchCmd() *cobra.Command {
 	c := &cobra.Command{
 		Use:   "batch",
-		Short: "Scan a list of sites (home page only) into a SQLite file that can be resumed",
+		Short: "Scan a list of sites (home page; with --depth 1 also a few internal pages) into a SQLite file that can be resumed",
 		Long: "batch scans the home page of each site of a list and keeps the results in a SQLite file.\n" +
-			"It does what `scan` does without extras: no --depth, --friends, --related, --active or\n" +
+			"It does what `scan` does without extras: --depth is at most 1, and no --friends, --related, --active or\n" +
 			"--browser, and the headers that change on every call are left out. A run can be stopped\n" +
 			"(Ctrl-C) and resumed: finished sites are not scanned again.",
 	}
@@ -38,7 +40,7 @@ func newBatchCmd() *cobra.Command {
 
 func newBatchRunCmd() *cobra.Command {
 	var db, registry, verifyCache string
-	var workers, limit int
+	var workers, limit, depth, maxPages int
 	var rate float64
 	var timeout time.Duration
 	var retry, noDNS, noFavicon, quiet bool
@@ -57,6 +59,9 @@ func newBatchRunCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if registry == "" {
 				return fmt.Errorf("--registry is required (or env OWFSCAN_REGISTRY)")
+			}
+			if depth < 0 || depth > maxBatchDepth || maxPages < 1 || maxPages > maxBatchPages {
+				return fmt.Errorf("--depth must be 0 to %d and --max-pages 1 to %d", maxBatchDepth, maxBatchPages)
 			}
 			if workers < 1 || workers > maxBatchWorkers || rate <= 0 || rate > maxBatchRate {
 				return fmt.Errorf("--workers must be 1 to %d and --rate above 0 and at most %.0f", maxBatchWorkers, maxBatchRate)
@@ -95,6 +100,7 @@ func newBatchRunCmd() *cobra.Command {
 			cfg.Apply(&opt)
 			opt.Registry, opt.Version = reg, version()
 			opt.NoFavicon = noFavicon
+			opt.Depth, opt.MaxPages = depth, maxPages
 			opt.DropHeaders = dropList(false)
 			opt.Fetch = (&netFlags{timeout: cfg.Fetch.Timeout.D(), maxAge: cfg.Fetch.MaxAge.D(), cacheDir: cfg.Fetch.CacheDir}).fetchOptions()
 			if !noDNS {
@@ -127,6 +133,8 @@ func newBatchRunCmd() *cobra.Command {
 	c.Flags().IntVar(&workers, "workers", 4, "sites scanned at once")
 	c.Flags().Float64Var(&rate, "rate", 2, "most scans started per second")
 	c.Flags().DurationVar(&timeout, "timeout", 60*time.Second, "time allowed to one site, the www. retry included")
+	c.Flags().IntVar(&depth, "depth", 0, "0: home page only; 1: also internal pages linked from it (robots.txt honoured)")
+	c.Flags().IntVar(&maxPages, "max-pages", 5, "with --depth 1, most pages fetched per site, the home page included (at most 10)")
 	c.Flags().IntVar(&limit, "limit", 0, "scan at most this many sites in this run (0: all)")
 	c.Flags().BoolVar(&retry, "retry-failed", false, "scan again the sites that failed")
 	c.Flags().BoolVar(&noDNS, "no-dns", false, "do not look up DNS records")
