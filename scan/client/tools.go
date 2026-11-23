@@ -5,11 +5,14 @@ package client
 
 import (
 	"context"
+	"io"
 	"net/url"
 
+	"github.com/matteoredaelli/open-web-fingerprints/internal/matcher"
 	"github.com/matteoredaelli/open-web-fingerprints/internal/scan/engine"
 	"github.com/matteoredaelli/open-web-fingerprints/internal/scan/fetch"
 	"github.com/matteoredaelli/open-web-fingerprints/internal/scan/observe"
+	"github.com/matteoredaelli/open-web-fingerprints/internal/scan/report"
 	"github.com/matteoredaelli/open-web-fingerprints/internal/scan/scanner"
 	"github.com/matteoredaelli/open-web-fingerprints/internal/scan/web"
 	"github.com/matteoredaelli/open-web-fingerprints/scan"
@@ -82,8 +85,13 @@ func ReadSite(ctx context.Context, opt Options, target string) (*Site, error) {
 	return &Site{URL: c.Main.Page.FinalURL, Pages: urls, Extraction: ex}, nil
 }
 
-// Observed is what the rules are applied to: the page, its host, the observation and
-// the body. The body is left out unless Options.KeepHTML is set.
+// Observation is what was seen on one target: headers, cookies, HTML, scripts, DNS, TLS,
+// favicon hashes and so on. It is also the input of a validation case
+// (schemas/validation-cases.schema.json), and the form the rules are applied to.
+type Observation = matcher.Observation
+
+// Observed is what Observe returns: the page and its host (see package scan), the
+// Observation and any warnings. Observation.HTML is empty unless Options.KeepHTML is set.
 type Observed = observe.Observed
 
 // Observe fetches a page, its favicon (unless Options.NoFavicon) and, with Options.DNS,
@@ -174,4 +182,10 @@ func Related(ctx context.Context, opt Options, target string) (*RelatedResult, e
 		Domain: web.RegistrableDomain(u.Hostname()), URL: c.Main.Page.FinalURL, HTML: c.Main.HTML, Links: ex.Links, TLS: c.Main.Host.TLS,
 	})
 	return &RelatedResult{URL: c.Main.Page.FinalURL, Related: r}, nil
+}
+
+// RenderReport writes a result as a self-contained HTML page: no script, everything
+// escaped, the same output for the same result. An empty title uses the target.
+func RenderReport(w io.Writer, res *scan.Result, title string) error {
+	return report.Render(w, res, report.Options{Title: title})
 }

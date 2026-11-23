@@ -4,7 +4,9 @@
 package client_test
 
 import (
+	"bytes"
 	"context"
+	"strings"
 	"testing"
 
 	"github.com/matteoredaelli/open-web-fingerprints/internal/scan/scantest"
@@ -65,4 +67,27 @@ func TestValidHealth(t *testing.T) {
 	if !client.ValidHealth("ok") || client.ValidHealth("fine") {
 		t.Error("health values")
 	}
+}
+
+func TestRenderReportAndObservation(t *testing.T) {
+	reg, err := client.ParseRegistry(scantest.RegistryJSON(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+	srv := scantest.Site()
+	defer srv.Close()
+	res, err := client.Scan(context.Background(), reg, client.Options{AllowPrivate: true, NoFavicon: true}, srv.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var a, b bytes.Buffer
+	if err := client.RenderReport(&a, res, "My title"); err != nil {
+		t.Fatal(err)
+	}
+	_ = client.RenderReport(&b, res, "My title")
+	if !strings.Contains(a.String(), "My title") || strings.Contains(a.String(), "<script") || a.String() != b.String() {
+		t.Error("the report must carry the title, hold no script and be deterministic")
+	}
+	// The observation can be named and built from outside the module.
+	_ = client.Observation{Headers: map[string]string{"Server": "x"}}
 }

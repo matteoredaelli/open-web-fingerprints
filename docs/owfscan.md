@@ -798,10 +798,12 @@ for _, t := range res.Technologies {
   limits and no DNS, crawling, probing or browser. Zero limits mean the defaults. Unlike the
   command, the library does not read the configuration file: you give every value.
 - The parts of a scan are available alone, with the same options: `Extract` (saved HTML, no
-  network), `ReadSite` (`links`, `social`), `Observe`, `Friends`, `Related`.
+  network), `ReadSite` (`links`, `social`), `Observe`, `Friends`, `Related`. `RenderReport`
+  writes the HTML page of a result (`owfscan report`).
 - `Scan` returns a `*scan.Result`: the types of package `scan`, the contract of
-  `schemas/scan-result.schema.json`. `Extraction` and `Observed` are aliases of internal types;
-  their fields are readable but you cannot name the package of `Observed.Observation`.
+  `schemas/scan-result.schema.json`. `Extraction`, `Observed` and `Observation` are aliases of
+  internal types, named here so you can use them; `Observation` is also the input of a
+  validation case (`schemas/validation-cases.schema.json`).
 - A runnable example is `ExampleScan` in `scan/client/client_test.go`.
 - The API is a draft, like the formats (0.x): no tagged release yet.
 

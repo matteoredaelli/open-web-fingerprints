@@ -14,8 +14,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/matteoredaelli/open-web-fingerprints/internal/scan/report"
 	"github.com/matteoredaelli/open-web-fingerprints/scan"
+	"github.com/matteoredaelli/open-web-fingerprints/scan/client"
 	"github.com/matteoredaelli/open-web-fingerprints/schemas"
 )
 
@@ -65,7 +65,7 @@ func newReportCmd() *cobra.Command {
 // writeReport renders the page to a file, or to the standard output for "-".
 func writeReport(cmd *cobra.Command, res *scan.Result, out, title string) error {
 	var buf bytes.Buffer
-	if err := report.Render(&buf, res, report.Options{Title: title}); err != nil {
+	if err := client.RenderReport(&buf, res, title); err != nil {
 		return err
 	}
 	if out == "-" {
