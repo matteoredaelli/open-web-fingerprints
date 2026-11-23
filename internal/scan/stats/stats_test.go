@@ -146,3 +146,33 @@ func TestFamilyOf(t *testing.T) {
 		}
 	}
 }
+
+func TestComputeLeavesOutGeneric(t *testing.T) {
+	ctx := context.Background()
+	st, err := batch.Open(ctx, filepath.Join(t.TempDir(), "b.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = st.Close() }()
+	_, _ = st.Add(ctx, []batch.Site{{Domain: "a.example", Rank: 1}})
+	g := tech("Cart Functionality", "", 0.5, "dom", "Ecommerce")
+	g.Generic = true
+	_ = st.SaveDone(ctx, "a.example", 200, result(200, g, tech("PHP", "", 0.7, "http_header")), time.Now())
+	names := func(opt Options) []string {
+		s, err := Compute(ctx, st, opt)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var n []string
+		for _, x := range s.Technologies {
+			n = append(n, x.Name)
+		}
+		return n
+	}
+	if got := names(Options{MinSites: 1}); len(got) != 1 || got[0] != "PHP" {
+		t.Errorf("default: %v", got)
+	}
+	if got := names(Options{MinSites: 1, IncludeGeneric: true}); len(got) != 2 {
+		t.Errorf("included: %v", got)
+	}
+}

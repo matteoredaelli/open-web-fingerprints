@@ -809,6 +809,19 @@ for _, t := range res.Technologies {
 - A runnable example is `ExampleScan` in `scan/client/client_test.go`.
 - The API is a draft, like the formats (0.x): no tagged release yet.
 
+## Domain signals and generic signals
+
+- **`domain_signals`** in the result lists technologies seen only in the domain's DNS records (a TXT record
+  that verifies an account with Atlassian, DocuSign or Anthropic, an MX of a mail provider). They say which
+  services the organization uses, not how the site is built, so they are not in `technologies`. The text output
+  prints them on one line. Results made before this field existed have them among the technologies; `owfscan
+  stats` handles both.
+- **`generic: true`** on a technology is the registry's mark (set by a reviewer with `owf technology set <slug>
+  --generic`, undone with `--clear-generic`; refreshes keep it): the rules detect a signal that says little about
+  the stack (a cart link, a generator meta tag, a form field). A scan still reports it, marked. `owfscan stats`
+  leaves generic technologies out unless you pass `--include-generic` (`excluded_generic` in the filters says
+  so). `--exclude` still works for names.
+
 ## Scanning a list of sites (`owfscan batch`)
 
 `owfscan batch run <list>` scans the **home page** of each site of a list and keeps the full results in a SQLite

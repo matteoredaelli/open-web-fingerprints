@@ -44,6 +44,10 @@ type Result struct {
 	Pages         []Page       `json:"pages"`
 	Host          *Host        `json:"host,omitempty"`
 	Technologies  []Technology `json:"technologies"`
+	// DomainSignals are technologies seen only in the domain's DNS records (a TXT record that
+	// verifies an account with a service, an MX of a mail provider). They say which services the
+	// organization uses, not how the site is built, so they are kept apart from Technologies.
+	DomainSignals []Technology `json:"domain_signals,omitempty"`
 	Links         []Link       `json:"links"`
 	Domains       []Domain     `json:"domains"`
 	Socials       []Social     `json:"socials"`
@@ -125,6 +129,9 @@ type Technology struct {
 	Vendor     string   `json:"vendor,omitempty"`
 	Version    string   `json:"version,omitempty"`
 	Categories []string `json:"categories,omitempty"`
+	// Generic is the registry's mark: the rules detect a signal that says little about the
+	// stack, not a product somebody chose. It is reported; statistics leave it out.
+	Generic bool `json:"generic,omitempty"`
 	// SameName lists the IDs of other registry records with the same name that were
 	// also detected and are shown here as one. The registry keeps them apart until a
 	// reviewer merges them (often the same product imported from two sources); this is

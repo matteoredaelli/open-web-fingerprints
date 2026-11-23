@@ -18,7 +18,7 @@ import (
 
 // Correction describes a reviewer's change to one field of a rule.
 type Correction struct {
-	Field  string // "target" or "pattern"
+	Field  string // "target", "pattern" or "version_extract" (empty: read no version)
 	Value  string
 	Reason string
 }
@@ -36,7 +36,7 @@ func CorrectFingerprint(ctx context.Context, repo repository.Repository, id doma
 	if strings.TrimSpace(c.Reason) == "" {
 		return domain.Fingerprint{}, errors.New("curate: a reason is required")
 	}
-	if strings.TrimSpace(c.Value) == "" {
+	if strings.TrimSpace(c.Value) == "" && c.Field != "version_extract" {
 		return domain.Fingerprint{}, errors.New("curate: the new value is empty")
 	}
 	f, err := findFingerprint(ctx, repo, id)
@@ -100,8 +100,11 @@ func findFingerprint(ctx context.Context, repo repository.Repository, id domain.
 }
 
 func fieldPtr(f *domain.Fingerprint, name string) *string {
-	if name == "target" {
+	switch name {
+	case "target":
 		return &f.Target
+	case "version_extract":
+		return &f.VersionExtract
 	}
 	return &f.Pattern
 }

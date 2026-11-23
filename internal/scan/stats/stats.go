@@ -34,6 +34,9 @@ type Options struct {
 	// Exclude lists technology names (case-insensitive) left out, for example rules known
 	// to be unreliable.
 	Exclude []string
+	// IncludeGeneric keeps the technologies the registry marks as generic signals; by default
+	// they are left out.
+	IncludeGeneric bool
 	// Top bounds the lists (default 30).
 	Top int
 	Now func() time.Time
@@ -75,7 +78,7 @@ func Compute(ctx context.Context, st *batch.Store, opt Options) (*scan.Stats, er
 	meta, _ := st.Meta(ctx)
 
 	out := &scan.Stats{SchemaVersion: scan.StatsSchemaVersion, GeneratedAt: now().UTC(), List: meta["list"], Scanner: meta["scanner"]}
-	out.Filters = scan.StatsFilter{MinConfidence: opt.MinConfidence, MinSites: opt.MinSites}
+	out.Filters = scan.StatsFilter{MinConfidence: opt.MinConfidence, MinSites: opt.MinSites, ExcludedGeneric: !opt.IncludeGeneric}
 	for e := range excl {
 		out.Filters.ExcludedTech = append(out.Filters.ExcludedTech, e)
 	}
@@ -114,8 +117,10 @@ func Compute(ctx context.Context, st *batch.Store, opt Options) (*scan.Stats, er
 			covSum += float64(r.Coverage.RulesEvaluated) / float64(r.Coverage.RulesTotal)
 		}
 		web := map[string]bool{}
-		for _, t := range r.Technologies {
-			if t.Confidence < opt.MinConfidence || excl[strings.ToLower(t.Name)] {
+		// Results made before domain_signals existed have them among the technologies; the
+		// evidence test below treats both the same.
+		for _, t := range append(append([]scan.Technology(nil), r.Technologies...), r.DomainSignals...) {
+			if t.Confidence < opt.MinConfidence || excl[strings.ToLower(t.Name)] || (t.Generic && !opt.IncludeGeneric) {
 				continue
 			}
 			domainOnly := len(t.Evidence) > 0

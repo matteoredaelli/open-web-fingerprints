@@ -52,8 +52,8 @@ and plan: `docs/scan.md`.
   `owf source review --note`. A repository licence is not proof of the licence of
   its data. The tool records legal decisions; it does not make them.
 - **Reviewer decisions survive refreshes**: record status, validation, probe
-  review, curated vendors, source decisions, resolved conflicts, rule corrections
-  (`owf fingerprint correct`: kept with the source's value and a reason; the importer
+  review, curated vendors, generic marks, source decisions, resolved conflicts, rule corrections
+  (`owf fingerprint correct`: target, pattern or version_extract, kept with the source's value and a reason; the importer
   never corrects a rule by itself).
 - **A source cannot overwrite another's content.** The source of a record's first
   provenance entry owns its content; others only add provenance.

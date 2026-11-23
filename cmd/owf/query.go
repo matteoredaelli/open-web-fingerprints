@@ -285,10 +285,10 @@ func newVendorShowCmd(o *options) *cobra.Command {
 
 func newTechnologySetCmd(o *options) *cobra.Command {
 	var website, description, vendor string
-	var clearWebsite, clearVendor bool
+	var clearWebsite, clearVendor, generic, clearGeneric bool
 	c := &cobra.Command{
 		Use:   "set <slug>",
-		Short: "Set a technology's website, description or vendor",
+		Short: "Set a technology's website, description, vendor or generic mark",
 		Long: "set records a reviewer's choice for a technology. The fields set this way are\n" +
 			"listed in `curated` and refreshes keep them, whatever the sources say. The name,\n" +
 			"slug, categories and rules are not changed here. Do not run it while an import is\n" +
@@ -317,6 +317,16 @@ func newTechnologySetCmd(o *options) *cobra.Command {
 			if f.Changed("description") {
 				p.Description = &description
 			}
+			switch {
+			case generic && clearGeneric:
+				return fmt.Errorf("use either --generic or --clear-generic")
+			case generic:
+				yes := true
+				p.Generic = &yes
+			case clearGeneric:
+				no := false
+				p.Generic = &no
+			}
 			r, err := o.open(cmd.Context())
 			if err != nil {
 				return err
@@ -336,6 +346,8 @@ func newTechnologySetCmd(o *options) *cobra.Command {
 	c.Flags().StringVar(&description, "description", "", "description")
 	c.Flags().StringVar(&vendor, "vendor", "", "vendor slug (see `owf vendor list`)")
 	c.Flags().BoolVar(&clearVendor, "clear-vendor", false, "remove the vendor")
+	c.Flags().BoolVar(&generic, "generic", false, "mark as a generic signal (a page feature, not a product): statistics leave it out by default")
+	c.Flags().BoolVar(&clearGeneric, "clear-generic", false, "remove the generic mark")
 	return c
 }
 

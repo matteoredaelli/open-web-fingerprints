@@ -372,7 +372,7 @@ func (r *run) group(members []domain.Fingerprint) ([]matcher.Outcome, bool) {
 // build turns the matching rules of a technology into the result's record.
 func (r *run) build(t domain.Technology, hits []hit, o *Output) scan.Technology {
 	e := r.e
-	rec := scan.Technology{ID: string(t.ID), Slug: t.Slug, Name: t.Name, Vendor: e.vendors[t.VendorID]}
+	rec := scan.Technology{ID: string(t.ID), Slug: t.Slug, Name: t.Name, Vendor: e.vendors[t.VendorID], Generic: t.Generic}
 	for _, c := range t.CategoryIDs {
 		if n := e.categories[c]; n != "" {
 			rec.Categories = append(rec.Categories, n)

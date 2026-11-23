@@ -76,6 +76,13 @@
         "$ref": "#/$defs/technology"
       }
     },
+    "domain_signals": {
+      "description": "Technologies seen only in the domain's DNS records: services the organization uses, not how the site is built.",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/technology"
+      }
+    },
     "links": {
       "type": "array",
       "items": {
@@ -666,6 +673,10 @@
         },
         "version": {
           "type": "string"
+        },
+        "generic": {
+          "type": "boolean",
+          "description": "The registry marks this technology as a generic signal (a page feature, not a product somebody chose)."
         },
         "categories": {
           "type": "array",

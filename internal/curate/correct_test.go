@@ -91,3 +91,23 @@ func TestCorrectErrors(t *testing.T) {
 		t.Error("a refused correction changes nothing")
 	}
 }
+
+func TestCorrectClearsVersionExtract(t *testing.T) {
+	ctx := context.Background()
+	r := repoWithRule(t, domain.Fingerprint{
+		ID: "fp_1", Observation: "html", Pattern: `og:type" content="([^"]+)"`, VersionExtract: `\1`,
+		Operator: domain.OpRegex, Status: domain.StatusActive,
+	})
+	f, err := CorrectFingerprint(ctx, r, "fp_1", Correction{Field: "version_extract", Value: "", Reason: "og:type is not a version"}, time.Now())
+	if err != nil || f.VersionExtract != "" || f.Correction.Original != `\1` {
+		t.Fatalf("%+v %v", f, err)
+	}
+	f, err = RevertFingerprint(ctx, r, "fp_1")
+	if err != nil || f.VersionExtract != `\1` {
+		t.Fatalf("%+v %v", f, err)
+	}
+	// An empty target or pattern is still refused.
+	if _, err := CorrectFingerprint(ctx, r, "fp_1", Correction{Field: "pattern", Value: "", Reason: "r"}, time.Now()); err == nil {
+		t.Error("empty pattern accepted")
+	}
+}

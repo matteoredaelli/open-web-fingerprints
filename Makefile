@@ -96,7 +96,7 @@ TRANCO_DIR ?= /tmp/tranco
 REGISTRY ?= registry.json
 DEPTH ?= 0
 # Generic detectors that fire on almost any page (not products): left out of the statistics.
-EXCLUDE ?= Metatag CMS,MetaGenerator,PoweredBy,Frame,Object,Meta-Author,Script
+EXCLUDE ?=
 tranco: build ## Scan the top TOP sites of Tranco list TRANCO_ID and write stats (TOP, TRANCO_ID, TRANCO_DIR, DEPTH)
 	mkdir -p $(TRANCO_DIR)
 	curl -fsSL https://tranco-list.eu/download/$(TRANCO_ID)/$(TOP) -o $(TRANCO_DIR)/top$(TOP).txt

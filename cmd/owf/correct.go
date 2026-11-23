@@ -20,7 +20,7 @@ func newFingerprintCorrectCmd(o *options) *cobra.Command {
 	c := &cobra.Command{
 		Use:   "correct <fingerprint-id>",
 		Short: "Correct one field of a rule that the source got wrong (a reviewer decision)",
-		Long: "correct changes the target or the pattern of one rule and records the value the\n" +
+		Long: "correct changes the target, the pattern or the version_extract of one rule and records the value the\n" +
 			"source gave, the new value, your reason and the time. The importer never does this\n" +
 			"by itself. A refresh keeps the correction. If the source later changes the value you\n" +
 			"corrected, that is a new rule without your correction (and yours stays as removed\n" +
@@ -49,6 +49,9 @@ func newFingerprintCorrectCmd(o *options) *cobra.Command {
 				}
 				fmt.Fprintf(cmd.OutOrStdout(), "%s: back to the source's value; health unknown\n", f.ID)
 			} else {
+				if field == "version_extract" && !cmd.Flags().Changed("value") {
+					return fmt.Errorf("--field version_extract needs --value (use --value \"\" to read no version)")
+				}
 				f, err = curate.CorrectFingerprint(cmd.Context(), r, id, curate.Correction{Field: field, Value: value, Reason: reason}, time.Now())
 				if err != nil {
 					return err
@@ -62,7 +65,7 @@ func newFingerprintCorrectCmd(o *options) *cobra.Command {
 			return nil
 		},
 	}
-	c.Flags().StringVar(&field, "field", "target", "field to correct: target or pattern")
+	c.Flags().StringVar(&field, "field", "target", "field to correct: target, pattern or version_extract")
 	c.Flags().StringVar(&value, "value", "", "the new value")
 	c.Flags().StringVar(&reason, "reason", "", "why (required)")
 	c.Flags().BoolVar(&revert, "revert", false, "remove the correction and put the source's value back")

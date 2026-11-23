@@ -259,6 +259,7 @@ func Scan(ctx context.Context, opt Options, target string) (*scan.Result, error)
 		Coverage: out.Coverage, Registry: opt.Registry.Ref,
 		Warnings: append(append([]scan.Warning{}, ex.Warnings...), out.Warnings...),
 	}
+	res.Technologies, res.DomainSignals = splitDomainSignals(res.Technologies)
 	redactVolatile(res.Technologies, opt.DropHeaders)
 	res.Browser = browserInfo
 	if probed != nil {
@@ -345,4 +346,25 @@ func redactVolatile(techs []scan.Technology, drop []string) {
 			}
 		}
 	}
+}
+
+// splitDomainSignals moves the technologies whose every piece of evidence is a DNS record out
+// of the list: they describe the services of the domain's owner, not the site.
+func splitDomainSignals(all []scan.Technology) (web, domain []scan.Technology) {
+	web = make([]scan.Technology, 0, len(all))
+	for _, t := range all {
+		only := len(t.Evidence) > 0
+		for _, e := range t.Evidence {
+			if e.Observation != "dns_record" {
+				only = false
+				break
+			}
+		}
+		if only {
+			domain = append(domain, t)
+		} else {
+			web = append(web, t)
+		}
+	}
+	return web, domain
 }

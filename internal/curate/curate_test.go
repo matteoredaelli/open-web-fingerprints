@@ -94,3 +94,23 @@ func TestVendorPatchErrors(t *testing.T) {
 		t.Errorf("a rejected patch changed the vendor: %+v", all.Vendors[0])
 	}
 }
+
+func TestTechnologyGenericMark(t *testing.T) {
+	ctx := context.Background()
+	r := memory.New()
+	if err := r.Apply(ctx, repository.ChangeSet{Upsert: domain.Records{Technologies: []domain.Technology{{
+		ID: "tech_1", Slug: "cart-functionality", Name: "Cart Functionality", Status: domain.StatusActive,
+		Provenance: []domain.Provenance{{SourceID: "src_1", State: "present"}},
+	}}}}); err != nil {
+		t.Fatal(err)
+	}
+	yes, no := true, false
+	tc, err := Technology(ctx, r, "cart-functionality", TechnologyPatch{Generic: &yes})
+	if err != nil || !tc.Generic || len(tc.Curated) != 1 || tc.Curated[0] != "generic" {
+		t.Fatalf("%+v %v", tc, err)
+	}
+	tc, err = Technology(ctx, r, "cart-functionality", TechnologyPatch{Generic: &no})
+	if err != nil || tc.Generic {
+		t.Fatalf("%+v %v", tc, err)
+	}
+}

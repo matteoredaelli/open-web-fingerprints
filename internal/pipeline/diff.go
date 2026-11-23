@@ -332,6 +332,8 @@ func fieldOf(f *domain.Fingerprint, name string) *string {
 		return &f.Target
 	case "pattern":
 		return &f.Pattern
+	case "version_extract":
+		return &f.VersionExtract
 	}
 	return nil
 }
@@ -347,6 +349,8 @@ func keepCurated(dst *domain.Technology, old domain.Technology) {
 			dst.Description = old.Description
 		case "vendor":
 			dst.VendorID = old.VendorID
+		case "generic":
+			dst.Generic = old.Generic
 		}
 	}
 }

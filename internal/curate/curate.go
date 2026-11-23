@@ -128,11 +128,12 @@ type TechnologyPatch struct {
 	Website     *string // "" clears the website
 	Description *string
 	VendorSlug  *string // "" clears the vendor
+	Generic     *bool   // true marks the technology as a generic signal, false removes the mark
 }
 
 // Empty reports whether the patch changes nothing.
 func (p TechnologyPatch) Empty() bool {
-	return p.Website == nil && p.Description == nil && p.VendorSlug == nil
+	return p.Website == nil && p.Description == nil && p.VendorSlug == nil && p.Generic == nil
 }
 
 // Technology applies a patch to the technology with the given slug and
@@ -189,6 +190,10 @@ func Technology(ctx context.Context, repo repository.Repository, slug string, p 
 			}
 		}
 		mark("vendor")
+	}
+	if p.Generic != nil {
+		t.Generic = *p.Generic
+		mark("generic")
 	}
 	sort.Strings(t.Curated)
 	if err := repo.Apply(ctx, repository.ChangeSet{Upsert: domain.Records{Technologies: []domain.Technology{*t}}}); err != nil {

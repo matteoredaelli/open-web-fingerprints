@@ -51,6 +51,8 @@ type StatsFilter struct {
 	MinConfidence float64  `json:"min_confidence"`
 	MinSites      int      `json:"min_sites"`
 	ExcludedTech  []string `json:"excluded_technologies,omitempty"`
+	// ExcludedGeneric is true when technologies the registry marks as generic were left out.
+	ExcludedGeneric bool `json:"excluded_generic,omitempty"`
 }
 
 // StatsSites counts the list and what became of it.

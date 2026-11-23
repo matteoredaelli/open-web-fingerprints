@@ -197,9 +197,13 @@ type Technology struct {
 	OpenSource  *bool        `json:"open_source,omitempty"`
 	SaaS        *bool        `json:"saas,omitempty"`
 	Status      Status       `json:"status"`
-	// Curated names the fields a reviewer set (website, description, vendor).
+	// Curated names the fields a reviewer set (website, description, vendor, generic).
 	// Refreshes keep them, whatever the source says.
-	Curated    []string     `json:"curated,omitempty"`
+	Curated []string `json:"curated,omitempty"`
+	// Generic is a reviewer's mark ("generic" in Curated): the rules detect a signal that
+	// says little about the stack (a shopping-cart link, a generator meta tag), not a
+	// product somebody chose. A scan still reports it, marked; statistics leave it out by default.
+	Generic    bool         `json:"generic,omitempty"`
 	Provenance []Provenance `json:"provenance"`
 }
 
@@ -243,7 +247,8 @@ type Correction struct {
 }
 
 // CorrectableFields are the rule fields a reviewer may correct.
-var CorrectableFields = []string{"target", "pattern"}
+// version_extract may be corrected to an empty value: the rule then detects but reads no version.
+var CorrectableFields = []string{"target", "pattern", "version_extract"}
 
 // Probe is an active, non-destructive request.
 type Probe struct {

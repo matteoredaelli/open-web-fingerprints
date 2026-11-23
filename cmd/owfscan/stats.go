@@ -22,6 +22,7 @@ import (
 
 func newStatsCmd() *cobra.Command {
 	var db, out, exclude, htmlOut, title string
+	var includeGeneric bool
 	var minConf float64
 	var minSites, top int
 	var asJSON bool
@@ -53,7 +54,7 @@ func newStatsCmd() *cobra.Command {
 					ex = append(ex, e)
 				}
 			}
-			s, err := stats.Compute(cmd.Context(), st, stats.Options{MinConfidence: minConf, MinSites: minSites, Exclude: ex, Top: top})
+			s, err := stats.Compute(cmd.Context(), st, stats.Options{MinConfidence: minConf, MinSites: minSites, Exclude: ex, IncludeGeneric: includeGeneric, Top: top})
 			if err != nil {
 				return err
 			}
@@ -92,6 +93,7 @@ func newStatsCmd() *cobra.Command {
 	c.Flags().StringVarP(&out, "output", "o", "", "also write the statistics (JSON) to this file")
 	c.Flags().Float64Var(&minConf, "min-confidence", 0, "leave out technologies whose confidence is lower")
 	c.Flags().IntVar(&minSites, "min-sites", 3, "name a technology only when at least this many sites show it")
+	c.Flags().BoolVar(&includeGeneric, "include-generic", false, "also count technologies the registry marks as generic signals (left out by default)")
 	c.Flags().StringVar(&exclude, "exclude", "", "comma-separated technology names to leave out (rules known to be unreliable)")
 	c.Flags().IntVar(&top, "top", 30, "length of the lists")
 	c.Flags().StringVar(&htmlOut, "html", "", "also write a static HTML summary page (no script, aggregates only) to this file")

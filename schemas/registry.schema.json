@@ -468,6 +468,10 @@
         "vendor_id": {
           "$ref": "#/$defs/id_vendor"
         },
+        "generic": {
+          "type": "boolean",
+          "description": "Reviewer's mark: the rules detect a signal that says little about the stack (a cart link, a generator meta tag), not a product somebody chose. Statistics leave it out by default."
+        },
         "curated": {
           "description": "Fields a reviewer set; refreshes keep them.",
           "type": "array",
@@ -475,7 +479,8 @@
             "enum": [
               "website",
               "description",
-              "vendor"
+              "vendor",
+              "generic"
             ]
           },
           "uniqueItems": true
@@ -754,7 +759,8 @@
         "field": {
           "enum": [
             "target",
-            "pattern"
+            "pattern",
+            "version_extract"
           ]
         },
         "original": {
@@ -762,7 +768,7 @@
         },
         "value": {
           "type": "string",
-          "minLength": 1
+          "description": "The corrected value; empty only for version_extract (the rule reads no version)."
         },
         "reason": {
           "type": "string",

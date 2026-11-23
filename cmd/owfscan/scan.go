@@ -155,6 +155,13 @@ func printScan(cmd *cobra.Command, r *scan.Result, verbose bool) {
 			fmt.Fprintf(out, "  %d  %s\n", pg.Status, pg.FinalURL)
 		}
 	}
+	if len(r.DomainSignals) > 0 {
+		names := make([]string, len(r.DomainSignals))
+		for i, t := range r.DomainSignals {
+			names[i] = t.Name
+		}
+		fmt.Fprintf(out, "\nDOMAIN SIGNALS (%d, DNS records only): %s\n", len(names), strings.Join(names, ", "))
+	}
 	fmt.Fprintf(out, "\nTECHNOLOGIES (%d)\n", len(r.Technologies))
 	w := tabwriter.NewWriter(out, 0, 4, 2, ' ', 0)
 	fmt.Fprintln(w, "NAME\tVERSION\tCONFIDENCE\tBEST HEALTH\tRULES\tSOURCES")

@@ -71,6 +71,9 @@
           "type": "integer",
           "minimum": 1
         },
+        "excluded_generic": {
+          "type": "boolean"
+        },
         "excluded_technologies": {
           "type": "array",
           "items": {
