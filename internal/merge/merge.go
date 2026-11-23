@@ -11,6 +11,7 @@ package merge
 import (
 	"errors"
 	"fmt"
+	"slices"
 	"sort"
 	"time"
 
@@ -173,6 +174,12 @@ func (w *Workspace) MergeTechnologies(a, b string) (string, error) {
 	surv.CategoryIDs = uniqueCats(surv.CategoryIDs)
 	fill(&surv.Description, abs.Description)
 	fill(&surv.Website, abs.Website)
+	// A product site is better than the address of its code repository, unless a
+	// reviewer chose the website.
+	if reconciler.IsRepositoryURL(surv.Website) && abs.Website != "" && !reconciler.IsRepositoryURL(abs.Website) &&
+		!slices.Contains(surv.Curated, "website") {
+		surv.Website = abs.Website
+	}
 	fill(&surv.Kind, abs.Kind)
 	if surv.VendorID == "" {
 		surv.VendorID = abs.VendorID

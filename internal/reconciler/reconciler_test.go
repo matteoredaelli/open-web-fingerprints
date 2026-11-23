@@ -31,6 +31,10 @@ func TestWebsiteRelation(t *testing.T) {
 		{"https://a.github.io", "https://b.github.io", Different}, // public suffix
 		{"", "https://example.com", Unknown},
 		{"example.com", "https://example.com:8080", SameDomain},
+		// A forge hosts unrelated projects: its address says nothing about identity.
+		{"https://github.com/a/x", "https://github.com/b/y", Unknown},
+		{"https://github.com/a/x", "https://www.github.com/a/x.git", SameDomain},
+		{"https://github.com/grafana/grafana", "https://grafana.com", Unknown},
 	} {
 		if got := WebsiteRelation(c.a, c.b); got != c.want {
 			t.Errorf("%q vs %q = %s, want %s", c.a, c.b, got, c.want)

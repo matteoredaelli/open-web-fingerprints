@@ -321,3 +321,37 @@ func TestMetadataConflictOnDifferentVendors(t *testing.T) {
 		t.Errorf("survivor must take the vendor it lacks, got %q", got)
 	}
 }
+
+func TestRepositoryWebsiteIsNoConflictAndLosesToTheProductSite(t *testing.T) {
+	for _, tc := range []struct{ kept, other, want string }{
+		{"https://github.com/grafana/grafana", "https://grafana.com", "https://grafana.com"},
+		{"https://grafana.com", "https://github.com/grafana/grafana", "https://grafana.com"},
+		{"https://www.foo.com", "http://foo.com/", "https://www.foo.com"},
+	} {
+		recs, cs := fixture()
+		recs.Technologies[0].Website, recs.Technologies[1].Website = tc.kept, tc.other
+		w := NewWorkspace(recs, nil, cs, alloc, now)
+		if _, err := w.MergeTechnologies("tech_1", "tech_2"); err != nil {
+			t.Fatal(err)
+		}
+		for _, c := range w.ChangeSet().Conflicts {
+			if c.Kind == domain.ConflictMetadata {
+				t.Errorf("%s vs %s: unexpected conflict %+v", tc.kept, tc.other, c.Detail)
+			}
+		}
+		if got := w.ChangeSet().Upsert.Technologies[0].Website; got != tc.want {
+			t.Errorf("%s vs %s: website %q, want %q", tc.kept, tc.other, got, tc.want)
+		}
+	}
+	// A website a reviewer set is not replaced.
+	recs, cs := fixture()
+	recs.Technologies[0].Website, recs.Technologies[0].Curated = "https://github.com/a/b", []string{"website"}
+	recs.Technologies[1].Website = "https://b.example"
+	w := NewWorkspace(recs, nil, cs, alloc, now)
+	if _, err := w.MergeTechnologies("tech_1", "tech_2"); err != nil {
+		t.Fatal(err)
+	}
+	if got := w.ChangeSet().Upsert.Technologies[0].Website; got != "https://github.com/a/b" {
+		t.Errorf("curated website replaced: %q", got)
+	}
+}

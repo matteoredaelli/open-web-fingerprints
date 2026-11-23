@@ -167,8 +167,19 @@ func sources(lists ...[]domain.Provenance) []domain.SourceID {
 	return out
 }
 
-// WebsiteRelation compares the registrable domains of two URLs.
+// WebsiteRelation compares the registrable domains of two URLs ("www." and the scheme
+// do not matter). The address of a code repository (GitHub, GitLab, SourceForge, ...) says
+// where the code lives, not who the product is, and a forge hosts thousands of unrelated
+// projects: with one of those the relation is Unknown, unless both name the same
+// repository.
 func WebsiteRelation(a, b string) string {
+	ra, rb := IsRepositoryURL(a), IsRepositoryURL(b)
+	if ra && rb && repoKey(a) == repoKey(b) {
+		return SameDomain
+	}
+	if ra || rb {
+		return Unknown
+	}
 	da, db := registrable(a), registrable(b)
 	switch {
 	case da == "" || db == "":
@@ -177,6 +188,53 @@ func WebsiteRelation(a, b string) string {
 		return SameDomain
 	}
 	return Different
+}
+
+// repoHosts are the code-hosting sites. Pages sites (github.io, gitlab.io) are real
+// websites of projects and are not listed.
+var repoHosts = map[string]bool{
+	"github.com": true, "gitlab.com": true, "bitbucket.org": true, "sourceforge.net": true,
+	"codeberg.org": true, "gitee.com": true, "launchpad.net": true, "git.sr.ht": true,
+	"code.google.com": true, "savannah.gnu.org": true, "rubyforge.org": true, "pypi.org": true,
+	"npmjs.com": true, "rubygems.org": true, "packagist.org": true, "metacpan.org": true, "search.cpan.org": true,
+}
+
+func parseURL(raw string) *url.URL {
+	if raw == "" {
+		return nil
+	}
+	if !strings.Contains(raw, "://") {
+		raw = "https://" + raw
+	}
+	u, err := url.Parse(raw)
+	if err != nil || u.Hostname() == "" {
+		return nil
+	}
+	return u
+}
+
+// IsRepositoryURL reports whether a website is a page of a code or package hosting
+// site rather than the site of a product.
+func IsRepositoryURL(raw string) bool {
+	u := parseURL(raw)
+	if u == nil {
+		return false
+	}
+	host := strings.TrimPrefix(strings.ToLower(u.Hostname()), "www.")
+	return repoHosts[host]
+}
+
+// repoKey is the host and the first two path segments (owner/project) of a repository URL.
+func repoKey(raw string) string {
+	u := parseURL(raw)
+	if u == nil {
+		return ""
+	}
+	parts := strings.FieldsFunc(strings.ToLower(strings.TrimSuffix(u.Path, ".git")), func(r rune) bool { return r == '/' })
+	if len(parts) > 2 {
+		parts = parts[:2]
+	}
+	return strings.TrimPrefix(strings.ToLower(u.Hostname()), "www.") + "/" + strings.Join(parts, "/")
 }
 
 func registrable(raw string) string {
