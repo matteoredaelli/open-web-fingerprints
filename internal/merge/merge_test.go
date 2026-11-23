@@ -355,3 +355,18 @@ func TestRepositoryWebsiteIsNoConflictAndLosesToTheProductSite(t *testing.T) {
 		t.Errorf("curated website replaced: %q", got)
 	}
 }
+
+func TestKeepSeparateCanBeReversedByMerge(t *testing.T) {
+	recs, cs := fixture()
+	w := NewWorkspace(recs, nil, cs, alloc, now)
+	id12, _ := alloc(domain.KindConflict, reconciler.PairKey(domain.ConflictIdentityCandidate, "tech_1", "tech_2"))
+	if err := w.Decide(domain.ConflictID(id12), KeepSeparate, "no"); err != nil {
+		t.Fatal(err)
+	}
+	if err := w.Decide(domain.ConflictID(id12), KeepSeparate, "again"); err == nil {
+		t.Error("keeping separate twice must fail")
+	}
+	if err := w.Decide(domain.ConflictID(id12), Merge, "changed my mind"); err != nil {
+		t.Fatalf("a merge reverses a kept-separate decision: %v", err)
+	}
+}

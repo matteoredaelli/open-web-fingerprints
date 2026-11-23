@@ -371,7 +371,9 @@ func (w *Workspace) Decide(id domain.ConflictID, d Decision, note string) error 
 	if !ok {
 		return fmt.Errorf("conflict %s not found", id)
 	}
-	if c.State != domain.ConflictOpen {
+	// A "kept separate" decision can be reversed by a merge (the reviewer changed their mind);
+	// a conflict already resolved cannot be decided again.
+	if c.State != domain.ConflictOpen && (c.State != domain.ConflictIgnored || d != Merge) {
 		return fmt.Errorf("conflict %s is %s, not open", id, c.State)
 	}
 	switch d {
