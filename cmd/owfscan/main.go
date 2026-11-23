@@ -11,10 +11,11 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"syscall"
 )
 
 func main() {
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 	cfg, cfgPath, cfgErr = loadConfig(os.Args[1:])
 	if err := newRootCmd().ExecuteContext(ctx); err != nil {

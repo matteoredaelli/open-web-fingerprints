@@ -18,6 +18,7 @@ const (
 	FamilyServers   = "Web servers and proxies"
 	FamilyAnalytics = "Analytics, tags and advertising"
 	FamilySecurity  = "Security, privacy and certificates"
+	FamilyBusiness  = "Marketing, support and business tools"
 	FamilySignals   = "Standards and page signals"
 	FamilyOther     = "Other"
 )
@@ -25,24 +26,41 @@ const (
 // familyOrder is the priority of the families and the order they are listed in.
 var familyOrder = []string{
 	FamilyCMS, FamilyCommerce, FamilyFramework, FamilyLibraries, FamilyInfra, FamilyServers,
-	FamilyAnalytics, FamilySecurity, FamilySignals, FamilyOther,
+	FamilyAnalytics, FamilyBusiness, FamilySecurity, FamilySignals, FamilyOther,
 }
 
 // categoryFamily maps a registry category to a family. Unknown categories fall to Other.
 var categoryFamily = map[string]string{
 	"CMS": FamilyCMS, "Blogs": FamilyCMS, "Page builders": FamilyCMS, "Wikis": FamilyCMS,
-	"Message boards": FamilyCMS, "Documentation": FamilyCMS, "Photo galleries": FamilyCMS,
+	"WordPress plugins": FamilyCMS, "WordPress themes": FamilyCMS, "Comment systems": FamilyCMS,
+	"Editors": FamilyCMS, "Rich text editors": FamilyCMS, "Digital asset management": FamilyCMS,
+	"Message boards": FamilyCMS, "Photo galleries": FamilyCMS,
+	"Shopify apps": FamilyCommerce, "Shopify themes": FamilyCommerce, "Ecommerce app": FamilyCommerce,
+	"Ecommerce frontends": FamilyCommerce, "Shipping carriers": FamilyCommerce, "Buy now pay later": FamilyCommerce,
+	"Cart abandonment": FamilyCommerce, "Returns": FamilyCommerce, "Fulfilment": FamilyCommerce,
+	"Cross border ecommerce": FamilyCommerce, "Reservations & delivery": FamilyCommerce,
+	"Ticket booking": FamilyCommerce, "Loyalty & rewards": FamilyCommerce,
 	"Ecommerce": FamilyCommerce, "Payment processors": FamilyCommerce, "Shopping cart": FamilyCommerce,
 	"JavaScript frameworks": FamilyFramework, "Web frameworks": FamilyFramework, "UI frameworks": FamilyFramework,
 	"Mobile frameworks": FamilyFramework, "Programming languages": FamilyFramework,
-	"Static site generator": FamilyFramework, "Development": FamilyFramework,
+	"Static site generator": FamilyFramework, "Devops": FamilyFramework, "Operating systems": FamilyInfra, "Development": FamilyFramework,
 	"JavaScript libraries": FamilyLibraries, "Font scripts": FamilyLibraries, "Video players": FamilyLibraries,
-	"Livestreaming": FamilyLibraries, "Maps": FamilyLibraries,
+	"Livestreaming": FamilyLibraries, "JavaScript graphics": FamilyLibraries, "Widgets": FamilyLibraries,
+	"Augmented reality": FamilyLibraries, "Maps": FamilyLibraries,
 	"CDN": FamilyInfra, "Hosting": FamilyInfra, "PaaS": FamilyInfra, "Caching": FamilyInfra,
-	"Load balancers": FamilyInfra, "Platform": FamilyInfra,
+	"Load balancers": FamilyInfra, "IaaS": FamilyInfra, "Containers": FamilyInfra, "Hosting panels": FamilyInfra, "Platform": FamilyInfra,
 	"Web servers": FamilyServers, "Reverse proxies": FamilyServers, "Web server extensions": FamilyServers,
 	"Analytics": FamilyAnalytics, "Tag managers": FamilyAnalytics, "Advertising": FamilyAnalytics,
-	"RUM": FamilyAnalytics, "A/B testing": FamilyAnalytics, "Marketing automation": FamilyAnalytics,
+	"RUM": FamilyAnalytics, "A/B testing": FamilyAnalytics, "A/B Testing": FamilyAnalytics, "Marketing automation": FamilyAnalytics,
+	"Live chat": FamilyBusiness, "CRM": FamilyBusiness, "Appointment scheduling": FamilyBusiness,
+	"Personalisation": FamilyBusiness, "Reviews": FamilyBusiness, "Affiliate programs": FamilyBusiness,
+	"Customer data platform": FamilyBusiness, "Form builders": FamilyBusiness, "Surveys": FamilyBusiness,
+	"Email": FamilyBusiness, "Referral marketing": FamilyBusiness, "Retargeting": FamilyBusiness,
+	"Segmentation": FamilyBusiness, "User onboarding": FamilyBusiness, "Support": FamilyBusiness,
+	"Recruitment & staffing": FamilyBusiness, "Fundraising & donations": FamilyBusiness, "LMS": FamilyBusiness,
+	"SEO": FamilyBusiness, "Issue trackers": FamilyBusiness, "Accounting": FamilyBusiness,
+	"Feature management": FamilyBusiness, "Documentation": FamilyBusiness,
+	"Search engines": FamilyBusiness, "Translation": FamilyBusiness,
 	"Security": FamilySecurity, "Cookie compliance": FamilySecurity, "SSL/TLS certificate authorities": FamilySecurity,
 	"Authentication": FamilySecurity,
 	"Miscellaneous":  FamilySignals, "Performance": FamilySignals,
@@ -53,7 +71,23 @@ var categoryFamily = map[string]string{
 var signalNames = map[string]bool{
 	"html5": true, "hsts": true, "email": true, "modern-security-headers": true, "x-ua-compatible": true,
 	"opensearch": true, "open graph": true, "open-graph-protocol": true, "http/3": true, "pwa": true,
-	"rss": true, "priority hints": true, "script": true, "frame": true, "object": true,
+	"rss": true, "priority hints": true, "script": true,
+	"cart functionality": true, "frame": true, "object": true,
+}
+
+// nameFamily places technologies that have no category (many WhatWeb rules) by name, in
+// lower case. Used only when the categories give nothing but Other.
+var nameFamily = map[string]string{
+	"cloudflare load balancer": FamilyInfra, "cloudfront load balancer": FamilyInfra,
+	"application load balancer": FamilyInfra, "s3": FamilyInfra, "alibaba-aliyun": FamilyInfra,
+	"google web services": FamilyInfra, "google frontend httpserver": FamilyInfra,
+	"apache": FamilyServers, "apache httpd": FamilyServers, "tengine-web-server": FamilyServers,
+	"envoy proxy envoy": FamilyServers, "istio envoy": FamilyServers,
+	"intercom widget": FamilyBusiness, "sentry instance": FamilyAnalytics,
+	"datadog browser rum": FamilyAnalytics, "fullstory rum": FamilyAnalytics,
+	"zurb foundation framework": FamilyFramework, "bitrix-site-manager": FamilyCMS,
+	"passwordfield": FamilySignals, "dublincore": FamilySignals, "meta-geo": FamilySignals,
+	"openid": FamilySignals, "google firebase db url": FamilyInfra,
 }
 
 // FamilyOf gives the family of a technology.
@@ -71,6 +105,11 @@ func FamilyOf(name string, categories []string) string {
 			if o == f && i < best {
 				best = i
 			}
+		}
+	}
+	if best == len(familyOrder) || familyOrder[best] == FamilyOther {
+		if f, ok := nameFamily[strings.ToLower(name)]; ok {
+			return f
 		}
 	}
 	if best == len(familyOrder) {

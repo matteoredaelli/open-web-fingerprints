@@ -1,0 +1,7 @@
+# Synthetic list written for these tests (not copied from any project).
+127.0.0.1 localhost
+::1 localhost ip6-localhost
+0.0.0.0 bad.example   # trailing comment
+0.0.0.0 Two.Example. three.example
+255.255.255.255 broadcasthost
+not an address line

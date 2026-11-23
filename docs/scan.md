@@ -49,6 +49,12 @@ Taken with the maintainer, in the order they were made:
    [owfscan.md](owfscan.md#what-the-scanner-does-to-the-network)).
 10. **Examples use local servers** and domains of the maintainer (`mr70.eu`);
     tests never depend on a third-party site.
+11. **Crawler (`owfscan bot`).** Same binary, own `bot.db` (not `batch.db`), home page only
+    (depth 0 or 1), all linked domains discovered, periodic revisit, only the last result kept,
+    stoppable at any moment and resumable. Block lists are the user's choice and none is shipped;
+    `bot run` refuses to start without one unless `--no-filter`. `robots.txt` is never ignored,
+    no probes, no contacts. A transport option was added to the public `client.Options` so that
+    the crawler can share one guarded connection pool. Details: [bot.md](bot.md).
 
 ## Principles
 

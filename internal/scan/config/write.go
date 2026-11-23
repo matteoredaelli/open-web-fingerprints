@@ -90,8 +90,71 @@ func Write(w io.Writer, c Config) error {
 	p("# still see all of them, so a rule on x-amz-cf-id or via keeps matching. A name, or a")
 	p("# prefix ending in * (\"x-envoy-*\"); lower case. `--all-headers` keeps everything.")
 	p("drop_headers = %s", multiline(c.Output.DropHeaders))
+	writeBot(p, q, list, c.Bot)
 	_, err := io.WriteString(w, b.String())
 	return err
+}
+
+func writeBot(p func(string, ...any), q func(string) string, list func([]string) string, b Bot) {
+	p("")
+	p("[bot]")
+	p("# `owfscan bot`: the crawler. It reads home pages only (depth 0 or 1), makes only GETs,")
+	p("# honours robots.txt and never sends probes or contacts. None of that can be set here.")
+	p("# SQLite file of the crawl.")
+	p("db = %s", q(b.DB))
+	p("workers = %d", b.Workers)
+	p("# Most requests per second over all hosts.")
+	p("rate = %v", b.Rate)
+	p("# Pause between two requests to the same host (a larger Crawl-delay in robots.txt wins).")
+	p("per_host_delay = %q", b.PerHostDelay.D().String())
+	p("# Most domains scanned in one run; 0 is no limit.")
+	p("budget = %d", b.Budget)
+	p("# A run stops after this long; \"0s\" is no limit.")
+	p("until = %q", b.Until.D().String())
+	p("# 0: the home page only. 1: also the pages it links.")
+	p("depth = %d", b.Depth)
+	p("# Most new domains one site may add to the frontier.")
+	p("max_new_per_site = %d", b.MaxNewPerSite)
+	p("# Most hops from a seed; domains found at this depth are scanned, their links are not followed.")
+	p("max_depth = %d", b.MaxDepth)
+	p("# How long a worker keeps a domain before another may take it (a killed run loses nothing).")
+	p("lease_ttl = %q", b.LeaseTTL.D().String())
+	p("# Time between two visits of a domain, and the longest for a domain that does not change.")
+	p("revisit = %q", b.Revisit.D().String())
+	p("revisit_max = %q", b.RevisitMax.D().String())
+	p("# A domain that has not changed comes back after revisit, then twice as late, up to revisit_max;")
+	p("# one that changed comes back after half of revisit. Visits are spread by 10%%.")
+	p("# A domain whose name does not exist is blocked for good after this many failures in a row; 0 never.")
+	p("dns_failures = %d", b.DNSFailures)
+	p("")
+	p("[bot.filter]")
+	p("# Domains on a block list are kept, marked blocked, and never scanned. A name-based filter")
+	p("# has false positives and negatives: it is no guarantee about the content of a site.")
+	p("mode = %q", b.Filter.Mode)
+	p("# Directory of the downloaded lists (`owfscan bot filter refresh` fills it).")
+	p("dir = %s", q(b.Filter.Dir))
+	p("# Categories of the lists that block: %s.", strings.Join(FilterCategories, ", "))
+	p("exclude_categories = %s", list(b.Filter.ExcludeCategories))
+	p("refresh_every = %q", b.Filter.RefreshEvery.D().String())
+	p("# true: `bot run` refuses to start with no enabled list (--no-filter is the explicit way round).")
+	p("require = %v", b.Filter.Require)
+	p("# No list is shipped (their licences differ). Add one, checking its licence:")
+	p("#")
+	p("# [[bot.filter.list]]")
+	p("# name = \"example\"")
+	p("# url = \"https://example.org/hosts.txt\"")
+	p("# category = \"adult\"        # %s", strings.Join(FilterCategories, " | "))
+	p("# format = \"hosts\"          # %s", strings.Join(FilterFormats, " | "))
+	p("# enabled = true")
+	for _, l := range b.Filter.Lists {
+		p("")
+		p("[[bot.filter.list]]")
+		p("name = %s", q(l.Name))
+		p("url = %s", q(l.URL))
+		p("category = %s", q(l.Category))
+		p("format = %s", q(l.Format))
+		p("enabled = %v", l.Enabled)
+	}
 }
 
 // Ceilings returns the largest values the file may ask for, for `config show`.
@@ -112,6 +175,19 @@ func Ceilings() [][2]string {
 		{"browser.max_requests", fmt.Sprint(maxBrowserReqs)},
 		{"result.max_evidence", fmt.Sprint(maxEvidenceList)},
 		{"output.drop_headers", fmt.Sprintf("%d entries", maxDropHeaders)},
+		{"bot.workers", fmt.Sprint(maxBotWorkers)},
+		{"bot.rate", fmt.Sprintf("%v requests per second", maxBotRate)},
+		{"bot.per_host_delay", fmt.Sprintf("1s to %s", maxPause)},
+		{"bot.budget", fmt.Sprint(maxBotBudget)},
+		{"bot.until", maxBotUntil.String()},
+		{"bot.depth", "1"},
+		{"bot.dns_failures", fmt.Sprint(maxBotDNSFailures)},
+		{"bot.max_new_per_site", fmt.Sprint(maxBotNew)},
+		{"bot.max_depth", fmt.Sprint(maxBotDepth)},
+		{"bot.lease_ttl", fmt.Sprintf("%s to %s", minLease, maxLease)},
+		{"bot.revisit, bot.revisit_max", fmt.Sprintf("%s to %s", minRevisit, maxRevisit)},
+		{"bot.filter.refresh_every", fmt.Sprintf("%s to %s", minFilterEvery, maxFilterEvery)},
+		{"bot.filter.list", fmt.Sprintf("%d lists, https only", maxFilterLists)},
 	}
 }
 

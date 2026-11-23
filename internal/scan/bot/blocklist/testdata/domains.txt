@@ -1,0 +1,8 @@
+# comment
+! other comment
+alpha.example
+*.wild.example
+Beta.Example.
+10.1.2.3
+two words.example
+nodot

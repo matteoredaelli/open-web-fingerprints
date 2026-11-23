@@ -1,0 +1,13 @@
+[Adblock Plus 2.0]
+! Title: synthetic
+||ads.example^
+||tracker.example^$important
+||typed.example^$script,third-party
+||path.example/ads/
+||wild*.example^
+/banner[0-9]+/
+example.org##.ad
+@@||good.example^
+||good.example^
+|http://plain.example/
+||1.2.3.4^

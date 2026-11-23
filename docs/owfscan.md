@@ -38,6 +38,7 @@ so). Add `--json` to any command for machine-readable output.
 | `owfscan social <url>` | social profiles, email addresses and telephone numbers | the page |
 | `owfscan observe <url>` | the observation the rules read, as JSON | the page, its favicon, DNS lookups |
 | `owfscan extract --url <page-url> <file\|->` | the same extraction as `links` and `social` on saved HTML | none |
+| `owfscan bot seed\|run\|status\|exclude\|filter` | the crawler: many sites over time, with block lists, robots.txt and a polite rate; see [bot.md](bot.md) | home pages of the domains it claims |
 
 ### Flags of the commands that fetch (and `scan`)
 
@@ -689,7 +690,8 @@ owfscan config path
 - **Sections.** `[fetch]` (timeout, max_body_bytes, max_redirects, max_age, cache_dir,
   user_agent), `[crawl]` (max_pages, delay, max_delay), `[friends]` (max), `[related]` (max,
   tlds), `[active]` (max, max_body_bytes), `[browser]` (timeout, settle, max_requests,
-  chrome_path), `[result]` (max_evidence), `[output]` (drop_headers). Durations are text: `"500ms"`, `"20s"`, `"24h"`.
+  chrome_path), `[result]` (max_evidence), `[output]` (drop_headers), `[bot]` and `[bot.filter]` (the
+  crawler, see [bot.md](bot.md)). Durations are text: `"500ms"`, `"20s"`, `"24h"`.
   A list in the file replaces the default list (`related.tlds`); a key left out keeps its default.
 - **Strict.** A key or section that does not exist is an error (it is probably a typo), every
   value has a range and a ceiling, all problems are reported together, and a file that exists but
@@ -807,6 +809,31 @@ for _, t := range res.Technologies {
 - A runnable example is `ExampleScan` in `scan/client/client_test.go`.
 - The API is a draft, like the formats (0.x): no tagged release yet.
 
+## Scanning a list of sites (`owfscan batch`)
+
+`owfscan batch run <list>` scans the **home page** of each site of a list and keeps the full results in a SQLite
+file (`--db`, default `batch.db`). The list has one domain per line or `rank,domain` (the Tranco format); blank
+lines and `#` comments are ignored. A site is tried as `https://domain` and, if the name does not exist, as
+`https://www.domain`. Sites are scanned in rank order.
+
+```
+owfscan batch run top1000.txt --db batch.db --registry registry.json --depth 1 --max-pages 5
+owfscan batch status --db batch.db
+owfscan stats --db batch.db --html stats.html
+```
+
+- It is `scan` without extras: `--depth` is 0 (home only) or 1 (also internal pages linked from it, robots.txt
+  honoured, `--max-pages` at most 10); no `--friends`, `--related`, `--active` or `--browser`; headers that
+  change on every call are left out.
+- Politeness: `--rate` is the most scans started per second (default 2, at most 20), `--workers` the most at once
+  (default 4, at most 32), `--timeout` the time given to one site. Scan only what you may scan.
+- Resumable: Ctrl-C stops the run; running the same command again scans only the sites not done. `--retry-failed`
+  tries the failed ones again; `--limit N` stops after N sites in this run.
+- `batch status` shows progress and the reasons of failures (for example `no such host`).
+- The file holds full results, personal contact details found on the pages included: keep it private. Publish
+  only aggregates (`owfscan stats`, see below).
+- `make tranco TOP=1000 DEPTH=1` downloads the Tranco list, runs the batch and writes the statistics.
+
 ## Statistics page
 
 `owfscan stats --db batch.db --html stats.html` also writes a static summary page of the aggregates
@@ -817,9 +844,9 @@ reading. No script, nothing loaded, values escaped, same input gives the same by
 
 The statistics also group technologies by `families`: CMS and publishing, E-commerce and payments, Frameworks
 and languages, Libraries/fonts/media, CDN/hosting/caching, Web servers and proxies, Analytics/tags/advertising,
-Security/privacy/certificates, Standards and page signals, Other. The registry's categories overlap (Next.js is a
+Marketing/support/business tools, Security/privacy/certificates, Standards and page signals, Other. The registry's categories overlap (Next.js is a
 JavaScript framework, a static site generator and a web server), so each technology gets **one** family: the first
 in that order that one of its categories maps to (`internal/scan/stats/families.go`). A few names (HTML5, HSTS,
-Open Graph, HTTP/3, ...) are page features or headers rather than products and always go to "Standards and page
+Open Graph, HTTP/3, Cart Functionality, ...) are page features or headers rather than products and always go to "Standards and page
 signals". A family's figure is the share of sites with at least one technology of it. It is a reading aid, not a
 taxonomy: a technology without categories (many WhatWeb rules) lands in Other.

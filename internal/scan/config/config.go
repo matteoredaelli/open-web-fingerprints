@@ -16,8 +16,10 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net/url"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"time"
 
@@ -61,6 +63,7 @@ type Config struct {
 	Browser Browser `toml:"browser"`
 	Result  Result  `toml:"result"`
 	Output  Output  `toml:"output"`
+	Bot     Bot     `toml:"bot"`
 }
 
 // Fetch limits every HTTP request.
@@ -121,6 +124,73 @@ type Output struct {
 	DropHeaders []string `toml:"drop_headers"`
 }
 
+// Bot limits `owfscan bot`, the crawler. Nothing here can turn on contacts or --active:
+// the crawler reads the home page only (depth 0 or 1), and never sends a probe.
+type Bot struct {
+	// DB is the SQLite file of the crawl.
+	DB      string `toml:"db"`
+	Workers int    `toml:"workers"`
+	// Rate is the most requests per second, over all hosts.
+	Rate float64 `toml:"rate"`
+	// PerHostDelay is the pause between two requests to the same host (a larger
+	// Crawl-delay in robots.txt wins, up to crawl.max_delay).
+	PerHostDelay Duration `toml:"per_host_delay"`
+	// Budget is the most domains scanned in one run; 0 means no limit.
+	Budget int `toml:"budget"`
+	// Until stops a run after this long; 0 means no limit.
+	Until Duration `toml:"until"`
+	// Depth is how many pages of a site are read: 0 the home page, 1 also its links.
+	Depth int `toml:"depth"`
+	// MaxNewPerSite is the most new domains one site may add to the frontier.
+	MaxNewPerSite int `toml:"max_new_per_site"`
+	// MaxDepth is the most hops from a seed: a domain found at this depth is scanned
+	// but the domains it links are not added.
+	MaxDepth int `toml:"max_depth"`
+	// LeaseTTL is how long a worker keeps a domain before another may take it.
+	LeaseTTL Duration `toml:"lease_ttl"`
+	// Revisit is the base time between two visits of a domain; RevisitMax is the longest,
+	// for a domain whose result does not change.
+	Revisit    Duration `toml:"revisit"`
+	RevisitMax Duration `toml:"revisit_max"`
+	// DNSFailures blocks a domain for good after this many "no such host" in a row; 0 never.
+	DNSFailures int       `toml:"dns_failures"`
+	Filter      BotFilter `toml:"filter"`
+}
+
+// Filter modes, categories and list formats.
+const (
+	FilterMark = "mark" // a blocked domain is kept, marked blocked, and never scanned
+)
+
+// FilterCategories are the categories a list may be given.
+var FilterCategories = []string{"adult", "gambling", "malware", "phishing", "ads", "tracking", "other"}
+
+// FilterFormats are the list formats the parsers read.
+var FilterFormats = []string{"hosts", "domains", "adblock"}
+
+// BotFilter says which domains the crawler refuses to scan. The lists are files the
+// user chooses (none is shipped: their licences differ).
+type BotFilter struct {
+	Mode string `toml:"mode"`
+	// Dir is where the downloaded lists are kept (one file and one .json note per list).
+	Dir               string   `toml:"dir"`
+	ExcludeCategories []string `toml:"exclude_categories"`
+	RefreshEvery      Duration `toml:"refresh_every"`
+	// Require makes `bot run` refuse to start with no enabled list; --no-filter is the
+	// explicit way round it.
+	Require bool         `toml:"require"`
+	Lists   []FilterList `toml:"list"`
+}
+
+// FilterList is one block list.
+type FilterList struct {
+	Name     string `toml:"name"`
+	URL      string `toml:"url"`
+	Category string `toml:"category"`
+	Format   string `toml:"format"`
+	Enabled  bool   `toml:"enabled"`
+}
+
 // DefaultDropHeaders are the headers that differ between two calls to the same site
 // made seconds apart, or identify the caller. date, age, set-cookie, via, server-timing,
 // x-amz-cf-id, x-azure-ref, x-cache, x-nf-request-id, x-request-id and x-client-ip were
@@ -152,6 +222,15 @@ func Default() Config {
 		Browser: Browser{Timeout: Duration(browser.DefaultTimeout), Settle: Duration(browser.DefaultSettle), MaxRequests: browser.DefaultMaxRequests},
 		Result:  Result{MaxEvidence: 50},
 		Output:  Output{DropHeaders: append([]string(nil), DefaultDropHeaders...)},
+		Bot: Bot{
+			DB: "bot.db", Workers: 4, Rate: 2, PerHostDelay: Duration(10 * time.Second),
+			Depth: 0, MaxNewPerSite: 50, MaxDepth: 3, LeaseTTL: Duration(10 * time.Minute),
+			Revisit: Duration(30 * 24 * time.Hour), RevisitMax: Duration(180 * 24 * time.Hour), DNSFailures: 3,
+			Filter: BotFilter{
+				Mode: FilterMark, Dir: "filters", ExcludeCategories: []string{"adult", "gambling", "malware", "phishing"},
+				RefreshEvery: Duration(7 * 24 * time.Hour), Require: true,
+			},
+		},
 	}
 }
 
@@ -171,6 +250,22 @@ const (
 	maxSettle       = time.Minute
 	maxEvidenceList = 1000
 	maxDropHeaders  = 200
+
+	maxBotWorkers     = 64
+	maxBotRate        = 50.0
+	maxBotBudget      = 10_000_000
+	maxBotUntil       = 30 * 24 * time.Hour
+	maxBotNew         = 1000
+	maxBotDepth       = 20
+	maxBotDNSFailures = 20
+	minLease          = 30 * time.Second
+	maxLease          = time.Hour
+	minRevisit        = 24 * time.Hour
+	maxRevisit        = 3 * 365 * 24 * time.Hour
+	maxFilterLists    = 50
+	maxFilterEvery    = 365 * 24 * time.Hour
+	minFilterEvery    = time.Hour
+	maxFilterNameLn   = 40
 )
 
 // Validate checks every value against its range and returns all the problems.
@@ -226,7 +321,104 @@ func (c Config) Validate() error {
 	if strings.ContainsAny(c.Fetch.UserAgent, "\r\n") {
 		bad("fetch.user_agent", "must be a single line")
 	}
+	errs = append(errs, c.Bot.validate()...)
 	return errors.Join(errs...)
+}
+
+func (b Bot) validate() []error {
+	var errs []error
+	bad := func(key, format string, a ...any) {
+		errs = append(errs, fmt.Errorf("bot.%s: %s", key, fmt.Sprintf(format, a...)))
+	}
+	num := func(key string, v, lo, hi int64) {
+		if v < lo || v > hi {
+			bad(key, "%d is out of range (%d to %d)", v, lo, hi)
+		}
+	}
+	dur := func(key string, d Duration, lo, hi time.Duration) {
+		if d.D() < lo || d.D() > hi {
+			bad(key, "%s is out of range (%s to %s)", d.D(), lo, hi)
+		}
+	}
+	if strings.TrimSpace(b.DB) == "" || strings.ContainsAny(b.DB, "\r\n\x00") {
+		bad("db", "must be a file name")
+	}
+	num("workers", int64(b.Workers), 1, maxBotWorkers)
+	if b.Rate <= 0 || b.Rate > maxBotRate || b.Rate != b.Rate {
+		bad("rate", "%v is out of range (above 0 to %v requests per second)", b.Rate, maxBotRate)
+	}
+	dur("per_host_delay", b.PerHostDelay, time.Second, maxPause)
+	num("budget", int64(b.Budget), 0, maxBotBudget)
+	dur("until", b.Until, 0, maxBotUntil)
+	num("depth", int64(b.Depth), 0, 1)
+	num("max_new_per_site", int64(b.MaxNewPerSite), 0, maxBotNew)
+	num("max_depth", int64(b.MaxDepth), 0, maxBotDepth)
+	dur("lease_ttl", b.LeaseTTL, minLease, maxLease)
+	dur("revisit", b.Revisit, minRevisit, maxRevisit)
+	dur("revisit_max", b.RevisitMax, minRevisit, maxRevisit)
+	if b.RevisitMax.D() < b.Revisit.D() {
+		bad("revisit_max", "must not be smaller than bot.revisit")
+	}
+	num("dns_failures", int64(b.DNSFailures), 0, maxBotDNSFailures)
+	f := b.Filter
+	if f.Mode != FilterMark {
+		bad("filter.mode", "%q is not one of: %s", f.Mode, FilterMark)
+	}
+	if strings.TrimSpace(f.Dir) == "" || strings.ContainsAny(f.Dir, "\r\n\x00") {
+		bad("filter.dir", "must be a directory name")
+	}
+	dur("filter.refresh_every", f.RefreshEvery, minFilterEvery, maxFilterEvery)
+	for _, c := range f.ExcludeCategories {
+		if !slices.Contains(FilterCategories, c) {
+			bad("filter.exclude_categories", "%q is not one of: %s", c, strings.Join(FilterCategories, ", "))
+		}
+	}
+	if len(f.Lists) > maxFilterLists {
+		bad("filter.list", "%d lists, at most %d", len(f.Lists), maxFilterLists)
+	}
+	seen := map[string]bool{}
+	for i, l := range f.Lists {
+		key := fmt.Sprintf("filter.list[%d]", i)
+		if !validListName(l.Name) {
+			bad(key+".name", "%q must be lower case letters, digits and '-', up to %d characters", l.Name, maxFilterNameLn)
+		} else if seen[l.Name] {
+			bad(key+".name", "%q is used twice", l.Name)
+		}
+		seen[l.Name] = true
+		if u, err := url.Parse(l.URL); err != nil || u.Scheme != "https" || u.Host == "" {
+			bad(key+".url", "%q must be an https address", l.URL)
+		}
+		if !slices.Contains(FilterCategories, l.Category) {
+			bad(key+".category", "%q is not one of: %s", l.Category, strings.Join(FilterCategories, ", "))
+		}
+		if !slices.Contains(FilterFormats, l.Format) {
+			bad(key+".format", "%q is not one of: %s", l.Format, strings.Join(FilterFormats, ", "))
+		}
+	}
+	return errs
+}
+
+func validListName(n string) bool {
+	if n == "" || len(n) > maxFilterNameLn {
+		return false
+	}
+	for _, r := range n {
+		if (r < 'a' || r > 'z') && (r < '0' || r > '9') && r != '-' {
+			return false
+		}
+	}
+	return true
+}
+
+// EnabledLists returns the block lists that are switched on.
+func (f BotFilter) EnabledLists() []FilterList {
+	var out []FilterList
+	for _, l := range f.Lists {
+		if l.Enabled {
+			out = append(out, l)
+		}
+	}
+	return out
 }
 
 func validHeaderPattern(h string) bool {

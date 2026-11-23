@@ -83,6 +83,8 @@ internal/scan/fetch         guarded HTTP fetch with redirects, limits, disk cach
 internal/scan/observe       page -> matcher observation (favicon hashes, DNS, TLS)
 internal/scan/engine        applies a registry to an observation; coverage
 internal/scan/scanner       a whole scan: observe, engine, web, result
+internal/scan/bot           crawler (`owfscan bot`): frontier in SQLite with leases, polite transport (rate, robots, backoff), run loop, revisit policy
+internal/scan/bot/blocklist block-list parsers (hosts, domains, adblock) and the reversed-label trie; pure
 internal/scan/scantest      test export and test site from the source fixtures
 internal/validation         test cases, health, static lint
 internal/fetch              pinned single-commit git fetch
@@ -131,7 +133,7 @@ before claiming value. Prefer sources with different data and clear licences.
 `init`, `source list|info|refresh|review`, `import`, `technology list|show|set`,
  `vendor list|show|set`, `fingerprint list|validate|test|lint|correct`, `probe list|review`,
 `conflict list|show|resolve`, `export`, `verify`, `stats`. `owfscan stats` (aggregates of a batch, schema `stats`, no site-level data). `owfscan batch run|status` (list of sites, home only, SQLite, resumable; `internal/scan/batch`). `owfscan report` (HTML, `internal/scan/report`: no script, escaped, deterministic). `owfscan` reads limits from `~/.config/owf/owfscan.toml` (`owfscan config init|show|path`; `internal/scan/config` is the one place for defaults; the file never enables contacts or lifts guards). `owfscan`:
-`scan`, `extract`, `links`, `social`, `observe`. `refresh` fetches one commit
+`scan`, `extract`, `links`, `social`, `observe`. `owfscan bot seed|run|status|exclude|filter` (the crawler: own `bot.db`, home pages only, `docs/bot.md`; block lists are the user's choice and none is shipped; `bot run` refuses to start without one unless `--no-filter`; robots.txt is never ignored; no probes; contacts are dropped before saving; the file cannot enable any of that). `refresh` fetches one commit
 with `git` (sparse, pinned by SHA) and imports it; `--dry-run` first.
 
 ## Working conventions
@@ -173,6 +175,8 @@ Open, roughly in order:
    a consumer needs them.
 4. Separate repositories for the detection engine and the public site.
 
+The crawler (`docs/bot.md`) is built and tested with local servers, **not yet run on real sites**; `scan/client.Options.Transport` exists for it (whoever sets it owns the address guard).
+
 Docs: `docs/domain-model.md`, `sources.md`, `dedup-design.md`, `validation.md`,
 `redistribution.md`, `scan.md` (scanner design and decisions), `owfscan.md`
-(scanner user guide).
+(scanner user guide), `bot.md` (the crawler).

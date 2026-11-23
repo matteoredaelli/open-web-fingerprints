@@ -16,6 +16,7 @@ package client
 import (
 	"context"
 	"errors"
+	"net/http"
 	"time"
 
 	"github.com/matteoredaelli/open-web-fingerprints/internal/scan/fetch"
@@ -78,6 +79,11 @@ type Options struct {
 	// CacheDir caches responses on disk, for MaxAge.
 	CacheDir string
 	MaxAge   time.Duration
+	// Transport replaces the network transport. Whoever sets it owns the guards: the
+	// refusal of private addresses, and TLS settings, are part of the default transport and
+	// are not applied to this one. It is meant for a program that makes many scans and wants
+	// one connection pool, a shared rate limit and a robots.txt cache (owfscan's crawler).
+	Transport http.RoundTripper
 
 	// DNS looks up DNS records of the site.
 	DNS bool
@@ -162,5 +168,6 @@ func (o Options) fetchOptions() fetch.Options {
 	return fetch.Options{
 		Timeout: o.Timeout, MaxBody: o.MaxBody, MaxRedirects: o.MaxRedirects, UserAgent: o.UserAgent,
 		AllowPrivate: o.AllowPrivate, Insecure: o.Insecure, CacheDir: o.CacheDir, MaxAge: o.MaxAge,
+		Transport: o.Transport,
 	}
 }

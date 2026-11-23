@@ -117,28 +117,40 @@ func New(opt Options) *Fetcher {
 	jar, _ := cookiejar.New(nil)
 	rt := opt.Transport
 	if rt == nil {
-		dialer := &net.Dialer{Timeout: 10 * time.Second, KeepAlive: 30 * time.Second}
-		if !opt.AllowPrivate {
-			allow := opt.Allow
-			if allow == nil {
-				allow = Public
-			}
-			dialer.Control = func(_, address string, _ syscall.RawConn) error { return guard(address, allow) }
-		}
-		rt = &http.Transport{
-			Proxy:                 nil,
-			DialContext:           dialer.DialContext,
-			ForceAttemptHTTP2:     true,
-			TLSClientConfig:       &tls.Config{InsecureSkipVerify: opt.Insecure, MinVersion: tls.VersionTLS10}, //nolint:gosec // opt-in, recorded in the result
-			TLSHandshakeTimeout:   10 * time.Second,
-			ResponseHeaderTimeout: opt.Timeout,
-			MaxIdleConns:          10,
-			IdleConnTimeout:       30 * time.Second,
-		}
+		rt = NewTransport(opt)
 	}
 	f := &Fetcher{opt: opt}
 	f.client = &http.Client{Transport: rt, Jar: jar, Timeout: opt.Timeout}
 	return f
+}
+
+// NewTransport returns the network transport New uses: the address guard sits in its
+// dialer, so it holds for every connection, redirects included. A caller that wants to
+// wrap the transport (rate limits, robots.txt) builds it here and passes the wrapper as
+// Options.Transport, so the guard is not lost. One transport can be shared by many
+// Fetchers: it is safe for concurrent use and keeps connections alive.
+func NewTransport(opt Options) *http.Transport {
+	if opt.Timeout <= 0 {
+		opt.Timeout = DefaultTimeout
+	}
+	dialer := &net.Dialer{Timeout: 10 * time.Second, KeepAlive: 30 * time.Second}
+	if !opt.AllowPrivate {
+		allow := opt.Allow
+		if allow == nil {
+			allow = Public
+		}
+		dialer.Control = func(_, address string, _ syscall.RawConn) error { return guard(address, allow) }
+	}
+	return &http.Transport{
+		Proxy:                 nil,
+		DialContext:           dialer.DialContext,
+		ForceAttemptHTTP2:     true,
+		TLSClientConfig:       &tls.Config{InsecureSkipVerify: opt.Insecure, MinVersion: tls.VersionTLS10}, //nolint:gosec // opt-in, recorded in the result
+		TLSHandshakeTimeout:   10 * time.Second,
+		ResponseHeaderTimeout: opt.Timeout,
+		MaxIdleConns:          10,
+		IdleConnTimeout:       30 * time.Second,
+	}
 }
 
 // guard refuses connections to addresses that are not on the public internet.
