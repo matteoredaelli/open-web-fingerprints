@@ -125,6 +125,12 @@ func (a *checksAcc) add(c *scan.Checks) {
 				a.dnsProv[p.Name]++
 			}
 		}
+		if m.CAA != nil {
+			a.pol["CAA record present"]++
+		}
+		if d := m.DNSSEC; d != nil && d.DS && d.Signed && d.Status == scan.CheckOK {
+			a.pol["DNSSEC signed and delegated"]++
+		}
 		if len(m.MX) == 0 {
 			return
 		}

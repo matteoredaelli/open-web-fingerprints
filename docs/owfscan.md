@@ -544,6 +544,12 @@ and says what was seen compared with the usual recommendation.
   (RFC 9116), whether it is there as `text/plain` with a `Contact`, how many contacts (values are not kept) and
   whether it has expired or lacks `Expires`. A site that answers every path with its home page does not count
   as having one.
+- **CAA and DNSSEC** (`checks.mail.caa`, `checks.mail.dnssec`): asked with a DNS library (`miekg/dns`,
+  `internal/scan/dnsx`) because the standard library cannot, to the servers of `/etc/resolv.conf`. CAA lists the
+  authorities allowed to issue (`info` when absent: it is a recommendation, not a rule). DNSSEC reads the DNSKEY records of
+  the zone and the DS record at the parent: `ok` when both exist, `weak` when only one does or when a validating resolver
+  refuses the zone, `info` when unsigned. `validated` is true only if the resolver sets the AD flag; most
+  office and home resolvers do not, and then the signatures were **not** checked here. Three extra DNS queries, no HTTP.
 - **Resolver caveat:** a resolver can answer "nothing" to a query that is too big or too rushed. The records whose
   absence is a finding (SPF, DMARC, MX) are asked again once before they are reported missing; a doubtful
   answer in a large batch can still be wrong, so read single misses with that in mind.

@@ -1208,6 +1208,33 @@
               "type": "integer",
               "minimum": 0
             },
+            "caa": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["present", "status"],
+              "properties": {
+                "present": {"type": "boolean"},
+                "records": {"type": "array", "items": {"type": "string"}},
+                "issuers": {"type": "array", "items": {"type": "string"}},
+                "no_issue": {"type": "boolean"},
+                "iodef": {"type": "boolean"},
+                "status": {"type": "string"},
+                "note": {"type": "string"}
+              }
+            },
+            "dnssec": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["signed", "ds", "validated", "status"],
+              "properties": {
+                "signed": {"type": "boolean"},
+                "ds": {"type": "boolean"},
+                "validated": {"type": "boolean"},
+                "algorithms": {"type": "array", "items": {"type": "string"}},
+                "status": {"type": "string"},
+                "note": {"type": "string"}
+              }
+            },
             "mta_sts": {
               "type": "object",
               "additionalProperties": false,

@@ -22,6 +22,7 @@ import (
 	"github.com/matteoredaelli/open-web-fingerprints/internal/domain"
 	"github.com/matteoredaelli/open-web-fingerprints/internal/export"
 	"github.com/matteoredaelli/open-web-fingerprints/internal/scan/browser"
+	"github.com/matteoredaelli/open-web-fingerprints/internal/scan/checks"
 	"github.com/matteoredaelli/open-web-fingerprints/internal/scan/engine"
 	"github.com/matteoredaelli/open-web-fingerprints/internal/scan/fetch"
 	"github.com/matteoredaelli/open-web-fingerprints/internal/scan/observe"
@@ -144,6 +145,8 @@ type Options struct {
 	// Checks adds the header and cookie review of the first page and, when Resolver is set, the
 	// mail and name server records of the domain (see package checks). No HTTP request is added.
 	Checks bool
+	// Zone, with Checks and Resolver, adds the CAA and DNSSEC records (nil: not asked).
+	Zone checks.Zone
 	// Browser also opens the first page in headless Chrome (see package browser).
 	// BrowserPath names the executable (empty: the usual places); BrowserTimeout bounds the run.
 	Browser        bool

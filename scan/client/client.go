@@ -19,6 +19,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/matteoredaelli/open-web-fingerprints/internal/scan/dnsx"
 	"github.com/matteoredaelli/open-web-fingerprints/internal/scan/fetch"
 	"github.com/matteoredaelli/open-web-fingerprints/internal/scan/observe"
 	"github.com/matteoredaelli/open-web-fingerprints/internal/scan/scanner"
@@ -153,6 +154,7 @@ func (o Options) internal(reg *Registry) scanner.Options {
 	}
 	if o.DNS {
 		io.Resolver = observe.SystemResolver{}
+		io.Zone = dnsx.Client{}
 	}
 	return io
 }

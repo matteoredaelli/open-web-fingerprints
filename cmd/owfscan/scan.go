@@ -360,6 +360,12 @@ func printChecks(cmd *cobra.Command, c *scan.Checks) {
 				line(t.n, "", "present")
 			}
 		}
+		if c := m.CAA; c != nil {
+			line("CAA", c.Status, strings.TrimSpace(strings.Join(c.Issuers, ", ")+" "+c.Note))
+		}
+		if d := m.DNSSEC; d != nil {
+			line("DNSSEC", d.Status, d.Note)
+		}
 		for _, p := range m.Providers {
 			line(p.Role, "", p.Name+" (via "+p.Via+")")
 		}

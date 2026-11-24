@@ -57,6 +57,11 @@ func runChecks(ctx context.Context, opt Options, crawl *Crawled, ob *observe.Obs
 		mail, w := checks.Mail(ctx, opt.Resolver, domain)
 		c.Mail = mail
 		warns = append(warns, w...)
+		if opt.Zone != nil && mail != nil {
+			caa, sec, w := checks.Review(ctx, opt.Zone, domain)
+			mail.CAA, mail.DNSSEC = caa, sec
+			warns = append(warns, w...)
+		}
 	}
 	return c, warns
 }

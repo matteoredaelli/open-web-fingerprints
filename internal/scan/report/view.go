@@ -653,6 +653,20 @@ func newChecksView(c *scan.Checks) *checksView {
 				mv.Rows = append(mv.Rows, chkRow{Name: t.n, Status: st, Value: short(t.v.Record, 90)})
 			}
 		}
+		if c := m.CAA; c != nil {
+			val := strings.Join(c.Issuers, ", ")
+			if c.IODEF {
+				val = strings.TrimSpace(val + " (iodef)")
+			}
+			mv.Rows = append(mv.Rows, chkRow{Name: "CAA", Status: c.Status, Value: short(val, 120), Note: c.Note})
+		}
+		if d := m.DNSSEC; d != nil {
+			val := strings.Join(d.Algorithms, ", ")
+			if d.Validated {
+				val = strings.TrimSpace(val + " (validated)")
+			}
+			mv.Rows = append(mv.Rows, chkRow{Name: "DNSSEC", Status: d.Status, Value: val, Note: d.Note})
+		}
 		for _, p := range m.Providers {
 			mv.Providers = append(mv.Providers, provRow{Role: p.Role, Name: p.Name, Via: p.Via})
 		}

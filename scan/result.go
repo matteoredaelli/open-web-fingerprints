@@ -535,6 +535,34 @@ type MailChecks struct {
 	MTASTS       *Tag   `json:"mta_sts,omitempty"`
 	TLSRPT       *Tag   `json:"tls_rpt,omitempty"`
 	BIMI         *Tag   `json:"bimi,omitempty"`
+	// CAA and DNSSEC are the certificate-authority and signature records of the domain.
+	CAA    *CAA    `json:"caa,omitempty"`
+	DNSSEC *DNSSEC `json:"dnssec,omitempty"`
+}
+
+// CAA is the review of the domain's CAA records (which authorities may issue certificates).
+type CAA struct {
+	Present bool     `json:"present"`
+	Records []string `json:"records,omitempty"` // "flags tag value"
+	// Issuers are the authorities named by issue and issuewild records.
+	Issuers []string `json:"issuers,omitempty"`
+	// NoIssue is true when an issue record with no authority forbids issuance.
+	NoIssue bool   `json:"no_issue,omitempty"`
+	IODEF   bool   `json:"iodef,omitempty"` // a violation report address is given
+	Status  string `json:"status"`
+	Note    string `json:"note,omitempty"`
+}
+
+// DNSSEC is the review of the domain's DNSSEC records.
+type DNSSEC struct {
+	Signed bool `json:"signed"` // the zone publishes DNSKEY records
+	DS     bool `json:"ds"`     // the parent holds a DS record
+	// Validated is true when the resolver used validated the answer; a resolver that does not
+	// validate leaves it false whatever the zone.
+	Validated  bool     `json:"validated"`
+	Algorithms []string `json:"algorithms,omitempty"`
+	Status     string   `json:"status"`
+	Note       string   `json:"note,omitempty"`
 }
 
 // Provider roles.
