@@ -25,11 +25,7 @@ and plan: `docs/scan.md`.
 
 - **Provenance is never lost.** Every imported record keeps source, revision,
   original ID and licence. Upstream removal marks provenance `removed_upstream`;
-  it never deletes a canonical record. Only a reviewer-approved merge deletes.
-- **Nothing merges across sources by itself.** Same-name technologies and
-  categories become *candidate conflicts*. A reviewer runs `owf conflict
-  resolve`. (Vendors are the exception: they are keyed by the CPE vendor
-  identifier, an external dictionary key.)
+  it never deletes a canonical record. Only a merge deletes.
 - **Agreement is not confidence.** Equivalent rules combine into one record with
   several provenance entries; canonical confidence is the *lowest explicit*
   value. Sources that share an ancestor are not independent evidence.
@@ -70,6 +66,8 @@ cmd/owf/                    thin Cobra CLI; logic lives in internal/
 internal/domain             canonical model, IDs (prefix_UUIDv7), semantic key
 internal/extractor          Extractor contract, registry, contract tests
   wappalyzer/ recog/ nuclei/ opentechalyzer/ whatweb/  one package per source format
+  wafw00f/                                             Python plugins read as data; no attack response
+  fingerprinthub/                                      nuclei reading with its own root (nuclei.NewFor)
 internal/normalizer         extraction -> domain (IDs, slugs, vendors, defaults)
 internal/reconciler         cross-source candidates, alias translation
 internal/merge, review      conflict decisions and record merges (atomic)
@@ -82,6 +80,7 @@ internal/scan/web           links, domains, social profiles, contacts from HTML
 internal/scan/fetch         guarded HTTP fetch with redirects, limits, disk cache
 internal/scan/observe       page -> matcher observation (favicon hashes, DNS, TLS)
 internal/scan/engine        applies a registry to an observation; coverage
+internal/scan/checks        `--checks`: header, connection, robots.txt/security.txt and mail-DNS review (fixed code, no score, opt-in; at most two extra GETs)
 internal/scan/scanner       a whole scan: observe, engine, web, result
 internal/scan/bot           crawler (`owfscan bot`): frontier in SQLite with leases, polite transport (rate, robots, backoff), run loop, revisit policy
 internal/scan/bot/blocklist block-list parsers (hosts, domains, adblock) and the reversed-label trie; pure
@@ -120,6 +119,8 @@ are not exported.
 | `rapid7-recog` | recog | web databases only; new data (favicon md5, title, cookie) |
 | `projectdiscovery-nuclei-templates` | nuclei | `http/technologies`; groups and probes |
 | `houseofmvps-opentechalyzer` | opentechalyzer | TypeScript literals read as data; `request_host`, probes |
+| `0x727-fingerprinthub` | nuclei reading (`fingerprinthub`) | `web-fingerprint/`; md5 and mmh3 favicon hashes; many products others lack |
+| `enablesecurity-wafw00f` | wafw00f | Python read as data; WAFs and CDNs; header and cookie rules on the normal response only (attack-payload checks skipped) |
 | `urbanadventurer-whatweb` | whatweb | Ruby `matches` lists read as data (no Ruby run); `:url` clauses are probes |
 
 More sources are planned in `docs/sources-plan.md` (order, licences, what to measure
@@ -157,7 +158,7 @@ with `git` (sparse, pinned by SHA) and imports it; `--dry-run` first.
 The maintainer keeps the current to-do list, local state and working preferences in `TODO.md`
 (local, not versioned; read it first if it exists).
 
-Done: model and schema, five importers, pinned fetch, reconciliation and merges,
+Done: model and schema, seven importers, pinned fetch, reconciliation and merges,
 vendors from CPE, offline matcher and validation harness (case files and
 upstream examples, with the origin of each piece of evidence), redistribution
 guard.
@@ -169,7 +170,7 @@ Open, roughly in order:
 1. More cases: 115 Enthec rules and 2 nuclei groups have test evidence (Recog has
    685 from upstream examples). Next: the remaining popular technologies, nuclei
    groups, and cookie rules whose names look like patterns.
-2. Review the 281 candidate conflicts; legal review of every source.
+2. Legal review of every source.
 3. Releases: semantic versioning of the data, a published schema URL, release
    notes (always explicit, never automatic); export of conflicts and aliases if
    a consumer needs them.

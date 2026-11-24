@@ -36,7 +36,9 @@ type Stats struct {
 	Pairs      []StatPair    `json:"pairs"`
 	Coverage   StatsCoverage `json:"coverage"`
 	Other      StatsOther    `json:"other"`
-	Notes      []string      `json:"notes"`
+	// Checks is present only when the scans were made with --checks.
+	Checks *StatsChecks `json:"checks,omitempty"`
+	Notes  []string     `json:"notes"`
 }
 
 // StatsSource says which registry the rules came from.
@@ -116,4 +118,53 @@ type StatsCoverage struct {
 // StatsOther counts what was too rare to list one by one (fewer than filters.min_sites).
 type StatsOther struct {
 	TechnologiesHidden int `json:"technologies_hidden"`
+}
+
+// StatsChecks aggregates the checks of the scans (owfscan scan --checks). It has its own
+// denominators, stated in each field, because not every site has every check: the mail
+// review needs DNS and a domain with no mail exchanger is left out of the mail shares.
+type StatsChecks struct {
+	// Sites is how many reached sites have a header review: the denominator of Headers,
+	// Connection, Cookies and Policies.
+	Sites   int                `json:"sites"`
+	Headers []StatHeaderStatus `json:"headers"`
+	// Connection counts sites by protocol and TLS version (a site can be in several lines).
+	Connection []StatCount  `json:"connection"`
+	Cookies    StatsCookies `json:"cookies"`
+	// Policies counts robots.txt, security.txt and AI crawler bans (see AIBots).
+	Policies []StatCount `json:"policies"`
+	// AIBots counts, per crawler, the sites whose robots.txt has a group for it that bans it from
+	// the whole site. A blanket ban under "*" is not counted here: it says nothing about that crawler.
+	AIBots []StatCount `json:"ai_bots"`
+	// MailReviewed is how many reached sites have a mail review; MailSites how many of them have
+	// a mail exchanger: the denominator of SPF, DMARC, Mail and the provider lists below,
+	// except DNSProviders, which is of MailReviewed.
+	MailReviewed int `json:"mail_reviewed"`
+	MailSites    int `json:"mail_sites"`
+	// SPF counts sites by the closing qualifier of their record (or "no record", "no all").
+	SPF []StatCount `json:"spf"`
+	// DMARC counts sites by policy (or "no record").
+	DMARC []StatCount `json:"dmarc"`
+	// Mail counts DKIM (a common selector found), MTA-STS, TLS-RPT, BIMI and SPF trees over ten lookups.
+	Mail             []StatCount `json:"mail"`
+	MailProviders    []StatCount `json:"mail_providers"`
+	SendingProviders []StatCount `json:"sending_providers"`
+	DNSProviders     []StatCount `json:"dns_providers"`
+}
+
+// StatHeaderStatus counts the sites by the status of one header.
+type StatHeaderStatus struct {
+	Name    string `json:"name"`
+	OK      int    `json:"ok"`
+	Weak    int    `json:"weak"`
+	Missing int    `json:"missing"`
+	Info    int    `json:"info"`
+}
+
+// StatsCookies counts sites, not cookies.
+type StatsCookies struct {
+	Sites      int `json:"sites"`       // sites that set at least one cookie on the first response
+	NoSecure   int `json:"no_secure"`   // ... at least one without Secure (over https)
+	NoHTTPOnly int `json:"no_httponly"` // ... at least one without HttpOnly
+	NoSameSite int `json:"no_samesite"` // ... at least one without SameSite
 }

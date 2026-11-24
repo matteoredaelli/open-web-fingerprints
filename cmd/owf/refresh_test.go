@@ -52,7 +52,11 @@ func localUpstream(t *testing.T) (dir string, entries []builtin.Entry) {
 	gitCmd(t, dir, "commit", "-q", "-m", "first")
 
 	entries = builtin.Sources()
-	entries[0].Source.URL = "file://" + dir
+	for i := range entries {
+		if entries[i].Source.Slug == "enthec-webappanalyzer" {
+			entries[i].Source.URL = "file://" + dir
+		}
+	}
 	return dir, entries
 }
 

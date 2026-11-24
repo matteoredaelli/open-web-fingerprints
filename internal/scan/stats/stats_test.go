@@ -176,3 +176,89 @@ func TestComputeLeavesOutGeneric(t *testing.T) {
 		t.Errorf("included: %v", got)
 	}
 }
+
+func checkedResult(c *scan.Checks) []byte {
+	var r scan.Result
+	_ = json.Unmarshal(result(200), &r)
+	r.Checks = c
+	b, _ := json.Marshal(r)
+	return b
+}
+
+func TestComputeChecks(t *testing.T) {
+	ctx := context.Background()
+	st, err := batch.Open(ctx, filepath.Join(t.TempDir(), "b.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = st.Close() }()
+	_, _ = st.Add(ctx, []batch.Site{{Domain: "a.example", Rank: 1}, {Domain: "b.example", Rank: 2}, {Domain: "c.example", Rank: 3}, {Domain: "d.example", Rank: 4}})
+	now := time.Now()
+	mk := func(hsts string, dmarc string, bots bool) *scan.Checks {
+		c := &scan.Checks{
+			Headers:   &scan.HeaderChecks{Headers: []scan.HeaderCheck{{Name: "strict-transport-security", Status: hsts}}, Cookies: []scan.CookieCheck{{Name: "sid", Issues: []string{"no_httponly"}}}},
+			Transport: &scan.TransportCheck{HTTPS: true, HTTP2: true, TLSVersion: "TLS 1.3", HTTP3Advertised: bots},
+			Policies:  &scan.Policies{Robots: &scan.RobotsCheck{Present: true, AIBots: []scan.AIBot{{Name: "GPTBot", Named: bots, Blocked: bots}, {Name: "CCBot", Blocked: true}}}, SecurityTxt: &scan.SecurityTxt{Present: bots, Status: scan.CheckOK}},
+			Mail: &scan.MailChecks{Domain: "x", MX: []string{"1 aspmx.l.google.com."},
+				Providers: []scan.Provider{{Name: "Google Workspace", Role: scan.RoleMailbox}, {Name: "Cloudflare", Role: scan.RoleDNS}},
+				SPF:       &scan.SPF{Record: "v=spf1 -all", All: "-all", TotalLookups: 12}, DMARC: &scan.DMARC{Policy: dmarc}, DKIM: []scan.DKIM{{Selector: "google"}}},
+		}
+		return c
+	}
+	_ = st.SaveDone(ctx, "a.example", 200, checkedResult(mk(scan.CheckOK, "reject", true)), now)
+	_ = st.SaveDone(ctx, "b.example", 200, checkedResult(mk(scan.CheckMissing, "none", false)), now)
+	nomail := mk(scan.CheckOK, "", false)
+	nomail.Mail.MX = nil
+	_ = st.SaveDone(ctx, "c.example", 200, checkedResult(nomail), now)
+	_ = st.SaveDone(ctx, "d.example", 200, result(200), now) // scanned without --checks
+
+	s, err := Compute(ctx, st, Options{MinSites: 2, Top: 30, Now: func() time.Time { return now }})
+	if err != nil {
+		t.Fatal(err)
+	}
+	c := s.Checks
+	if c == nil || c.Sites != 3 || c.MailReviewed != 3 || c.MailSites != 2 {
+		t.Fatalf("%+v", c)
+	}
+	h := c.Headers[0]
+	if h.OK != 2 || h.Missing != 1 {
+		t.Errorf("hsts %+v", h)
+	}
+	get := func(l []scan.StatCount, name string) scan.StatCount {
+		for _, x := range l {
+			if x.Name == name {
+				return x
+			}
+		}
+		return scan.StatCount{}
+	}
+	if x := get(c.DMARC, "p=reject"); x.Sites != 1 || x.Share != 0.5 {
+		t.Errorf("dmarc %+v", c.DMARC)
+	}
+	if x := get(c.SPF, "-all"); x.Sites != 2 || x.Share != 1 {
+		t.Errorf("spf %+v", c.SPF)
+	}
+	if get(c.Mail, "SPF tree over 10 lookups").Sites != 2 || get(c.Mail, "DKIM: a common selector found").Sites != 2 {
+		t.Errorf("mail %+v", c.Mail)
+	}
+	if get(c.MailProviders, "Google Workspace").Sites != 2 || get(c.DNSProviders, "Cloudflare").Sites != 3 {
+		t.Errorf("providers %+v %+v", c.MailProviders, c.DNSProviders)
+	}
+	// Only a ban by name counts: CCBot is blocked under "*" only, and GPTBot is named once.
+	if len(c.AIBots) != 0 || get(c.Policies, "bans at least one AI crawler by name").Sites != 1 {
+		t.Errorf("bots %+v policies %+v", c.AIBots, c.Policies)
+	}
+	if c.Cookies.Sites != 3 || c.Cookies.NoHTTPOnly != 3 || c.Cookies.NoSecure != 0 {
+		t.Errorf("cookies %+v", c.Cookies)
+	}
+	if get(c.Connection, "HTTP/2").Sites != 3 || get(c.Connection, "TLS 1.3").Sites != 3 {
+		t.Errorf("connection %+v", c.Connection)
+	}
+	b, _ := json.Marshal(s)
+	if err := schemas.ValidateStats(b); err != nil {
+		t.Fatalf("statistics with checks must satisfy the schema: %v", err)
+	}
+	if strings.Contains(string(b), "a.example") {
+		t.Error("no site name in the statistics")
+	}
+}

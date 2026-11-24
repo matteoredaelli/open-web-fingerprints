@@ -113,6 +113,10 @@ type Options struct {
 	ActiveMax     int
 	ActiveMaxBody int
 
+	// Checks adds the header and cookie review of the first page and, with DNS, the mail and
+	// name server records of the domain (no HTTP request is added).
+	Checks bool
+
 	// Browser also opens the first page in headless Chrome (runs the page's JavaScript).
 	Browser            bool
 	BrowserPath        string
@@ -141,7 +145,7 @@ func (o Options) internal(reg *Registry) scanner.Options {
 		Depth:     o.Depth, MaxPages: o.MaxPages, Delay: o.Delay, MaxDelay: o.MaxDelay, IgnoreRobots: o.IgnoreRobots,
 		Friends: o.Friends, FriendsMax: o.FriendsMax,
 		Related: o.Related, RelatedMax: o.RelatedMax, RelatedTLDs: o.RelatedTLDs,
-		Active: o.Active, ActiveMax: o.ActiveMax, ActiveMaxBody: o.ActiveMaxBody,
+		Active: o.Active, ActiveMax: o.ActiveMax, ActiveMaxBody: o.ActiveMaxBody, Checks: o.Checks,
 		Browser: o.Browser, BrowserPath: o.BrowserPath, BrowserTimeout: o.BrowserTimeout,
 		BrowserSettle: o.BrowserSettle, BrowserMaxRequests: o.BrowserMaxRequests,
 		MinHealth: o.MinHealth, MaxEvidence: o.MaxEvidence, DropHeaders: o.DropHeaders,

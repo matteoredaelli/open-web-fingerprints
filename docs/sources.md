@@ -382,3 +382,56 @@ literals, numbers, arrays; no Ruby is run). Measured on the full clone:
   Not checked: how many rules are redundant with other sources' rules, false-positive rate (the
   new rules have `health: unknown`; many are single words), and 17 websites written without a
   scheme or as free text (the plugin's own text is kept in `raw`).
+
+## FingerprintHub (imported, `0x727-fingerprinthub`)
+
+`0x727/FingerprintHub` @ `120898f9001a60e406311b12c8d0d5fbe4321a4e`, directory
+`web-fingerprint/` (the database of observer_ward). Licence MIT, read in
+`LICENSE.md`. The README adds that the content is for study and security work and
+not for profit: not a licence term, to be read when recording `owf source review`.
+
+- **Format.** Nuclei-style templates (3505 files, 999 vendor directories). The
+  extractor is the nuclei one with another root (`nuclei.NewFor`), plus the
+  `favicon` matcher (a `hash` list of md5 hex or mmh3 decimal values, read as
+  `favicon_hash` rules with target `md5` or `mmh3`). The copies kept under
+  `00_unknown` are read last, so the vendor's copy wins (91 such duplicates).
+- **Extracted** (measured 2026-11-23, import into a copy of `owf.db`): 3411
+  technologies, 5501 rules: `html` 4981, `response_headers` 236, `favicon_hash` 284 and
+  20 probes (drafts, safety review pending); the extractor emits 5521 and six are merged as duplicates on import.
+  Skipped and counted: POST (2), request headers or body (1), a favicon hash on a probed
+  path (1), an extractor without a capture group (1). No version rules (almost no
+  template has extractors). No template has severity above `info`.
+- **Overlap.** The import added 881 candidate conflicts (same-name technologies);
+  about 27% of template ids have a technology of the same name already. Many new
+  products are Chinese or industrial software absent from the other sources.
+- **Lineage.** The nuclei source already skips the template generated from this
+  data (`fingerprinthub-web-fingerprints`), so there is no double counting there.
+- **Not measured.** How many of the 5501 rules duplicate an existing rule; quality of the
+  `word` matchers (many are plain substrings of titles and bodies, so they may be weak).
+
+## WAFW00F (imported, `enablesecurity-wafw00f`)
+
+`EnableSecurity/wafw00f` @ `69fbe3956bba47a172cf87e40e9037535d32a130`, directory
+`wafw00f/plugins/` (172 Python files, one per WAF or CDN). Licence BSD-3-Clause,
+read in `LICENSE`.
+
+- **Format.** Python, read as data (`internal/extractor/wafw00f`: a reader for the
+  subset the plugins use, nothing is executed): functions made of
+  `if <calls>: return True|False`, with helper functions (`check_schema_NN`).
+  Guards `if not X: return False` become required terms (a group of rules);
+  `if X: return True` is an alternative.
+- **What is read.** WAFW00F sends a normal request and an *attack* request (a
+  malicious payload meant to trigger the WAF). Only `matchHeader` and
+  `matchCookie` on the normal response are read, as `http_header` and
+  `set_cookie` rules. All 292 `matchContent`, 17 `matchStatus`, 5 `matchReason`
+  and 16 calls with `attack=True` look at the attack response and are skipped:
+  this project sends no such request, so the scanner cannot apply them.
+- **Extracted** (measured 2026-11-23, import into a copy of `owf.db`): 104
+  technologies (of 171 plugins; 67 detect only on the attack response) and 181 rules:
+  90 header regexes, 38 header-present, 54 cookie regexes.
+- **Overlap.** 32 of the 104 names already exist in the registry (candidate
+  conflicts); about 70 WAFs and CDNs are new.
+- **Caveats.** Header rules work on the home page response, which for many WAFs
+  shows the product only when a request is blocked, so they may not fire on a normal
+  visit; no test evidence yet. No category is assigned (a WAF category is a decision for
+  the reviewer). Names have the "(Vendor)" suffix removed; the vendor is kept in `raw`.

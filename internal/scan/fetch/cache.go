@@ -28,6 +28,7 @@ type cacheEntry struct {
 	DurationMS  int64           `json:"duration_ms"`
 	FetchedAt   time.Time       `json:"fetched_at"`
 	TLS         *scan.TLS       `json:"tls,omitempty"`
+	Proto       string          `json:"proto,omitempty"`
 	BodySHA256  string          `json:"body_sha256"`
 }
 
@@ -61,7 +62,7 @@ func (f *Fetcher) fromCache(rawURL string) *Response {
 	return &Response{
 		URL: e.URL, FinalURL: e.FinalURL, Status: e.Status, Header: e.Header, SetCookies: e.SetCookies,
 		ContentType: e.ContentType, Body: body, Truncated: e.Truncated, Redirects: e.Redirects,
-		Duration: time.Duration(e.DurationMS) * time.Millisecond, FetchedAt: e.FetchedAt, Cached: true, TLS: e.TLS,
+		Duration: time.Duration(e.DurationMS) * time.Millisecond, FetchedAt: e.FetchedAt, Cached: true, TLS: e.TLS, Proto: e.Proto,
 	}
 }
 
@@ -77,7 +78,7 @@ func (f *Fetcher) toCache(r *Response) {
 	e := cacheEntry{
 		URL: r.URL, FinalURL: r.FinalURL, Status: r.Status, Header: r.Header, SetCookies: r.SetCookies,
 		ContentType: r.ContentType, Truncated: r.Truncated, Redirects: r.Redirects,
-		DurationMS: r.Duration.Milliseconds(), FetchedAt: r.FetchedAt, TLS: r.TLS, BodySHA256: hex.EncodeToString(sum[:]),
+		DurationMS: r.Duration.Milliseconds(), FetchedAt: r.FetchedAt, TLS: r.TLS, Proto: r.Proto, BodySHA256: hex.EncodeToString(sum[:]),
 	}
 	meta, err := json.Marshal(e)
 	if err != nil {

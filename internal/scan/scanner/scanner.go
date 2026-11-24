@@ -141,6 +141,9 @@ type Options struct {
 	// Active sends the approved probes (see RunProbes); ActiveMax bounds the requests.
 	Active    bool
 	ActiveMax int
+	// Checks adds the header and cookie review of the first page and, when Resolver is set, the
+	// mail and name server records of the domain (see package checks). No HTTP request is added.
+	Checks bool
 	// Browser also opens the first page in headless Chrome (see package browser).
 	// BrowserPath names the executable (empty: the usual places); BrowserTimeout bounds the run.
 	Browser        bool
@@ -272,6 +275,11 @@ func Scan(ctx context.Context, opt Options, target string) (*scan.Result, error)
 			pg.Headers, pg.HeadersFiltered = observe.FilterHeaders(pg.Headers, opt.DropHeaders), true
 		}
 		res.Pages = append(res.Pages, pg)
+	}
+	if opt.Checks {
+		c, w := runChecks(ctx, opt, crawl, ob, final, res.Target.RegistrableDomain, started)
+		res.Checks = c
+		res.Warnings = append(res.Warnings, w...)
 	}
 	if opt.Friends {
 		// Only the home page counts: the page that was asked for, not the pages a crawl added.

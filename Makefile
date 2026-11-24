@@ -95,12 +95,14 @@ TRANCO_ID ?= 46YVX
 TRANCO_DIR ?= /tmp/tranco
 REGISTRY ?= registry.json
 DEPTH ?= 0
+# CHECKS=1 adds --checks (header, connection and mail review; up to two more GETs per site: robots.txt, security.txt).
+CHECKS ?=
 # Generic detectors that fire on almost any page (not products): left out of the statistics.
 EXCLUDE ?=
 tranco: build ## Scan the top TOP sites of Tranco list TRANCO_ID and write stats (TOP, TRANCO_ID, TRANCO_DIR, DEPTH)
 	mkdir -p $(TRANCO_DIR)
 	curl -fsSL https://tranco-list.eu/download/$(TRANCO_ID)/$(TOP) -o $(TRANCO_DIR)/top$(TOP).txt
-	bin/owfscan batch run $(TRANCO_DIR)/top$(TOP).txt --db $(TRANCO_DIR)/batch.db --registry $(REGISTRY) --depth $(DEPTH) --quiet
+	bin/owfscan batch run $(TRANCO_DIR)/top$(TOP).txt --db $(TRANCO_DIR)/batch.db --registry $(REGISTRY) --depth $(DEPTH) $(if $(CHECKS),--checks) --quiet
 	bin/owfscan stats --db $(TRANCO_DIR)/batch.db -o $(TRANCO_DIR)/stats.json --exclude '$(EXCLUDE)' --html $(TRANCO_DIR)/stats.html
 
 # filters: download the block lists of the crawler (needs the network, so it is not part of `make check`).

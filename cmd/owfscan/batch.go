@@ -42,7 +42,7 @@ func newBatchRunCmd() *cobra.Command {
 	var workers, limit, depth, maxPages int
 	var rate float64
 	var timeout time.Duration
-	var retry, noDNS, noFavicon, quiet bool
+	var retry, noDNS, noFavicon, quiet, doChecks bool
 	c := &cobra.Command{
 		Use:   "run <list>",
 		Short: "Add the sites of a list to the file and scan those not yet done",
@@ -103,6 +103,7 @@ func newBatchRunCmd() *cobra.Command {
 			opt.DropHeaders = dropList(false)
 			(&netFlags{timeout: cfg.Fetch.Timeout.D(), maxAge: cfg.Fetch.MaxAge.D(), cacheDir: cfg.Fetch.CacheDir}).applyTo(&opt)
 			opt.DNS = !noDNS
+			opt.Checks = doChecks
 			scanFn := func(ctx context.Context, target string) (*scan.Result, error) {
 				res, err := client.Scan(ctx, reg, opt, target)
 				if err != nil {
@@ -136,6 +137,7 @@ func newBatchRunCmd() *cobra.Command {
 	c.Flags().BoolVar(&retry, "retry-failed", false, "scan again the sites that failed")
 	c.Flags().BoolVar(&noDNS, "no-dns", false, "do not look up DNS records")
 	c.Flags().BoolVar(&noFavicon, "no-favicon", false, "do not fetch the favicon")
+	c.Flags().BoolVar(&doChecks, "checks", false, "also review headers, connection and mail records of each site, and read robots.txt and /.well-known/security.txt (up to two more GETs per site; robots.txt honoured); the statistics then include them")
 	c.Flags().BoolVar(&quiet, "quiet", false, "do not print each site")
 	return c
 }

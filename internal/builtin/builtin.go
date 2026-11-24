@@ -11,9 +11,11 @@ import (
 
 	"github.com/matteoredaelli/open-web-fingerprints/internal/domain"
 	"github.com/matteoredaelli/open-web-fingerprints/internal/extractor"
+	"github.com/matteoredaelli/open-web-fingerprints/internal/extractor/fingerprinthub"
 	"github.com/matteoredaelli/open-web-fingerprints/internal/extractor/nuclei"
 	"github.com/matteoredaelli/open-web-fingerprints/internal/extractor/opentechalyzer"
 	"github.com/matteoredaelli/open-web-fingerprints/internal/extractor/recog"
+	"github.com/matteoredaelli/open-web-fingerprints/internal/extractor/wafw00f"
 	"github.com/matteoredaelli/open-web-fingerprints/internal/extractor/wappalyzer"
 	"github.com/matteoredaelli/open-web-fingerprints/internal/extractor/whatweb"
 )
@@ -101,6 +103,28 @@ func Sources() []Entry {
 		},
 		Branch: "master", SparsePaths: []string{whatweb.Root},
 		IncludeFile: whatweb.IsPluginFile,
+	}, {
+		Source: domain.Source{
+			Slug: "enablesecurity-wafw00f", Name: "WAFW00F",
+			URL:         "https://github.com/EnableSecurity/wafw00f",
+			License:     "BSD-3-Clause",
+			ExtractorID: wafw00f.ID, Redistributable: "unreviewed",
+			Notes: "Python plugins under wafw00f/plugins that identify web application firewalls and CDNs, read as data (nothing is executed). Only header and cookie checks on the normal response are read; everything that looks at the response to an attack payload (body, status, reason) is skipped, because this project never sends one. Needs legal review (docs/sources.md).",
+		},
+		Branch: "master", SparsePaths: []string{wafw00f.Root},
+		IncludeFile: wafw00f.IsPluginFile,
+	}, {
+		Source: domain.Source{
+			Slug: "0x727-fingerprinthub", Name: "FingerprintHub",
+			URL:         "https://github.com/0x727/FingerprintHub",
+			License:     "MIT",
+			ExtractorID: fingerprinthub.ID, Redistributable: "unreviewed",
+			Notes: "Nuclei-style templates under web-fingerprint/, the database of observer_ward; read with the nuclei reading (word and regex matchers, favicon md5 and mmh3 hashes). Many products are Chinese or industrial software the other sources lack. The repository is MIT, but its README says the content is for study and security work, not for profit; that is not a licence condition but the maintainer should read it when recording the review. The nuclei source skips the template generated from this data (docs/sources-plan.md).",
+		},
+		Branch: "main", SparsePaths: []string{fingerprinthub.Root},
+		IncludeFile: func(p string) bool {
+			return strings.HasPrefix(p, fingerprinthub.Root+"/") && strings.HasSuffix(p, ".yaml")
+		},
 	}}
 	sort.Slice(out, func(i, j int) bool { return out[i].Source.Slug < out[j].Source.Slug })
 	return out
@@ -119,7 +143,7 @@ func Find(slug string) (Entry, bool) {
 // Extractors returns a registry with every built-in extractor.
 func Extractors() *extractor.Registry {
 	r := extractor.NewRegistry()
-	for _, e := range []extractor.Extractor{wappalyzer.New(), recog.New(), nuclei.New(), opentechalyzer.New(), whatweb.New()} {
+	for _, e := range []extractor.Extractor{wappalyzer.New(), recog.New(), nuclei.New(), fingerprinthub.New(), opentechalyzer.New(), wafw00f.New(), whatweb.New()} {
 		if err := r.Register(e); err != nil {
 			panic(err) // static registration cannot collide
 		}

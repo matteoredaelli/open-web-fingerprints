@@ -127,6 +127,7 @@ type view struct {
 	Security                               []secRow
 	SecPresent, SecTotal                   int
 	HeadersFiltered                        bool
+	Checks                                 *checksView
 	Socials                                []socialView
 	Contacts                               []contactView
 	Domains                                []domainBar
@@ -408,6 +409,10 @@ func build(r *scan.Result, opt Options) view {
 		v.SecTotal = len(securityHeaders)
 	}
 
+	if c := r.Checks; c != nil {
+		v.Checks = newChecksView(c)
+	}
+
 	// People and places.
 	for _, s := range r.Socials {
 		v.Socials = append(v.Socials, socialView{Platform: s.Platform, Kind: s.Kind, Handle: s.Handle, URL: safeURL(s.URL), Initial: initial(s.Platform), Hue: hueCSS(s.Platform)})
@@ -518,4 +523,140 @@ func build(r *scan.Result, opt Options) view {
 		v.Stats = append(v.Stats, stat{len(r.Pages), "pages read"})
 	}
 	return v
+}
+
+// checksView is the presentation of scan.Checks. Statuses become CSS classes: ok, weak,
+// missing, info. There is no score on purpose.
+type checksView struct {
+	Headers           []chkRow
+	Cookies           []cookieRow
+	HasHeaders        bool
+	OK, Weak, Missing int
+	HTTPS             bool
+	HeadersNote       string
+	Mail              *mailView
+	HasMail           bool
+	Site              []chkRow // connection, robots.txt, security.txt
+}
+
+type chkRow struct{ Name, Status, Value, Note string }
+
+type cookieRow struct{ Name, Flags, Issues string }
+
+type mailView struct {
+	Domain    string
+	Rows      []chkRow // SPF, DMARC, DKIM, MTA-STS, TLS-RPT, BIMI
+	MX, NS    []string
+	NullMX    bool
+	Providers []provRow
+	DKIMTried int
+}
+
+type provRow struct{ Role, Name, Via string }
+
+func newChecksView(c *scan.Checks) *checksView {
+	cv := &checksView{}
+	if h := c.Headers; h != nil {
+		cv.HasHeaders, cv.OK, cv.Weak, cv.Missing, cv.HTTPS, cv.HeadersNote = true, h.OK, h.Weak, h.Missing, h.HTTPS, h.Note
+		for _, x := range h.Headers {
+			cv.Headers = append(cv.Headers, chkRow{Name: x.Name, Status: x.Status, Value: short(x.Value, 90), Note: x.Note})
+		}
+		for _, k := range h.Cookies {
+			var f []string
+			if k.Secure {
+				f = append(f, "Secure")
+			}
+			if k.HTTPOnly {
+				f = append(f, "HttpOnly")
+			}
+			if k.SameSite != "" {
+				f = append(f, "SameSite="+k.SameSite)
+			}
+			cv.Cookies = append(cv.Cookies, cookieRow{Name: k.Name, Flags: strings.Join(f, " · "), Issues: strings.ReplaceAll(strings.Join(k.Issues, ", "), "_", " ")})
+		}
+	}
+	if t := c.Transport; t != nil {
+		val := strings.TrimSpace(t.Proto + " " + t.TLSVersion)
+		if t.HTTP3Advertised {
+			val += " · HTTP/3 advertised"
+		}
+		if t.CertDaysLeft != nil {
+			val += fmt.Sprintf(" · certificate %d days left", *t.CertDaysLeft)
+		}
+		st := t.TLSStatus
+		if st == "" {
+			st = "info"
+		}
+		cv.Site = append(cv.Site, chkRow{Name: "Connection", Status: st, Value: val, Note: t.Note})
+	}
+	if p := c.Policies; p != nil {
+		if r := p.Robots; r != nil {
+			val, note := "no robots.txt", ""
+			if r.Present {
+				val = fmt.Sprintf("%d sitemaps", r.SitemapCount)
+				note = fmt.Sprintf("AI crawlers banned from the whole site: %d of %d (%d named in the file)", r.AIBlocked, len(r.AIBots), r.AINamed)
+			}
+			cv.Site = append(cv.Site, chkRow{Name: "robots.txt", Status: "info", Value: val, Note: note})
+		}
+		if s := p.SecurityTxt; s != nil {
+			val := ""
+			if s.Present {
+				val = fmt.Sprintf("%d contacts", s.Contacts)
+			}
+			cv.Site = append(cv.Site, chkRow{Name: "security.txt", Status: s.Status, Value: val, Note: s.Note})
+		}
+	}
+	if m := c.Mail; m != nil {
+		cv.HasMail = true
+		mv := &mailView{Domain: m.Domain, MX: m.MX, NS: m.NS, NullMX: m.NullMX, DKIMTried: m.DKIMSelTried}
+		if s := m.SPF; s != nil {
+			val := s.Record
+			if s.TotalLookups > 0 {
+				val = fmt.Sprintf("%s · %d lookups in the tree", val, s.TotalLookups)
+			}
+			mv.Rows = append(mv.Rows, chkRow{Name: "SPF", Status: s.Status, Value: short(val, 120), Note: s.Note})
+		}
+		if d := m.DMARC; d != nil {
+			val := ""
+			if d.Policy != "" {
+				val = "p=" + d.Policy
+			}
+			if d.SubdomainPolicy != "" {
+				val += " sp=" + d.SubdomainPolicy
+			}
+			mv.Rows = append(mv.Rows, chkRow{Name: "DMARC", Status: d.Status, Value: val, Note: d.Note})
+		}
+		if m.DKIMSelTried > 0 {
+			var sel []string
+			for _, k := range m.DKIM {
+				t := k.Selector
+				if k.Revoked {
+					t += " (revoked)"
+				}
+				sel = append(sel, t)
+			}
+			st, val, note := "info", strings.Join(sel, ", "), "selectors cannot be listed in DNS: only common names were tried"
+			if len(sel) > 0 {
+				st = "ok"
+			}
+			mv.Rows = append(mv.Rows, chkRow{Name: "DKIM", Status: st, Value: val, Note: note})
+		}
+		for _, t := range []struct {
+			n string
+			v *scan.Tag
+		}{{"MTA-STS", m.MTASTS}, {"TLS-RPT", m.TLSRPT}, {"BIMI", m.BIMI}} {
+			if t.v != nil {
+				st := "info"
+				if t.v.Present {
+					st = "ok"
+				}
+				mv.Rows = append(mv.Rows, chkRow{Name: t.n, Status: st, Value: short(t.v.Record, 90)})
+			}
+		}
+		for _, p := range m.Providers {
+			mv.Providers = append(mv.Providers, provRow{Role: p.Role, Name: p.Name, Via: p.Via})
+		}
+		cv.Mail = mv
+	}
+	return cv
 }

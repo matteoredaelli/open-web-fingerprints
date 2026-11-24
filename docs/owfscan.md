@@ -500,6 +500,65 @@ one); and a certificate that names no organization (most free certificates) give
 `cert_org`. Trying other TLDs of the same name (`michelin.it`) is not done yet and would be
 an option, because it means contacting names nobody pointed to.
 
+## Header and mail checks (`--checks`)
+
+`owfscan scan --checks` adds a `checks` object to the result (and a "Checks" section to the
+HTML report). They are fixed code, not registry rules, and kept apart from `technologies`. At
+most two requests are added: `GET /robots.txt` (when the crawl did not read it, as with one page) and
+`GET /.well-known/security.txt` (skipped if robots.txt asks crawlers to stay away from it; with `--ignore-robots`
+it is sent anyway): the headers and connection are those of the first response, and the mail part is DNS only (it needs DNS, so not with `--no-dns`,
+and it is skipped when the target is an IP address). `owfscan batch run --checks` (and `make tranco CHECKS=1`)
+does the same for every site and `owfscan stats` then aggregates it (see below).
+There is no score: each item has a status (`ok`, `weak`, `missing`, `info`) and a short reason,
+and says what was seen compared with the usual recommendation.
+
+- **Headers** (`checks.headers`): Strict-Transport-Security (max-age of at least 180 days; only
+  meaningful over https), Content-Security-Policy (weak when scripts allow `'unsafe-inline'`
+  without a nonce or hash, `'unsafe-eval'`, `*`, `data:` or `http:`, or are not restricted at all;
+  a report-only policy is `info`), X-Frame-Options (or CSP `frame-ancestors`), X-Content-Type-Options,
+  Referrer-Policy, Permissions-Policy and the Cross-Origin-* policies (optional), and the headers that
+  disclose software (`Server`, `X-Powered-By`, `X-AspNet-Version`, `X-Generator`; weak when they carry
+  a version). Cookies: `Secure`, `HttpOnly`, `SameSite`; names and attributes only, never values.
+  Only the first page is read, a CDN can vary headers by client, and a policy can be set in a `<meta>`
+  tag: a missing header is a fact about that answer, not about the whole site.
+- **Mail and DNS** (`checks.mail`, for the registrable domain): MX (and null MX), NS, SPF (final
+  qualifier, number of lookups in the record, includes), DMARC (policy, subdomain policy, `pct`,
+  report addresses), DKIM (a short list of common selectors; DKIM selectors cannot be listed, so
+  "none found" is not "none"), MTA-STS, TLS-RPT and BIMI records. Services are recognised from fixed lists
+  of host names (`internal/scan/checks/providers.go`): a mailbox provider from MX, senders from SPF
+  `include:`, the DNS provider from NS. A service not in the lists is not shown. A lookup that fails
+  (timeout, server error) becomes a warning `check_dns_*` and the item is left out, never reported as
+  missing. A domain with no MX gets `info`, not `missing`, for SPF and DMARC. This is about 20 DNS queries.
+
+- **SPF tree:** the `include:` and `redirect=` targets are followed (breadth first, each host once, at
+  most 20 queries) and `total_lookups` counts the lookups of the whole tree: the standard allows 10 and a
+  record over it fails at receivers. An include with a macro (`%{d}`) cannot be resolved without a sender and
+  leaves `tree_complete` false, as does a failed lookup or the query limit: the total is then a lower
+  bound. Senders behind nested includes are recognised too.
+- **Connection** (`checks.transport`): protocol (HTTP/2), TLS version, ALPN, an `Alt-Svc` offering `h3`
+  (advertised, not used: the page is not fetched over HTTP/3), days left on the certificate. TLS older than 1.2,
+  an expired certificate or an http page is `weak`.
+- **Published files** (`checks.policies`): from robots.txt, how many `Sitemap` lines and, for a short list of
+  AI crawlers (`GPTBot`, `ClaudeBot`, `CCBot`, `Google-Extended`...), whether the file bans each from the whole
+  site and whether it names it (a blanket `User-agent: *` ban is shown but not "named"); from security.txt
+  (RFC 9116), whether it is there as `text/plain` with a `Contact`, how many contacts (values are not kept) and
+  whether it has expired or lacks `Expires`. A site that answers every path with its home page does not count
+  as having one.
+- **Resolver caveat:** a resolver can answer "nothing" to a query that is too big or too rushed. The records whose
+  absence is a finding (SPF, DMARC, MX) are asked again once before they are reported missing; a doubtful
+  answer in a large batch can still be wrong, so read single misses with that in mind.
+
+### In the statistics
+
+`owfscan stats` adds a `checks` object (and a "Checks" block in `--html`) when the scans have checks. Each
+list says its own denominator: header, connection, cookie and file shares are of the sites with a header review;
+SPF, DMARC, mail-record and provider shares are of the sites **with a mail exchanger**; DNS providers are of the
+domains reviewed. Provider names seen on fewer than `--min-sites` sites are not named, and AI crawlers are counted
+only when the file names them. DKIM is a lower bound (only common selectors are tried).
+
+Not done yet: CAA and DNSSEC (the standard library cannot query them), ASN and country of the IP (needs an
+offline database), the redirect chain, and a check of the sitemap file itself.
+
 ## Active probes (`--active`)
 
 Some rules need the answer to a request to a fixed path of the site: `/robots.txt`,

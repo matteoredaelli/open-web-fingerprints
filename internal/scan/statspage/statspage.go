@@ -62,6 +62,23 @@ type view struct {
 	MinConf                         string
 	Excluded                        string
 	Notes                           []string
+	Checks                          *checksView
+}
+
+// checksView is the "Checks" part of the page.
+type checksView struct {
+	Sites, MailSites, MailReviewed                int
+	Headers                                       []hdrRow
+	Connection, Policies, AIBots                  []bar
+	Cookies                                       []bar
+	SPF, DMARC, Mail                              []bar
+	MailProviders, SendingProviders, DNSProviders []bar
+}
+
+type hdrRow struct {
+	Name                    string
+	OK, Weak, Missing, Info string
+	OKW, WeakW, MissingW    template.CSS
 }
 
 func pct(f float64) string { return fmt.Sprintf("%.1f%%", f*100) }
@@ -165,6 +182,29 @@ func build(s *scan.Stats, opt Options) view {
 			break
 		}
 		v.Pairs = append(v.Pairs, bar{Name: p.A + " + " + p.B, Sites: p.Sites, Pct: pct(p.Share), Width: width(p.Share)})
+	}
+	if c := s.Checks; c != nil {
+		cv := &checksView{Sites: c.Sites, MailSites: c.MailSites, MailReviewed: c.MailReviewed,
+			Connection: counts(c.Connection, 0), Policies: counts(c.Policies, 0), AIBots: counts(c.AIBots, 0),
+			SPF: counts(c.SPF, 0), DMARC: counts(c.DMARC, 0), Mail: counts(c.Mail, 0),
+			MailProviders: counts(c.MailProviders, 10), SendingProviders: counts(c.SendingProviders, 10), DNSProviders: counts(c.DNSProviders, 10)}
+		if c.Cookies.Sites > 0 {
+			f := func(name string, n int) bar {
+				sh := float64(n) / float64(c.Cookies.Sites)
+				return bar{Name: name, Sites: n, Pct: pct(sh), Width: width(sh)}
+			}
+			cv.Cookies = []bar{f("without Secure (https)", c.Cookies.NoSecure), f("without HttpOnly", c.Cookies.NoHTTPOnly), f("without SameSite", c.Cookies.NoSameSite)}
+		}
+		for _, h := range c.Headers {
+			n := float64(h.OK + h.Weak + h.Missing + h.Info)
+			if n == 0 {
+				continue
+			}
+			cv.Headers = append(cv.Headers, hdrRow{Name: h.Name,
+				OK: pct(float64(h.OK) / n), Weak: pct(float64(h.Weak) / n), Missing: pct(float64(h.Missing) / n), Info: pct(float64(h.Info) / n),
+				OKW: width(float64(h.OK) / n), WeakW: width(float64(h.Weak) / n), MissingW: width(float64(h.Missing) / n)})
+		}
+		v.Checks = cv
 	}
 	return v
 }

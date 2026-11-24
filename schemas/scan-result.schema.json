@@ -520,6 +520,9 @@
           }
         }
       }
+    },
+    "checks": {
+      "$ref": "#/$defs/checks"
     }
   },
   "$defs": {
@@ -589,6 +592,9 @@
         },
         "cached": {
           "type": "boolean"
+        },
+        "proto": {
+          "type": "string"
         }
       }
     },
@@ -639,6 +645,9 @@
               "items": {
                 "type": "string"
               }
+            },
+            "alpn": {
+              "type": "string"
             }
           }
         }
@@ -915,6 +924,498 @@
           }
         }
       }
+    },
+    "checks": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [],
+      "properties": {
+        "headers": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "page",
+            "https",
+            "headers",
+            "cookies",
+            "ok",
+            "weak",
+            "missing"
+          ],
+          "properties": {
+            "page": {
+              "type": "string"
+            },
+            "https": {
+              "type": "boolean"
+            },
+            "ok": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "weak": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "missing": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "note": {
+              "type": "string"
+            },
+            "headers": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "name",
+                  "present",
+                  "status"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "present": {
+                    "type": "boolean"
+                  },
+                  "value": {
+                    "type": "string"
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "ok",
+                      "weak",
+                      "missing",
+                      "info"
+                    ]
+                  },
+                  "note": {
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            "cookies": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "name",
+                  "secure",
+                  "http_only"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "secure": {
+                    "type": "boolean"
+                  },
+                  "http_only": {
+                    "type": "boolean"
+                  },
+                  "same_site": {
+                    "type": "string"
+                  },
+                  "issues": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "mail": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "domain"
+          ],
+          "properties": {
+            "domain": {
+              "type": "string"
+            },
+            "mx": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "null_mx": {
+              "type": "boolean"
+            },
+            "ns": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "providers": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "name",
+                  "role",
+                  "via"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "role": {
+                    "type": "string",
+                    "enum": [
+                      "mailbox",
+                      "sending",
+                      "dns"
+                    ]
+                  },
+                  "via": {
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            "spf": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "lookups",
+                "status"
+              ],
+              "properties": {
+                "record": {
+                  "type": "string"
+                },
+                "all": {
+                  "type": "string"
+                },
+                "includes": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "lookups": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "ok",
+                    "weak",
+                    "missing",
+                    "info"
+                  ]
+                },
+                "note": {
+                  "type": "string"
+                },
+                "total_lookups": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "nested": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "tree_complete": {
+                  "type": "boolean"
+                }
+              }
+            },
+            "dmarc": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "status"
+              ],
+              "properties": {
+                "record": {
+                  "type": "string"
+                },
+                "policy": {
+                  "type": "string"
+                },
+                "subdomain_policy": {
+                  "type": "string"
+                },
+                "pct": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "rua": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "ruf": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "ok",
+                    "weak",
+                    "missing",
+                    "info"
+                  ]
+                },
+                "note": {
+                  "type": "string"
+                }
+              }
+            },
+            "dkim": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "selector"
+                ],
+                "properties": {
+                  "selector": {
+                    "type": "string"
+                  },
+                  "key_type": {
+                    "type": "string"
+                  },
+                  "revoked": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            },
+            "dkim_selectors_tried": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "mta_sts": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "present"
+              ],
+              "properties": {
+                "present": {
+                  "type": "boolean"
+                },
+                "record": {
+                  "type": "string"
+                }
+              }
+            },
+            "tls_rpt": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "present"
+              ],
+              "properties": {
+                "present": {
+                  "type": "boolean"
+                },
+                "record": {
+                  "type": "string"
+                }
+              }
+            },
+            "bimi": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "present"
+              ],
+              "properties": {
+                "present": {
+                  "type": "boolean"
+                },
+                "record": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "transport": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "https",
+            "http2",
+            "http3_advertised"
+          ],
+          "properties": {
+            "https": {
+              "type": "boolean"
+            },
+            "proto": {
+              "type": "string"
+            },
+            "tls_version": {
+              "type": "string"
+            },
+            "alpn": {
+              "type": "string"
+            },
+            "http2": {
+              "type": "boolean"
+            },
+            "http3_advertised": {
+              "type": "boolean"
+            },
+            "alt_svc": {
+              "type": "string"
+            },
+            "tls_status": {
+              "type": "string",
+              "enum": [
+                "ok",
+                "weak",
+                "missing",
+                "info"
+              ]
+            },
+            "cert_days_left": {
+              "type": "integer"
+            },
+            "note": {
+              "type": "string"
+            }
+          }
+        },
+        "policies": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [],
+          "properties": {
+            "robots": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "present",
+                "sitemap_count",
+                "ai_blocked",
+                "ai_named"
+              ],
+              "properties": {
+                "present": {
+                  "type": "boolean"
+                },
+                "sitemap_count": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "sitemaps": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "ai_blocked": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "ai_named": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "ai_bots": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "name",
+                      "blocked",
+                      "named"
+                    ],
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "blocked": {
+                        "type": "boolean"
+                      },
+                      "named": {
+                        "type": "boolean"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "security_txt": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "present",
+                "contacts",
+                "status"
+              ],
+              "properties": {
+                "present": {
+                  "type": "boolean"
+                },
+                "url": {
+                  "type": "string"
+                },
+                "contacts": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "expires": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "expired": {
+                  "type": "boolean"
+                },
+                "has_policy": {
+                  "type": "boolean"
+                },
+                "has_encryption": {
+                  "type": "boolean"
+                },
+                "signed": {
+                  "type": "boolean"
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "ok",
+                    "weak",
+                    "missing",
+                    "info"
+                  ]
+                },
+                "note": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "description": "Passive observations about the site and its domain, not registry fingerprints. Present only when asked for (--checks). No score."
     }
   }
 }

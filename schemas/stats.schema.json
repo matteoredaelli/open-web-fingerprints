@@ -245,6 +245,158 @@
       "items": {
         "$ref": "#/$defs/family"
       }
+    },
+    "checks": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sites",
+        "headers",
+        "connection",
+        "cookies",
+        "policies",
+        "ai_bots",
+        "mail_reviewed",
+        "mail_sites",
+        "spf",
+        "dmarc",
+        "mail",
+        "mail_providers",
+        "sending_providers",
+        "dns_providers"
+      ],
+      "properties": {
+        "sites": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "headers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "name",
+              "ok",
+              "weak",
+              "missing",
+              "info"
+            ],
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "ok": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "weak": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "missing": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "info": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
+          }
+        },
+        "connection": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/count"
+          }
+        },
+        "cookies": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "sites",
+            "no_secure",
+            "no_httponly",
+            "no_samesite"
+          ],
+          "properties": {
+            "sites": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "no_secure": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "no_httponly": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "no_samesite": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        "policies": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/count"
+          }
+        },
+        "ai_bots": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/count"
+          }
+        },
+        "mail_reviewed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "mail_sites": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "spf": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/count"
+          }
+        },
+        "dmarc": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/count"
+          }
+        },
+        "mail": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/count"
+          }
+        },
+        "mail_providers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/count"
+          }
+        },
+        "sending_providers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/count"
+          }
+        },
+        "dns_providers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/count"
+          }
+        }
+      },
+      "description": "Present only when the scans were made with --checks. Each list has its own denominator (sites, mail_sites or mail_reviewed)."
     }
   },
   "$defs": {

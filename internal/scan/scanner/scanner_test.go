@@ -18,6 +18,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/matteoredaelli/open-web-fingerprints/internal/scan/checks"
 	"github.com/matteoredaelli/open-web-fingerprints/internal/scan/fetch"
 	"github.com/matteoredaelli/open-web-fingerprints/internal/scan/scantest"
 	"github.com/matteoredaelli/open-web-fingerprints/scan"
@@ -427,5 +428,68 @@ func TestRedactVolatileEvidence(t *testing.T) {
 	redactVolatile(techs, nil)
 	if techs[0].Evidence[0].Matched != "abc" {
 		t.Error("an empty list changes nothing")
+	}
+}
+
+// mailDNS answers a fixed mail setup for any name.
+type mailDNS struct{}
+
+func (mailDNS) LookupMX(context.Context, string) ([]string, error) {
+	return []string{"1 aspmx.l.google.com."}, nil
+}
+func (mailDNS) LookupNS(context.Context, string) ([]string, error) {
+	return []string{"a.ns.cloudflare.com."}, nil
+}
+func (mailDNS) LookupTXT(_ context.Context, n string) ([]string, error) {
+	switch n {
+	case "example.test":
+		return []string{"v=spf1 include:_spf.google.com ~all"}, nil
+	case "_dmarc.example.test":
+		return []string{"v=DMARC1; p=none; rua=mailto:d@example.test"}, nil
+	case "google._domainkey.example.test":
+		return []string{"v=DKIM1; k=rsa; p=AAAA"}, nil
+	}
+	return nil, nil
+}
+
+func TestScanChecks(t *testing.T) {
+	srv := scantest.Site()
+	defer srv.Close()
+	opt := options(t)
+	plain, err := Scan(context.Background(), opt, srv.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if plain.Checks != nil {
+		t.Fatal("checks are opt-in")
+	}
+	opt.Checks = true
+	res, err := Scan(context.Background(), opt, srv.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.Checks == nil || res.Checks.Headers == nil || len(res.Checks.Headers.Headers) == 0 {
+		t.Fatalf("header review missing: %+v", res.Checks)
+	}
+	if res.Checks.Mail != nil {
+		t.Error("an IP address has no mail records to review")
+	}
+	if tr := res.Checks.Transport; tr == nil || tr.HTTPS || tr.Proto == "" {
+		t.Errorf("transport: %+v", tr)
+	}
+	if p := res.Checks.Policies; p == nil || p.SecurityTxt == nil || p.SecurityTxt.Present {
+		t.Errorf("policies: %+v", p)
+	}
+	// A mail review satisfies the schema.
+	mail, warns := checks.Mail(context.Background(), mailDNS{}, "example.test")
+	if len(warns) != 0 {
+		t.Fatal(warns)
+	}
+	res.Checks.Mail = mail
+	if err := Validate(res); err != nil {
+		t.Fatalf("the result with checks must satisfy the schema: %v", err)
+	}
+	if mail.DMARC.Policy != "none" || len(mail.DKIM) != 1 {
+		t.Errorf("%+v", mail)
 	}
 }

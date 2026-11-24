@@ -94,6 +94,7 @@ func Compute(ctx context.Context, st *batch.Store, opt Options) (*scan.Stats, er
 	days := map[string]int{}
 	pairs := map[[2]string]int{}
 	var perSite []int
+	var ck checksAcc
 	var covSum float64
 	reached, withCert := 0, 0
 	statusN := map[int]int{}
@@ -191,6 +192,9 @@ func Compute(ctx context.Context, st *batch.Store, opt Options) (*scan.Stats, er
 			if !t.NotAfter.IsZero() {
 				days[bucket(int(t.NotAfter.Sub(r.ScannedAt).Hours()/24))]++
 			}
+		}
+		if r.Checks != nil {
+			ck.add(r.Checks)
 		}
 		seen := map[string]bool{}
 		for _, s := range r.Socials {
@@ -324,6 +328,7 @@ func Compute(ctx context.Context, st *batch.Store, opt Options) (*scan.Stats, er
 	out.Headers = list(hl, 0)
 	out.TLS = scan.StatsTLS{WithCertificate: withCert, DaysLeft: list(days, 1), Issuers: top(list(issuers, opt.MinSites))}
 	out.Social = top(list(soc, opt.MinSites))
+	out.Checks = ck.result(opt)
 	var pl []scan.StatPair
 	for k, n := range pairs {
 		if n >= opt.MinSites {
@@ -368,6 +373,12 @@ func Compute(ctx context.Context, st *batch.Store, opt Options) (*scan.Stats, er
 		"Domain signals (DNS records only) describe the domain, not the web stack, and are listed apart.",
 		fmt.Sprintf("Anything seen on fewer than %d sites is counted in other.technologies_hidden, not named.", opt.MinSites),
 		"The list is a ranking of domains, not a sample of the web: it favours large organisations.",
+	}
+	if out.Checks != nil {
+		out.Notes = append(out.Notes,
+			"Checks (headers, connection, robots.txt, security.txt, mail records) are passive observations of the home page and the domain's DNS; a missing item is a fact about that answer, not a verdict on the site.",
+			fmt.Sprintf("Header, connection and policy shares are of the %d sites with a header review; mail shares are of the %d sites with a mail exchanger (%d reviewed); DNS providers are of the %d reviewed.", out.Checks.Sites, out.Checks.MailSites, out.Checks.MailReviewed, out.Checks.MailReviewed),
+			"DKIM selectors cannot be listed in DNS: only common names are tried, so the DKIM figure is a lower bound. Providers are recognised from fixed lists of host names; one not in the list is not counted.")
 	}
 	return out, nil
 }

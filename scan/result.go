@@ -67,7 +67,10 @@ type Result struct {
 	// Active is present only when probes were allowed (--active).
 	Active *Active `json:"active,omitempty"`
 	// Browser is present only when the first page was also run in a browser.
-	Browser  *Browser    `json:"browser,omitempty"`
+	Browser *Browser `json:"browser,omitempty"`
+	// Checks is present only when they were asked for (--checks): observations about the
+	// site and its domain that are not registry fingerprints.
+	Checks   *Checks     `json:"checks,omitempty"`
 	Coverage Coverage    `json:"coverage"`
 	Registry RegistryRef `json:"registry"`
 	Warnings []Warning   `json:"warnings"`
@@ -96,6 +99,9 @@ type Page struct {
 	// cache hits, cookies, ...) were left out of Headers. The rules still saw them.
 	HeadersFiltered bool `json:"headers_filtered,omitempty"`
 	Cached          bool `json:"cached,omitempty"` // read from the response cache, not the network
+	// Proto is the protocol of the response (HTTP/1.1, HTTP/2.0); empty when read from a cache
+	// written before it was kept.
+	Proto string `json:"proto,omitempty"`
 }
 
 // Redirect is one hop of a redirect chain.
@@ -113,7 +119,9 @@ type Host struct {
 
 // TLS is the certificate presented by the host.
 type TLS struct {
-	Version   string    `json:"version,omitempty"`
+	Version string `json:"version,omitempty"`
+	// ALPN is the application protocol negotiated in the handshake (h2, http/1.1).
+	ALPN      string    `json:"alpn,omitempty"`
 	Issuer    string    `json:"issuer,omitempty"`
 	Subject   string    `json:"subject,omitempty"`
 	NotBefore time.Time `json:"not_before,omitzero"`
@@ -382,4 +390,211 @@ type Warning struct {
 	Code    string `json:"code"`
 	Message string `json:"message"`
 	Ref     string `json:"ref,omitempty"`
+}
+
+// Checks are passive observations about the site and its domain, kept apart from the
+// technologies: they come from fixed code, not from registry rules. Each says what was seen
+// and, where a common recommendation exists, how it compares. They are not a security audit
+// and carry no score: a missing header or record is a fact about the answer received, not a
+// finding about the whole site.
+type Checks struct {
+	// Headers is the review of the response headers and cookies of the first page.
+	Headers *HeaderChecks `json:"headers,omitempty"`
+	// Mail is the review of the domain's mail and name server records (DNS only).
+	Mail *MailChecks `json:"mail,omitempty"`
+	// Transport is what the first response says about the connection.
+	Transport *TransportCheck `json:"transport,omitempty"`
+	// Policies are the site's published statements: robots.txt and security.txt.
+	Policies *Policies `json:"policies,omitempty"`
+}
+
+// TransportCheck reviews the connection of the first response.
+type TransportCheck struct {
+	HTTPS      bool   `json:"https"`
+	Proto      string `json:"proto,omitempty"`       // HTTP/1.1, HTTP/2.0
+	TLSVersion string `json:"tls_version,omitempty"` // TLS 1.3
+	ALPN       string `json:"alpn,omitempty"`
+	HTTP2      bool   `json:"http2"`
+	// HTTP3Advertised is true when an Alt-Svc header offers h3: the page was not fetched over
+	// HTTP/3, the site says it could be.
+	HTTP3Advertised bool   `json:"http3_advertised"`
+	AltSvc          string `json:"alt_svc,omitempty"`
+	// TLSStatus is weak for TLS older than 1.2 or an expired certificate, ok for 1.2 and later.
+	TLSStatus string `json:"tls_status,omitempty"`
+	// CertDaysLeft is the days the certificate still has to run (negative: expired); set only
+	// when the certificate was read.
+	CertDaysLeft *int   `json:"cert_days_left,omitempty"`
+	Note         string `json:"note,omitempty"`
+}
+
+// Policies are the files a site publishes to say what it wants of robots and researchers.
+type Policies struct {
+	// Robots is set when robots.txt was read (not with --ignore-robots, which skips it).
+	Robots      *RobotsCheck `json:"robots,omitempty"`
+	SecurityTxt *SecurityTxt `json:"security_txt,omitempty"`
+}
+
+// RobotsCheck summarises robots.txt.
+type RobotsCheck struct {
+	Present bool `json:"present"`
+	// SitemapCount is how many Sitemap lines it has; Sitemaps lists the first few.
+	SitemapCount int      `json:"sitemap_count"`
+	Sitemaps     []string `json:"sitemaps,omitempty"`
+	// AIBots says, for crawlers of AI services, whether the file bans them from the whole site
+	// ("/"). Named is true when the file has a group for that crawler, false when it only
+	// falls under the "*" group.
+	AIBots []AIBot `json:"ai_bots,omitempty"`
+	// AIBlocked counts the AI crawlers that are banned; AINamed those the file names.
+	AIBlocked int `json:"ai_blocked"`
+	AINamed   int `json:"ai_named"`
+}
+
+// AIBot is one crawler's treatment in robots.txt.
+type AIBot struct {
+	Name    string `json:"name"`
+	Blocked bool   `json:"blocked"`
+	Named   bool   `json:"named"`
+}
+
+// SecurityTxt is /.well-known/security.txt (RFC 9116).
+type SecurityTxt struct {
+	Present bool   `json:"present"`
+	URL     string `json:"url,omitempty"`
+	// Contacts counts the Contact fields; their values are not kept.
+	Contacts      int       `json:"contacts"`
+	Expires       time.Time `json:"expires,omitzero"`
+	Expired       bool      `json:"expired,omitempty"`
+	HasPolicy     bool      `json:"has_policy,omitempty"`
+	HasEncryption bool      `json:"has_encryption,omitempty"`
+	Signed        bool      `json:"signed,omitempty"`
+	// Status is info when the file is not there, weak when it lacks Contact or Expires or has
+	// expired, ok otherwise.
+	Status string `json:"status"`
+	Note   string `json:"note,omitempty"`
+}
+
+// Statuses of a single check.
+const (
+	CheckOK      = "ok"      // present and in line with the usual recommendation
+	CheckWeak    = "weak"    // present, but with a value the recommendation advises against
+	CheckMissing = "missing" // absent, and the recommendation says it should be there
+	CheckInfo    = "info"    // absent but optional, or present and only worth knowing
+)
+
+// HeaderChecks reviews the headers of one response.
+type HeaderChecks struct {
+	Page    string        `json:"page"`           // the page the headers come from
+	HTTPS   bool          `json:"https"`          // it was served over https
+	Headers []HeaderCheck `json:"headers"`        // always the same headers, in the same order
+	Cookies []CookieCheck `json:"cookies"`        // cookies set by that response (values are never kept)
+	OK      int           `json:"ok"`             // how many headers are ok
+	Weak    int           `json:"weak"`           // how many are weak
+	Missing int           `json:"missing"`        // how many are missing
+	Note    string        `json:"note,omitempty"` // what the review cannot tell
+}
+
+// HeaderCheck is the review of one header.
+type HeaderCheck struct {
+	Name    string `json:"name"`            // lower-case
+	Present bool   `json:"present"`         //
+	Value   string `json:"value,omitempty"` // cut to a short length
+	Status  string `json:"status"`
+	Note    string `json:"note,omitempty"`
+}
+
+// CookieCheck lists the attributes of one cookie.
+type CookieCheck struct {
+	Name     string `json:"name"`
+	Secure   bool   `json:"secure"`
+	HTTPOnly bool   `json:"http_only"`
+	SameSite string `json:"same_site,omitempty"` // lax, strict, none; empty if not set
+	// Issues name the attributes the usual recommendation expects and the cookie lacks:
+	// no_secure (on https), no_httponly, no_samesite, samesite_none_without_secure. Whether
+	// a cookie needs HttpOnly depends on what it is used for, which is not known here.
+	Issues []string `json:"issues,omitempty"`
+}
+
+// MailChecks reviews the DNS records that concern mail and name servers of the registrable domain.
+type MailChecks struct {
+	Domain string `json:"domain"`
+	// MX lists the mail exchangers ("10 mx.example.com"); NullMX is true for "0 ." (the domain
+	// says it does not receive mail).
+	MX     []string `json:"mx,omitempty"`
+	NullMX bool     `json:"null_mx,omitempty"`
+	// NS lists the name servers.
+	NS []string `json:"ns,omitempty"`
+	// Providers are the services recognised from the MX, SPF and NS records by a fixed list of
+	// host names. A service that is not in the list is not reported.
+	Providers []Provider `json:"providers,omitempty"`
+	SPF       *SPF       `json:"spf,omitempty"`
+	DMARC     *DMARC     `json:"dmarc,omitempty"`
+	// DKIM lists the selectors found among a short list of common names. DKIM selectors cannot be
+	// listed in DNS, so a domain with no entry here may still sign mail under another selector.
+	DKIM         []DKIM `json:"dkim,omitempty"`
+	DKIMSelTried int    `json:"dkim_selectors_tried,omitempty"`
+	MTASTS       *Tag   `json:"mta_sts,omitempty"`
+	TLSRPT       *Tag   `json:"tls_rpt,omitempty"`
+	BIMI         *Tag   `json:"bimi,omitempty"`
+}
+
+// Provider roles.
+const (
+	RoleMailbox = "mailbox" // receives the domain's mail (MX)
+	RoleSending = "sending" // allowed to send for the domain (SPF)
+	RoleDNS     = "dns"     // hosts the DNS zone (NS)
+)
+
+// Provider is a service recognised in the mail or DNS records.
+type Provider struct {
+	Name string `json:"name"`
+	Role string `json:"role"`
+	Via  string `json:"via"` // the record value that revealed it
+}
+
+// SPF is the Sender Policy Framework record.
+type SPF struct {
+	Record string `json:"record,omitempty"` // empty when there is none
+	// All is the closing qualifier: "-all" (fail), "~all" (soft fail), "?all" (neutral),
+	// "+all" (anything allowed), "" (none, or a redirect).
+	All      string   `json:"all,omitempty"`
+	Includes []string `json:"includes,omitempty"`
+	// Lookups counts the terms that cost a DNS lookup in this record alone (include, a, mx,
+	// ptr, exists, redirect); the standard allows ten in total, nested records included.
+	Lookups int `json:"lookups"`
+	// TotalLookups counts the lookups of the whole tree, includes followed (0 if they were not).
+	TotalLookups int `json:"total_lookups,omitempty"`
+	// Nested lists the hosts reached by following the includes, one level or more down.
+	Nested []string `json:"nested,omitempty"`
+	// TreeComplete is false when following the includes stopped (a failed lookup, or too many
+	// queries): TotalLookups is then a lower bound.
+	TreeComplete bool   `json:"tree_complete,omitempty"`
+	Status       string `json:"status"`
+	Note         string `json:"note,omitempty"`
+}
+
+// DMARC is the policy record at _dmarc.<domain>.
+type DMARC struct {
+	Record string `json:"record,omitempty"`
+	Policy string `json:"policy,omitempty"` // none, quarantine, reject
+	// SubdomainPolicy is set when sp= differs from the policy.
+	SubdomainPolicy string   `json:"subdomain_policy,omitempty"`
+	Pct             int      `json:"pct,omitempty"` // 0 when not given (the default is 100)
+	Rua             []string `json:"rua,omitempty"`
+	Ruf             []string `json:"ruf,omitempty"`
+	Status          string   `json:"status"`
+	Note            string   `json:"note,omitempty"`
+}
+
+// DKIM is a selector that has a key record.
+type DKIM struct {
+	Selector string `json:"selector"`
+	KeyType  string `json:"key_type,omitempty"` // k= (rsa by default)
+	// Revoked is true for an empty p= (the key was withdrawn).
+	Revoked bool `json:"revoked,omitempty"`
+}
+
+// Tag is a record that is present or not, with its text (MTA-STS, TLS-RPT, BIMI).
+type Tag struct {
+	Present bool   `json:"present"`
+	Record  string `json:"record,omitempty"`
 }

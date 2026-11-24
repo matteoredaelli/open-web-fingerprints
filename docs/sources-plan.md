@@ -246,3 +246,30 @@ on the licence. Retire.js stays behind the scanner feature it needs.
 **Decision (2026-11-22, maintainer):** the WhatWeb licence question is settled as OK. The decision
 is recorded here; it is entered in the registry with `owf source review` (with a note naming its
 basis) only once the source is imported.
+
+### Wikidata (2026-11-23, SPARQL endpoint, labels and aliases in English)
+
+Wikidata (CC0) has no fingerprints. The question was whether it helps to **identify
+that two registry technologies are the same product**, or to fill vendor and website. A
+name-only measurement, not an import.
+
+Method: every distinct technology name of the registry (11195 names) was looked up as an
+`rdfs:label` or `skos:altLabel` (`@en`) of an item that is an instance or subclass of
+*software* (Q7397); batches of 60, `P856` (official website) read when present.
+
+- **1383 names (12%) match a software item.** 1132 match exactly one item; **251 (18% of the
+  matches) match several**, so a name alone is not an identity (`Grasp`, `Newt`, `Vex`, `Heroic`
+  are homonyms of obscure items).
+- **41 items are hit by two or more different registry names.** These are the useful signal:
+  most are real (`IIS` / `Microsoft IIS`, `Matomo` / `Piwik`, `Tomcat` / `Apache Tomcat`,
+  `SVN` / `Subversion`, `DNN` / `DotNetNuke`, `Vue` / `Vue.js`, `Node` / `Node.js`, `AEM` /
+  `Adobe Experience Manager`, `Riot` / `Element`). Some are wrong or debatable (`GitLab` /
+  `Zoom`, `WordPress` / `WordPress.com`, `Flow` / `Neos Flow`, `Pelican` / `Pelican Panel`,
+  `Connect` / `Macromedia Breeze`, `React Router` / `Remix`): roughly one in five on a
+  first read, not checked one by one.
+- **Conclusion.** Value is small (about 35 pairs, in a registry of 11207 technologies) and the
+  matching is noisy, so Wikidata is **not a source** and nothing should be merged from it
+  automatically (the project rule: nothing merges across sources by itself). If wanted, it
+  is a one-off report of *suggested* identity pairs for the reviewer (`owf conflict` already
+  has `identity_candidate`), with the item id kept as evidence. Vendors and websites were not
+  measured. Raw results are not committed (they are a measurement, regenerable).

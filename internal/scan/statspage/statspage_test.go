@@ -83,3 +83,29 @@ func TestEmptyAndNil(t *testing.T) {
 		t.Error("empty statistics not explained")
 	}
 }
+
+func TestRendersChecks(t *testing.T) {
+	s := sample()
+	if strings.Contains(render(t, s), "Mailbox providers") {
+		t.Error("no checks, no section")
+	}
+	s.Checks = &scan.StatsChecks{Sites: 50, MailReviewed: 40, MailSites: 30,
+		Headers:       []scan.StatHeaderStatus{{Name: "strict-transport-security", OK: 30, Weak: 5, Missing: 15}},
+		Connection:    []scan.StatCount{{Name: "HTTP/2", Sites: 40, Share: 0.8}},
+		Cookies:       scan.StatsCookies{Sites: 20, NoHTTPOnly: 10},
+		Policies:      []scan.StatCount{{Name: "security.txt present", Sites: 5, Share: 0.1}},
+		AIBots:        []scan.StatCount{{Name: "GPTBot", Sites: 6, Share: 0.12}},
+		SPF:           []scan.StatCount{{Name: "-all", Sites: 15, Share: 0.5}},
+		DMARC:         []scan.StatCount{{Name: "p=reject", Sites: 9, Share: 0.3}},
+		MailProviders: []scan.StatCount{{Name: "<b>Evil</b>", Sites: 9, Share: 0.3}},
+	}
+	out := render(t, s)
+	for _, want := range []string{"Mail and DNS", "30 of 40 reviewed", "security.txt present", "GPTBot", "p=reject", "without HttpOnly", "50.0%", "&lt;b&gt;Evil&lt;/b&gt;"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("page lacks %q", want)
+		}
+	}
+	if strings.Contains(out, "<b>Evil") || strings.Contains(out, "<script") {
+		t.Error("escaping")
+	}
+}

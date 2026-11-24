@@ -81,6 +81,7 @@ type Response struct {
 	FetchedAt   time.Time
 	Cached      bool
 	TLS         *scan.TLS
+	Proto       string // HTTP/1.1, HTTP/2.0
 }
 
 // Fetcher fetches pages. It keeps cookies for the duration of a scan, so a
@@ -235,7 +236,7 @@ func (f *Fetcher) Get(ctx context.Context, rawURL string) (*Response, error) {
 	r := &Response{
 		URL: rawURL, FinalURL: resp.Request.URL.String(), Status: resp.StatusCode, Header: resp.Header.Clone(),
 		SetCookies: resp.Header.Values("Set-Cookie"), ContentType: resp.Header.Get("Content-Type"),
-		Redirects: chain, FetchedAt: start.UTC(), Duration: f.opt.Now().Sub(start),
+		Redirects: chain, FetchedAt: start.UTC(), Duration: f.opt.Now().Sub(start), Proto: resp.Proto,
 	}
 	if int64(len(body)) > f.opt.MaxBody {
 		body, r.Truncated = body[:f.opt.MaxBody], true
@@ -249,7 +250,7 @@ func (f *Fetcher) Get(ctx context.Context, rawURL string) (*Response, error) {
 }
 
 func tlsInfo(cs *tls.ConnectionState) *scan.TLS {
-	t := &scan.TLS{Version: tls.VersionName(cs.Version)}
+	t := &scan.TLS{Version: tls.VersionName(cs.Version), ALPN: cs.NegotiatedProtocol}
 	if len(cs.PeerCertificates) > 0 {
 		c := cs.PeerCertificates[0]
 		t.Issuer, t.Subject = c.Issuer.String(), c.Subject.String()
@@ -268,6 +269,6 @@ func (r *Response) Page() scan.Page {
 	return scan.Page{
 		URL: r.URL, FinalURL: r.FinalURL, Status: r.Status, ContentType: r.ContentType,
 		Bytes: len(r.Body), DurationMS: int(r.Duration.Milliseconds()), Redirects: r.Redirects,
-		Headers: h, Cached: r.Cached,
+		Headers: h, Cached: r.Cached, Proto: r.Proto,
 	}
 }

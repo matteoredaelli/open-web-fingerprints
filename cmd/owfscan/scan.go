@@ -33,7 +33,7 @@ func version() string {
 func newScanCmd() *cobra.Command {
 	n := &netFlags{}
 	var registry, minHealth, verifyCache string
-	var friends, related, useBrowser, active bool
+	var friends, related, useBrowser, active, doChecks bool
 	var tf tldFlags
 	var activeMax, relatedMax int
 	var chrome string
@@ -75,6 +75,7 @@ func newScanCmd() *cobra.Command {
 			}
 			opt.Related, opt.RelatedMax, opt.RelatedTLDs = related, relatedMax, tlds
 			opt.Active, opt.ActiveMax = active, activeMax
+			opt.Checks = doChecks
 			opt.Browser, opt.BrowserPath, opt.BrowserTimeout = useBrowser, chrome, browserTimeout
 			n.applyTo(&opt)
 			opt.DropHeaders = dropList(allHeaders)
@@ -113,6 +114,7 @@ func newScanCmd() *cobra.Command {
 	c.Flags().BoolVar(&related, "related", false, "also look for domains that may belong to the same owner, with the evidence (contacts other sites; see `owfscan related --help`)")
 	tf.add(c)
 	c.Flags().IntVar(&relatedMax, "related-max", cfg.Related.Max, "most candidate domains to read with --related")
+	c.Flags().BoolVar(&doChecks, "checks", false, "also review the security headers and cookies of the first page and, with DNS, the mail records of the domain (SPF, DMARC, DKIM, MX, NS; no extra HTTP request; see docs/owfscan.md)")
 	c.Flags().BoolVar(&active, "active", false, "also send the probes a reviewer approved (GET to fixed paths of the site, robots.txt honoured; see `owf probe --help`)")
 	c.Flags().IntVar(&activeMax, "active-max", cfg.Active.Max, "most probe requests to send with --active")
 	c.Flags().BoolVar(&useBrowser, "browser", false, "also open the first page in headless Chrome, to see global variables, XHR calls and the DOM after scripts ran (runs the page's JavaScript; see docs/owfscan.md)")
@@ -232,6 +234,9 @@ func printScan(cmd *cobra.Command, r *scan.Result, verbose bool) {
 	if r.Related != nil {
 		printRelated(cmd, r.Related)
 	}
+	if r.Checks != nil {
+		printChecks(cmd, r.Checks)
+	}
 	if a := r.Active; a != nil {
 		fmt.Fprintf(out, "\nPROBES: %d approved, %d sent, %d failed, %d not sent (%d disallowed by robots.txt, %d refused)\n", a.Approved, a.Sent, a.Failed, a.NotSent, a.Disallowed, a.Refused)
 	}
@@ -274,4 +279,89 @@ func stampDir(flag string) string {
 		return filepath.Join(d, "owfscan", "verified")
 	}
 	return flag
+}
+
+func printChecks(cmd *cobra.Command, c *scan.Checks) {
+	out := cmd.OutOrStdout()
+	if h := c.Headers; h != nil {
+		fmt.Fprintf(out, "\nHEADERS (%s): %d ok, %d weak, %d missing\n", h.Page, h.OK, h.Weak, h.Missing)
+		for _, x := range h.Headers {
+			if x.Status == scan.CheckInfo && !x.Present {
+				continue
+			}
+			fmt.Fprintf(out, "  %-8s %s", x.Status, x.Name)
+			if x.Note != "" {
+				fmt.Fprintf(out, ": %s", x.Note)
+			}
+			fmt.Fprintln(out)
+		}
+		for _, k := range h.Cookies {
+			if len(k.Issues) > 0 {
+				fmt.Fprintf(out, "  cookie   %s: %s\n", k.Name, strings.Join(k.Issues, ", "))
+			}
+		}
+	}
+	if t := c.Transport; t != nil {
+		fmt.Fprintf(out, "\nCONNECTION: %s", strings.TrimSpace(t.Proto+" "+t.TLSVersion))
+		if t.HTTP3Advertised {
+			fmt.Fprint(out, ", HTTP/3 advertised")
+		}
+		if t.CertDaysLeft != nil {
+			fmt.Fprintf(out, ", certificate %d days left", *t.CertDaysLeft)
+		}
+		if t.Note != "" {
+			fmt.Fprintf(out, " (%s: %s)", t.TLSStatus, t.Note)
+		}
+		fmt.Fprintln(out)
+	}
+	if p := c.Policies; p != nil {
+		if r := p.Robots; r != nil {
+			fmt.Fprintf(out, "ROBOTS.TXT: present=%t, %d sitemaps, AI crawlers banned from the whole site: %d of %d (%d named)\n", r.Present, r.SitemapCount, r.AIBlocked, len(r.AIBots), r.AINamed)
+		}
+		if s := p.SecurityTxt; s != nil {
+			fmt.Fprintf(out, "SECURITY.TXT: %s", s.Status)
+			if s.Note != "" {
+				fmt.Fprintf(out, ": %s", s.Note)
+			}
+			fmt.Fprintln(out)
+		}
+	}
+	if m := c.Mail; m != nil {
+		fmt.Fprintf(out, "\nMAIL AND DNS (%s)\n", m.Domain)
+		line := func(label, status, text string) {
+			fmt.Fprintf(out, "  %-6s %-8s %s\n", label, status, text)
+		}
+		if m.SPF != nil {
+			tree := ""
+			if m.SPF.TotalLookups > 0 {
+				tree = fmt.Sprintf("%d lookups in the tree ", m.SPF.TotalLookups)
+			}
+			line("SPF", m.SPF.Status, strings.TrimSpace(m.SPF.All+" "+tree+m.SPF.Note))
+		}
+		if d := m.DMARC; d != nil {
+			pol := ""
+			if d.Policy != "" {
+				pol = "p=" + d.Policy
+			}
+			line("DMARC", d.Status, strings.TrimSpace(pol+" "+d.Note))
+		}
+		var sel []string
+		for _, k := range m.DKIM {
+			sel = append(sel, k.Selector)
+		}
+		if m.DKIMSelTried > 0 {
+			line("DKIM", "", fmt.Sprintf("%d of %d common selectors found %s", len(m.DKIM), m.DKIMSelTried, strings.Join(sel, ", ")))
+		}
+		for _, t := range []struct {
+			n string
+			v *scan.Tag
+		}{{"MTA-STS", m.MTASTS}, {"TLSRPT", m.TLSRPT}, {"BIMI", m.BIMI}} {
+			if t.v != nil && t.v.Present {
+				line(t.n, "", "present")
+			}
+		}
+		for _, p := range m.Providers {
+			line(p.Role, "", p.Name+" (via "+p.Via+")")
+		}
+	}
 }

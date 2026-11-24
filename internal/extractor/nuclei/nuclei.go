@@ -72,16 +72,24 @@ var skipTemplates = map[string]string{
 }
 
 // Extractor implements extractor.Extractor for nuclei technology templates.
-type Extractor struct{}
+type Extractor struct{ id, name, root string }
 
 // New returns a nuclei extractor.
-func New() *Extractor { return &Extractor{} }
+func New() *Extractor {
+	return &Extractor{id: ID, name: "Nuclei technology templates", root: Root}
+}
+
+// NewFor returns an extractor for another collection written in the nuclei
+// template format (FingerprintHub is one): same reading, other identity and root.
+func NewFor(id, name, root string) *Extractor {
+	return &Extractor{id: id, name: name, root: root}
+}
 
 // ID implements extractor.Extractor.
-func (*Extractor) ID() string { return ID }
+func (x *Extractor) ID() string { return x.id }
 
 // Name implements extractor.Extractor.
-func (*Extractor) Name() string { return "Nuclei technology templates" }
+func (x *Extractor) Name() string { return x.name }
 
 // Capabilities implements extractor.CapabilityReporter.
 func (*Extractor) Capabilities() []extractor.Capability {
@@ -130,6 +138,7 @@ type tmatcher struct {
 	DSL             []string `yaml:"dsl"`
 	CaseInsensitive bool     `yaml:"case-insensitive"`
 	Negative        bool     `yaml:"negative"`
+	Hash            []string `yaml:"hash"` // favicon matchers: md5 (hex) or mmh3 (decimal)
 	Encoding        string   `yaml:"encoding"`
 }
 
@@ -171,7 +180,7 @@ func (x *Extractor) Extract(ctx context.Context, src extractor.Source) (*extract
 	}
 	res := &extractor.ExtractionResult{Metadata: map[string]any{"revision": src.Revision}}
 	var files []string
-	err := fs.WalkDir(src.FS, Root, func(p string, d fs.DirEntry, err error) error {
+	err := fs.WalkDir(src.FS, x.root, func(p string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
@@ -184,9 +193,18 @@ func (x *Extractor) Extract(ctx context.Context, src extractor.Source) (*extract
 		return nil, fmt.Errorf("nuclei: list templates: %w", err)
 	}
 	if len(files) == 0 {
-		return nil, fmt.Errorf("nuclei: no templates under %s", Root)
+		return nil, fmt.Errorf("nuclei: no templates under %s", x.root)
 	}
-	sort.Strings(files)
+	// A collection may keep a copy of a template whose vendor is unknown
+	// (FingerprintHub's 00_unknown): the copy with a vendor is read first, so
+	// it is the one that wins when both have the same id.
+	unknown := func(p string) bool { return strings.Contains(p, "/00_unknown/") }
+	sort.Slice(files, func(i, j int) bool {
+		if ui, uj := unknown(files[i]), unknown(files[j]); ui != uj {
+			return uj
+		}
+		return files[i] < files[j]
+	})
 
 	st := &state{res: res, techs: map[string]int{}, vendors: map[string]string{}, skipped: map[string]int{}, tplVersion: map[string]bool{}}
 	seen := map[string]string{}
@@ -228,7 +246,7 @@ func (x *Extractor) Extract(ctx context.Context, src extractor.Source) (*extract
 	}
 	sort.Strings(reasons)
 	for _, r := range reasons {
-		res.Warnings = append(res.Warnings, extractor.Warning{Code: "skipped", Ref: Root,
+		res.Warnings = append(res.Warnings, extractor.Warning{Code: "skipped", Ref: x.root,
 			Message: fmt.Sprintf("%d: %s", st.skipped[r], r)})
 	}
 	res.Metadata["templates"] = len(files)
@@ -471,6 +489,11 @@ var partNames = map[string]string{
 	"all": "response", "content_type": "content_type", "server": "server",
 }
 
+var (
+	md5Hex  = regexp.MustCompile(`^[0-9a-fA-F]{32}$`)
+	mmh3Dec = regexp.MustCompile(`^-?[0-9]+$`)
+)
+
 // matcherClauses returns the alternatives a matcher stands for.
 func matcherClauses(m tmatcher) ([]clause, error) {
 	if m.Negative {
@@ -488,6 +511,23 @@ func matcherClauses(m tmatcher) ([]clause, error) {
 		var alts []clause
 		for _, s := range m.Status {
 			alts = append(alts, clause{{part: "status", op: domain.OpEquals, pattern: strconv.Itoa(s)}})
+		}
+		return alts, nil
+	case "favicon":
+		var alts []clause
+		for _, h := range m.Hash {
+			h = strings.TrimSpace(h)
+			switch {
+			case md5Hex.MatchString(h):
+				alts = append(alts, clause{{part: "favicon", op: domain.OpHashEquals, pattern: strings.ToLower(h), target: "md5"}})
+			case mmh3Dec.MatchString(h):
+				alts = append(alts, clause{{part: "favicon", op: domain.OpHashEquals, pattern: h, target: "mmh3"}})
+			default:
+				return nil, skipf("favicon hash in an unknown form")
+			}
+		}
+		if len(alts) == 0 {
+			return nil, skipf("empty favicon matcher")
 		}
 		return alts, nil
 	case "word", "regex":

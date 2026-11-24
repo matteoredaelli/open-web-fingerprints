@@ -75,6 +75,7 @@ td{padding:7px 10px 7px 0;border-top:1px solid var(--line);vertical-align:top;wo
 .sec{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px}
 .sec div{padding:11px 13px;border-radius:12px;border:1px solid var(--line);background:var(--card)}
 .sec .y{border-left:4px solid var(--ok)}.sec .n{border-left:4px solid var(--track);opacity:.8}
+.sec .c-ok{border-left:4px solid var(--ok)}.sec .c-weak{border-left:4px solid var(--soon)}.sec .c-missing{border-left:4px solid var(--bad)}.sec .c-info{border-left:4px solid var(--track)}
 .sec b{display:block}.sec small{color:var(--mute)}
 .chips{display:flex;flex-wrap:wrap;gap:8px}
 .chip{display:inline-flex;align-items:center;gap:8px;padding:6px 12px 6px 6px;border-radius:99px;background:var(--card);border:1px solid var(--line);box-shadow:var(--shadow)}
@@ -182,7 +183,7 @@ footer{margin:56px 0 40px;color:var(--mute);font-size:13px;border-top:1px solid 
     {{end}}
   </section>
 
-  {{if or .IPs .DNS .TLS .Security}}
+  {{if or .IPs .DNS .TLS (and .Security (not .Checks))}}
   <section>
     <h2>Infrastructure</h2>
     <p class="sub">Where the site is served from and how it is set up, as seen from outside.</p>
@@ -207,7 +208,7 @@ footer{margin:56px 0 40px;color:var(--mute);font-size:13px;border-top:1px solid 
       </div>
       {{end}}
     </div>
-    {{if .Security}}
+    {{if and .Security (not .Checks)}}
     <div class="card" style="margin-top:16px">
       <h3 style="margin-top:0">Browser-facing headers <small style="color:var(--mute);font-weight:500">{{.SecPresent}} of {{.SecTotal}} present on the first page</small></h3>
       <div class="sec">{{range .Security}}<div class="{{if .Present}}y{{else}}n{{end}}"><b>{{.Name}}</b><small>{{if .Present}}{{if .Value}}<span class="mono">{{.Value}}</span>{{else}}present{{end}}{{else}}not set · {{.Note}}{{end}}</small></div>{{end}}</div>
@@ -239,6 +240,45 @@ footer{margin:56px 0 40px;color:var(--mute);font-size:13px;border-top:1px solid 
       </div>
       {{end}}
     </div>
+  </section>
+  {{end}}
+
+  {{with .Checks}}
+  <section id="checks">
+    <h2>Checks</h2>
+    <p class="sub">Passive observations about the first response and the domain's DNS. Each compares what was seen with the usual recommendation; there is no score, and a missing item is a fact about this answer, not a verdict on the site.</p>
+    {{if .HasHeaders}}
+    <div class="card">
+      <h3 style="margin-top:0">Headers <small style="color:var(--mute);font-weight:500">{{.OK}} ok · {{.Weak}} weak · {{.Missing}} missing</small></h3>
+      <div class="sec">{{range .Headers}}<div class="c-{{.Status}}"><b>{{.Name}} <span class="badge">{{.Status}}</span></b><small>{{if .Value}}<span class="mono">{{.Value}}</span>{{end}}{{if and .Value .Note}} · {{end}}{{.Note}}</small></div>{{end}}</div>
+      {{if .Cookies}}<h3>Cookies <small style="color:var(--mute);font-weight:500">names and attributes only, values are never kept</small></h3>
+      <table><tr><th>Cookie</th><th>Attributes</th><th>Not set</th></tr>{{range .Cookies}}<tr><td class="mono">{{.Name}}</td><td>{{.Flags}}</td><td>{{.Issues}}</td></tr>{{end}}</table>{{end}}
+      <p class="note">{{.HeadersNote}}</p>
+    </div>
+    {{end}}
+    {{if .Site}}
+    <div class="card" style="margin-top:16px">
+      <h3 style="margin-top:0">Connection and published policies</h3>
+      <div class="sec">{{range .Site}}<div class="c-{{.Status}}"><b>{{.Name}} <span class="badge">{{.Status}}</span></b><small>{{if .Value}}<span class="mono">{{.Value}}</span>{{end}}{{if and .Value .Note}} · {{end}}{{.Note}}</small></div>{{end}}</div>
+    </div>
+    {{end}}
+    {{with .Mail}}
+    <div class="card" style="margin-top:16px">
+      <h3 style="margin-top:0">Mail and name servers <small style="color:var(--mute);font-weight:500">{{.Domain}}</small></h3>
+      <div class="sec">{{range .Rows}}<div class="c-{{.Status}}"><b>{{.Name}} <span class="badge">{{.Status}}</span></b><small>{{if .Value}}<span class="mono">{{.Value}}</span>{{end}}{{if and .Value .Note}} · {{end}}{{.Note}}</small></div>{{end}}</div>
+      <div class="two" style="margin-top:14px">
+        <div>
+          <h3 style="margin-top:0">Recognised services</h3>
+          {{range .Providers}}<div class="rel"><b>{{.Name}}</b><span class="badge">{{.Role}}</span> <span class="mono">{{.Via}}</span></div>{{else}}<p style="color:var(--mute)">None recognised: the list of names is short and a service not in it is not shown.</p>{{end}}
+        </div>
+        <div>
+          <table>{{if .NullMX}}<tr><td>MX</td><td>null MX: the domain says it receives no mail</td></tr>{{end}}
+          {{if .MX}}<tr><td>MX</td><td>{{range .MX}}<div class="mono">{{.}}</div>{{end}}</td></tr>{{end}}
+          {{if .NS}}<tr><td>NS</td><td>{{range .NS}}<div class="mono">{{.}}</div>{{end}}</td></tr>{{end}}</table>
+        </div>
+      </div>
+    </div>
+    {{end}}
   </section>
   {{end}}
 

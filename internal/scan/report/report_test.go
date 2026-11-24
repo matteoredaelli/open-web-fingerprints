@@ -121,3 +121,31 @@ func TestPrimaryCategory(t *testing.T) {
 		t.Error("safeURL")
 	}
 }
+
+func TestRendersChecks(t *testing.T) {
+	r := sample()
+	r.Checks = &scan.Checks{
+		Headers: &scan.HeaderChecks{Page: "https://x.example/", HTTPS: true, OK: 1, Weak: 1, Missing: 1, Note: "one request",
+			Headers: []scan.HeaderCheck{
+				{Name: "strict-transport-security", Present: true, Value: "max-age=1", Status: scan.CheckWeak, Note: "max-age is under 180 days"},
+				{Name: "content-security-policy", Status: scan.CheckMissing, Note: "<img src=x onerror=alert(1)>"},
+			},
+			Cookies: []scan.CookieCheck{{Name: "sid", Secure: true, SameSite: "lax", Issues: []string{"no_httponly"}}}},
+		Mail: &scan.MailChecks{Domain: "x.example", MX: []string{"1 aspmx.l.google.com."},
+			Providers: []scan.Provider{{Name: "Google Workspace", Role: scan.RoleMailbox, Via: "aspmx.l.google.com."}},
+			SPF:       &scan.SPF{Record: "v=spf1 -all", Status: scan.CheckOK}, DMARC: &scan.DMARC{Policy: "none", Status: scan.CheckWeak, Note: "p=none"},
+			DKIMSelTried: 16, MTASTS: &scan.Tag{}},
+	}
+	out := render(t, r)
+	for _, want := range []string{"Checks", "1 ok · 1 weak · 1 missing", "c-weak", "c-missing", "no httponly", "Google Workspace", "DMARC", "p=none", "values are never kept"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("report lacks %q", want)
+		}
+	}
+	if strings.Contains(out, "<img src=x onerror") || strings.Contains(out, "1 of 6 present") {
+		t.Error("hostile text must be escaped, and the basic header list is replaced by the checks")
+	}
+	if strings.Contains(render(t, sample()), `id="checks"`) {
+		t.Error("no checks, no section")
+	}
+}

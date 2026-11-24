@@ -196,6 +196,36 @@ footer{margin:56px 0 40px;color:var(--mute);font-size:13px;border-top:1px solid 
     </div>
   </section>
 
+  {{with .Checks}}
+  <section>
+    <h2>Checks</h2>
+    <p class="sub">Passive observations of the home page and of the domain's DNS. A missing item is a fact about that answer, not a verdict on the site. Each block states its own number of sites.</p>
+    {{if .Headers}}<div class="card"><h3 style="margin-top:0">Headers <small style="color:var(--mute);font-weight:500">{{.Sites}} sites</small></h3>
+      <table><tr><th>Header</th><th>ok</th><th>weak</th><th>missing</th><th>info</th></tr>{{range .Headers}}<tr><td class="mono">{{.Name}}</td><td>{{.OK}}</td><td>{{.Weak}}</td><td>{{.Missing}}</td><td>{{.Info}}</td></tr>{{end}}</table>
+      <p class="note">ok: present and in line with the usual recommendation; weak: present with a value it advises against; missing: absent where it recommends one; info: optional.</p></div>{{end}}
+    <div class="two" style="margin-top:16px">
+      {{if .Connection}}<div class="card"><h3 style="margin-top:0">Connection <small style="color:var(--mute);font-weight:500">{{.Sites}} sites</small></h3><div class="bars">{{range .Connection}}<div><span class="l">{{.Name}}</span><span class="bar"><i style="{{.Width}}"></i></span><span class="n">{{.Pct}}</span></div>{{end}}</div></div>{{end}}
+      {{if .Policies}}<div class="card"><h3 style="margin-top:0">Published files <small style="color:var(--mute);font-weight:500">{{.Sites}} sites</small></h3><div class="bars">{{range .Policies}}<div><span class="l" title="{{.Name}}">{{.Name}}</span><span class="bar"><i style="{{.Width}}"></i></span><span class="n">{{.Pct}}</span></div>{{end}}</div>
+        {{if .AIBots}}<p class="sub" style="margin:14px 0 8px">AI crawlers banned by name in robots.txt</p><div class="bars">{{range .AIBots}}<div><span class="l">{{.Name}}</span><span class="bar"><i style="{{.Width}}"></i></span><span class="n">{{.Pct}}</span></div>{{end}}</div>{{end}}</div>{{end}}
+      {{if .Cookies}}<div class="card"><h3 style="margin-top:0">Cookies <small style="color:var(--mute);font-weight:500">of sites that set one</small></h3><div class="bars">{{range .Cookies}}<div><span class="l">{{.Name}}</span><span class="bar"><i style="{{.Width}}"></i></span><span class="n">{{.Pct}}</span></div>{{end}}</div>
+        <p class="note">Whether a cookie needs HttpOnly depends on its use, which is not known here.</p></div>{{end}}
+    </div>
+    {{if .MailReviewed}}
+    <h3>Mail and DNS <small style="color:var(--mute);font-weight:500">{{.MailSites}} of {{.MailReviewed}} reviewed domains have a mail exchanger</small></h3>
+    <div class="two">
+      {{if .SPF}}<div class="card"><h3 style="margin-top:0">SPF</h3><div class="bars">{{range .SPF}}<div><span class="l">{{.Name}}</span><span class="bar"><i style="{{.Width}}"></i></span><span class="n">{{.Pct}}</span></div>{{end}}</div></div>{{end}}
+      {{if .DMARC}}<div class="card"><h3 style="margin-top:0">DMARC</h3><div class="bars">{{range .DMARC}}<div><span class="l">{{.Name}}</span><span class="bar"><i style="{{.Width}}"></i></span><span class="n">{{.Pct}}</span></div>{{end}}</div></div>{{end}}
+      {{if .Mail}}<div class="card"><h3 style="margin-top:0">Other mail records</h3><div class="bars">{{range .Mail}}<div><span class="l" title="{{.Name}}">{{.Name}}</span><span class="bar"><i style="{{.Width}}"></i></span><span class="n">{{.Pct}}</span></div>{{end}}</div>
+        <p class="note">DKIM selectors cannot be listed: only common names are tried, so this is a lower bound.</p></div>{{end}}
+      {{if .MailProviders}}<div class="card"><h3 style="margin-top:0">Mailbox providers</h3><div class="bars">{{range .MailProviders}}<div><span class="l">{{.Name}}</span><span class="bar"><i style="{{.Width}}"></i></span><span class="n">{{.Pct}}</span></div>{{end}}</div></div>{{end}}
+      {{if .SendingProviders}}<div class="card"><h3 style="margin-top:0">Services allowed to send (SPF)</h3><div class="bars">{{range .SendingProviders}}<div><span class="l">{{.Name}}</span><span class="bar"><i style="{{.Width}}"></i></span><span class="n">{{.Pct}}</span></div>{{end}}</div></div>{{end}}
+      {{if .DNSProviders}}<div class="card"><h3 style="margin-top:0">DNS providers <small style="color:var(--mute);font-weight:500">of {{.MailReviewed}}</small></h3><div class="bars">{{range .DNSProviders}}<div><span class="l">{{.Name}}</span><span class="bar"><i style="{{.Width}}"></i></span><span class="n">{{.Pct}}</span></div>{{end}}</div></div>{{end}}
+    </div>
+    <p class="note">Providers are recognised from fixed lists of host names: one that is not in a list is not counted.</p>
+    {{end}}
+  </section>
+  {{end}}
+
   <section>
     <h2>The run</h2>
     <div class="two">
