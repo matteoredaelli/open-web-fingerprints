@@ -15,6 +15,7 @@ import (
 	"github.com/miekg/dns"
 
 	"github.com/matteoredaelli/open-web-fingerprints/internal/scan/checks"
+	"github.com/matteoredaelli/open-web-fingerprints/internal/scan/dnslimit"
 )
 
 // Client queries the resolvers of Servers (host:port); empty means the ones in /etc/resolv.conf.
@@ -51,6 +52,11 @@ func (c Client) ask(ctx context.Context, name string, qtype uint16, cd bool) (*d
 	if to == 0 {
 		to = 5 * time.Second
 	}
+	release, err := dnslimit.Acquire(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer release()
 	m := new(dns.Msg)
 	m.SetQuestion(dns.Fqdn(name), qtype)
 	m.SetEdns0(4096, true)

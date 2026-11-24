@@ -21,6 +21,7 @@ import (
 	"golang.org/x/net/html/charset"
 
 	"github.com/matteoredaelli/open-web-fingerprints/internal/matcher"
+	"github.com/matteoredaelli/open-web-fingerprints/internal/scan/dnslimit"
 	"github.com/matteoredaelli/open-web-fingerprints/internal/scan/fetch"
 	"github.com/matteoredaelli/open-web-fingerprints/internal/scan/web"
 	"github.com/matteoredaelli/open-web-fingerprints/scan"
@@ -47,16 +48,31 @@ func (s SystemResolver) r() *net.Resolver {
 
 // LookupIP implements Resolver.
 func (s SystemResolver) LookupIP(ctx context.Context, host string) ([]netip.Addr, error) {
+	release, err := dnslimit.Acquire(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer release()
 	return s.r().LookupNetIP(ctx, "ip", host)
 }
 
 // LookupCNAME implements Resolver.
 func (s SystemResolver) LookupCNAME(ctx context.Context, host string) (string, error) {
+	release, err := dnslimit.Acquire(ctx)
+	if err != nil {
+		return "", err
+	}
+	defer release()
 	return s.r().LookupCNAME(ctx, host)
 }
 
 // LookupNS implements Resolver.
 func (s SystemResolver) LookupNS(ctx context.Context, d string) ([]string, error) {
+	release, err := dnslimit.Acquire(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer release()
 	ns, err := s.r().LookupNS(ctx, d)
 	var out []string
 	for _, n := range ns {
@@ -67,6 +83,11 @@ func (s SystemResolver) LookupNS(ctx context.Context, d string) ([]string, error
 
 // LookupMX implements Resolver.
 func (s SystemResolver) LookupMX(ctx context.Context, d string) ([]string, error) {
+	release, err := dnslimit.Acquire(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer release()
 	mx, err := s.r().LookupMX(ctx, d)
 	var out []string
 	for _, m := range mx {
@@ -77,6 +98,11 @@ func (s SystemResolver) LookupMX(ctx context.Context, d string) ([]string, error
 
 // LookupTXT implements Resolver.
 func (s SystemResolver) LookupTXT(ctx context.Context, d string) ([]string, error) {
+	release, err := dnslimit.Acquire(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer release()
 	return s.r().LookupTXT(ctx, d)
 }
 
